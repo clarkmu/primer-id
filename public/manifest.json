@@ -1,0 +1,17 @@
+{
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "name": "Primer ID",
+  "short_name": "Primer ID",
+  "display": "fullscreen",
+  "start_url": ".",
+  "description": "TCS and drug resistance pipelines.",
+  "theme_color": "#4B9CD3",
+  "background_color": "#151515",
+  "scope": "https://primer-id.org"
+}
