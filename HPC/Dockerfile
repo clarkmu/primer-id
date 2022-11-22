@@ -46,14 +46,21 @@ RUN conda init bash
 # install all Anaconda packages silently
 RUN conda config --env --set always_yes true
 
+# add channels 
+
+RUN conda config --add channels defaults
+RUN conda config --add channels bioconda
+RUN conda config --add channels conda-forge
+RUN conda config --set channel_priority strict
+
 # install snakemake - full install (could try other methods to speed up setup)
 RUN conda install -n base -c conda-forge mamba
 RUN mamba create -c conda-forge -c bioconda -n snakemake snakemake
 
 # OGV-Dating dependency
-RUN conda install -c bioconda raxml-ng
-RUN conda install -c bioconda fasttree
-RUN conda install -c bioconda hyphy
+RUN conda install raxml-ng
+RUN conda install fasttree
+RUN conda install hyphy
 
 # INSTALLING RECOMMENDED HYPHY VERSION 2.4-alpha
 # apt install libomp-dev libcurl4-openssl-dev libcrypto++-dev libssl-dev
