@@ -44,12 +44,15 @@ export default function ConfirmModal() {
   };
 
   const DisplaySubject = ({ subject, lib }) => (
-    <div className="flex flex-col gap-1" key={`confirm_${lib}`}>
-      <div>
-        <u>{lib}</u>
-        {` - ${subject.length} file${
+    <div className="flex flex-col gap-1">
+      <div className="font-bold flex gap-1">
+        <span>{lib}</span>
+        <span>-</span>
+        <span>{`${subject.length} sample${
           subject.length > 1 ? "s" : ""
-        } - start2ART: ${conversion[lib]}`}
+        }`}</span>
+        <span>-</span>
+        <span> {`Start ART: ${conversion[lib]} weeks`}</span>
       </div>
       <div className="ml-4 flex flex-col gap-1">
         {subject.map((sample) => (
@@ -77,7 +80,7 @@ export default function ConfirmModal() {
           <div>{email}</div>
         </div>
         <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto">
-          <b>Submitted files by sample:</b>
+          {/* <b>Submitted files by sample:</b> */}
           {Object.keys(listedFiles).map((lib) => (
             <DisplaySubject
               subject={listedFiles[lib]}

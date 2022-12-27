@@ -25,7 +25,7 @@ filter.analysis_description = {terms.io.info :
                             terms.io.contact :          "spond@temple.edu",
                             terms.io.requirements :     "A sequence alignment"
                           };
-                          
+
 io.DisplayAnalysisBanner (filter.analysis_description);
 
 filter.code_info = alignments.LoadGeneticCode ("Universal");
@@ -38,27 +38,28 @@ io.ReportProgressMessage ("Data QC", "Loaded `filter.nuc_data[terms.data.sequenc
 
 /* split off QVOA reads */
 
-filter.partitionining_expressions   = {"QVOA" : "(QVOA)|(OGV)"};
-filter.partitoned_sequence_names    = regexp.PartitionByRegularExpressions(alignments.GetSequenceNames ("filter.raw_data"), filter.partitionining_expressions); 
+filter.regex = "(QVOA)|(OGV)|(DNA)|(xxxx)|(BAR[0-9]+)";
+filter.partitionining_expressions   = {"QVOA" : filter.regex};
+filter.partitoned_sequence_names    = regexp.PartitionByRegularExpressions(alignments.GetSequenceNames ("filter.raw_data"), filter.partitionining_expressions);
 
 //io.CheckAssertion ("Abs(filter.partitoned_sequence_names['(QVOA)|(OGV)'])>0", "There were no sequences marked as QVOA in the input file");
 
 KeywordArgument ("qvoa", "Write QVOA sequences here ", filter.nuc_data[terms.data.file] + "_qvoa.fas");
 filter.qvoa_path = io.PromptUserForFilePath ("Save QVOA sequences to");
-io.ReportProgressMessage ("Data QC", "Found `Abs(filter.partitoned_sequence_names['(QVOA)|(OGV)'])` QVOA sequences in the file; writing them to **`filter.qvoa_path`**");
+io.ReportProgressMessage ("Data QC", "Found `Abs(filter.partitoned_sequence_names[filter.regex])` QVOA sequences in the file; writing them to **`filter.qvoa_path`**");
 alignments.GetSequenceByName ("filter.raw_data", None);
 fprintf (filter.qvoa_path, CLEAR_FILE, KEEP_OPEN);
 
 filter.qvoa = {};
 
-utility.ForEach (filter.partitoned_sequence_names["(QVOA)|(OGV)"], "_seq_record_", 
+utility.ForEach (filter.partitoned_sequence_names[filter.regex], "_seq_record_",
 '
     sanitized_name = ((_seq_record_ ^ {{"_xxxx_000WPI"}{""}}) ^ {{"OGV_"}{""}}) + "_QVOA";
     filter.qvoa [sanitized_name] = alignments.StripGaps (alignments.GetSequenceByName ("filter.raw_data", _seq_record_));
-    
 
-    fprintf (filter.qvoa_path, ">", sanitized_name , "\n", 
-        filter.qvoa [sanitized_name], 
+
+    fprintf (filter.qvoa_path, ">", sanitized_name , "\n",
+        filter.qvoa [sanitized_name],
         "\n");
 ');
 fprintf (filter.qvoa_path, CLOSE_FILE);
@@ -102,22 +103,22 @@ fprintf (filter.combined_nuc_path, CLEAR_FILE, KEEP_OPEN);
 
 filter.sequences_with_copies = {};
 
-utility.ForEach (filter.partitoned_sequence_names[""], "_seq_record_", 
+utility.ForEach (filter.partitoned_sequence_names[""], "_seq_record_",
 '
     io.ReportProgressBar ("filter","Filtering RNA sequence " + filter.seq_count);
     filter.read_to_check = alignments.Strip (alignments.StripGaps (alignments.GetSequenceByName ("filter.raw_data", _seq_record_)));
-    
-    if (filter.unique / filter.read_to_check == FALSE) {    
-        
+
+    if (filter.unique / filter.read_to_check == FALSE) {
+
         filter.RNA_reads[_seq_record_] = filter.read_to_check;
-        
+
         filter.sequences_with_copies [filter.read_to_check] = {"0" : _seq_record_};
         filter.unique [filter.read_to_check] = _seq_record_;
-    
+
         filter.sequence_info[_seq_record_] = alignments.TranslateCodonsToAminoAcidsWithAmbigsAllFrames (filter.RNA_reads[_seq_record_],
                                filter.code_info, filter.lookup_cache);
-                               
-                                                                                                 
+
+
         for (frame = 0; frame < 3; frame += 1) {
 
             if (((filter.sequence_info[_seq_record_])[frame])[terms.stop_codons] == 0) {
@@ -133,15 +134,15 @@ utility.ForEach (filter.partitoned_sequence_names[""], "_seq_record_",
                 filter.clean_seqs [_seq_record_] = ((filter.sequence_info[_seq_record_])[frame])[terms.data.sequence];
                 break;
             }
-        }   
-                           
+        }
+
         if (frame == 3) {
             filter.frameshifted [_seq_record_] = 1;
-        }  
+        }
     } else {
         filter.sequences_with_copies [filter.read_to_check] + _seq_record_;
     }
-                           
+
     filter.seq_count += 1;
 ');
 
@@ -152,33 +153,35 @@ io.CheckAssertion ("filter.longest_seq_L>0", "There were no RNA sequences that w
 
 
 filter.ref_seq = {"REF" : {'stripped' : filter.longest_seq}};
-filter.options = IgSCUEAL.define_alignment_settings (filter.code_info);   
+filter.options = IgSCUEAL.define_alignment_settings (filter.code_info);
 filter.options["code"] = filter.code_info;
 
 
 if (Abs(filter.frameshifted)) {
     io.ReportProgressMessage ("Data QC", "Correcting frame-shifts in the remaining reads");
     filter.seq_count = 1;
- 
+
     utility.ForEachPair (filter.frameshifted, "_sequence_", "_value_",
     '
         io.ReportProgressBar ("filter","Processing sequence " + filter.seq_count);
         filter.cleaned = IgSCUEAL.align_sequence_to_reference_set (filter.RNA_reads[_sequence_], filter.ref_seq, filter.options);
-        
-        //if (_sequence_ == "CAP206_159wpi_ENV_2_all_aligned_loops_trimmed_98_2") {
+
+        //if (_sequence_ == "PIDCAP380_PH380_F1_2_23_W5half_post_ART_DNA_BAR1_Seq1_Phase3_NumReads240_P17_QVOA") {
         //    console.log (filter.cleaned);
         //}
- 
-        filtered.aa_seq = alignments.StripGaps(filter.cleaned["AA"]);
+
+        //console.log (filter.cleaned);
+
+        filtered.aa_seq = alignments.StripGaps(filter.cleaned["AA"])^ {{"\\?","X"}};
         filtered.na_seq = IgSCUEAL.strip_in_frame_indels(filter.cleaned["QRY"]);
-        
+
         (filter.sequences_with_copies[filter.RNA_reads[_sequence_]])["_write_to_file"][""];
         filter.seq_count += 1;
     ');
 
     io.ClearProgressBar ();
-    
-} 
+
+}
 
 io.ReportProgressMessage ("Data QC", "Checking for frame-preserving indels in other reads");
 filter.seq_count = 1;
@@ -192,7 +195,7 @@ utility.ForEachPair (filter.clean_seqs, "_sequence_", "_value_",
     //    console.log (filter.cleaned);
     //}
 
-    filtered.aa_seq = alignments.StripGaps(filter.cleaned["AA"]);
+    filtered.aa_seq = alignments.StripGaps(filter.cleaned["AA"])  ^ {{"\\?","X"}};
     filtered.na_seq = IgSCUEAL.strip_in_frame_indels(filter.cleaned["QRY"]);
     (filter.sequences_with_copies[filter.RNA_reads[_sequence_]])["_write_to_file"][""];
     filter.seq_count += 1;
@@ -206,13 +209,19 @@ io.ReportProgressMessage ("Data QC", "Performing QA on QVOA reads");
 utility.ForEachPair (filter.qvoa, "_sequence_", "_value_",
 '
     filter.cleaned = IgSCUEAL.align_sequence_to_reference_set (_value_, filter.ref_seq, filter.options);
-    filtered.aa_seq = alignments.StripGaps(filter.cleaned["AA"]);
+
+    if (None == filter.cleaned) {
+        console.log (_sequence_ + " failed to map to RNA references");
+        return;
+    }
+
+    filtered.aa_seq = alignments.StripGaps(filter.cleaned["AA"]) ^ {{"\\?","X"}};
     filtered.na_seq = IgSCUEAL.strip_in_frame_indels(filter.cleaned["QRY"]);
-    
+
     fprintf (filter.combined_protein_path, ">", _sequence_, "\n",  filtered.aa_seq, "\n");
     fprintf (filter.combined_nuc_path, ">", _sequence_, "\n", filtered.na_seq , "\n");
 ');
-    
+
 
 
 fprintf (filter.protein_path, CLOSE_FILE);
@@ -231,7 +240,3 @@ function _write_to_file (key, value) {
     fprintf (filter.combined_protein_path, ">", value, "\n",  filtered.aa_seq, "\n");
     fprintf (filter.combined_nuc_path, ">", value, "\n", filtered.na_seq , "\n");
  }
-
-
-
-

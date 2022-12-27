@@ -42,6 +42,8 @@ $LOG_DIR = $IS_DEV ? $BASE : "$BASE/output/ogv-dating";
 $BUCKET_URL = "gs://ogv-dating";
 
 if( $IS_DEV ){
+    shell_exec("mkdir -p $BASE");
+
     if(file_exists($LOCK_FILE)){
         echo "LOCK FILE EXISTED";
         unlink($LOCK_FILE);
@@ -131,14 +133,13 @@ class Pipeline {
 
         $this->generateSamplesFile();
 
-        $cores = $GLOBALS["IS_DEV"] ? "all" : "5";
+        $cores = 4 * max([1, count($this->data['conversion'])]);
 
         $cmd = "snakemake --cores $cores --config job_dir=\"{$this->dir}\"";
 
         if( $GLOBALS['IS_DEV'] ){
             $this->command($cmd);
         }else{
-            # --keep-going doesn't work on dev
             $cmd .= " --keep-going --snakefile {$GLOBALS["BASE"]}/Snakefile";
             $this->command("sbatch -o {$this->slurmOutput} -n $cores --job-name=\"{$this->slurmJobName}\" --mem=20000 -t 1440 --wrap=\"{$cmd}\"");
         }
@@ -252,7 +253,8 @@ class Pipeline {
         $conversion = $this->data['conversion'];
 
         if(!$conversion || !count($conversion)){
-            return;
+            // return;
+            $conversion = [];
         }
 
         $conversionJSON = [];
@@ -268,7 +270,7 @@ class Pipeline {
 
         file_put_contents($inputLocation, json_encode($conversionJSON));
 
-        $scriptLocation = $GLOBALS['IS_DEV'] ? "{$GLOBALS['TILDA']}/pipeline/scripts/result-summary.py" : "{$GLOBALS['BASE']}/result-summary.py";
+        $scriptLocation = $GLOBALS['IS_DEV'] ? "{$GLOBALS['TILDA']}/result-summary.py" : "{$GLOBALS['BASE']}/result-summary.py";
         $this->command("python3 $scriptLocation -d {$this->dir}/results/dating/ -j $inputLocation -o $outputLocation");
     }
 
@@ -343,7 +345,8 @@ class Pipeline {
         if( strpos($jobStatus, "FAILED") !== FALSE ){
             $this->addError(
                 "This OGV-Dating submission has failed. The error output is available below.</br></br>" .
-                file_get_contents($this->slurmOutput)
+                file_get_contents($this->slurmOutput),
+                false
             );
         }else{
             $this->mlog("NO ACTION FOR PIPELINE ID {$this->id}");
@@ -361,7 +364,7 @@ class Pipeline {
         $email = new PHPMailer();
         $email->isHTML(true);
         $email->SetFrom($GLOBALS["ADMIN_EMAIL"], "SwanLabWeb");
-        $email->Subject = "Primer-ID ERROR";
+        $email->Subject = "OGV-Dating ERROR";
         $email->AddAddress($GLOBALS["ADMIN_EMAIL"]);
         $email->AddAddress($this->data['email']);
 

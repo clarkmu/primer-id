@@ -1,9 +1,10 @@
 #!/bin/sh
 
-name="ogv-dating-container"
+name="primer-id-container"
 
 function _build {
     # remove --platform flag if not using Apple Silicon chip
+    # --no-cache
     docker build -t "$name" ./ --platform linux/amd64
 }
 

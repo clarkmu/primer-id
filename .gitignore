@@ -4,6 +4,8 @@ storage-admin.json
 .env*
 /cypress
 
+errors.log
+*.fasta
 .snakemake
 ogv-submissions
 

@@ -33,7 +33,7 @@ export default function Uploads() {
     }
   }, []);
 
-  const disableButtons = files.length < 1 || showConversion || error.length > 0;
+  const disableButtons = files.length < 1 || error.length > 0;
 
   const handleAdd = async (event: Event) => {
     const addError = await addFiles(event);
@@ -61,17 +61,11 @@ export default function Uploads() {
     <div className="flex flex-col gap-8">
       <div className="flex justify-around">
         <div className="flex flex-col gap-2">
-          <InputFile
-            multiple
-            onChange={handleAdd}
-            label="Upload Files"
-            disabled={showConversion}
-          />
+          <InputFile multiple onChange={handleAdd} label="Upload Files" />
         </div>
         <div className="flex flex-col gap-2">
           {isInputDirSupported ? (
             <InputFile
-              disabled={showConversion}
               label="Upload a Directory"
               multiple
               directory=""
@@ -126,7 +120,12 @@ export default function Uploads() {
       </div>
       <Alert msg={error} />
       <div className="flex justify-center items-center gap-8">
-        <Button disabled={disableButtons} onClick={finishFileSection} fullWidth>
+        <Button
+          disabled={disableButtons}
+          onClick={finishFileSection}
+          variant={showConversion ? "outlined" : "primary"}
+          fullWidth
+        >
           {disableButtons
             ? "Upload .fasta files to process with OGV-Dating pipeline"
             : "Finish File Selection"}

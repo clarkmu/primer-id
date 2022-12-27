@@ -132,7 +132,7 @@ namespace IgSCUEAL.phylo {
                 //console.log (res_lf);
 
                 //assert (0);
-                
+
                 logL_by_branch [this_branch] = -2*res_lf[1][0];
                 if (logL_by_branch [this_branch] < best_AIC) {
                     best_AIC = logL_by_branch [this_branch];
@@ -153,7 +153,7 @@ namespace IgSCUEAL.phylo {
 
 
             best_type = Max (supported);
-    
+
             supported = utility.Filter (supported, "_support_", "_support_ >= 0.01");
             if (utility.Array1D (supported) == 0) {
                 // ensure that there's at least one supported assignment
@@ -341,12 +341,12 @@ namespace IgSCUEAL.phylo {
                 } else {
                     ExecuteAFile (fit_path);
                 }
-                
+
                 GetString   (fitted, LikelihoodFunction, lf_count);
                 GetString   (lf_info, ^fitted, -1);
                 ConstructCategoryMatrix (data_matrix, ^((lf_info["Trees"])[0]));
-                                
-                
+
+
                 node_count = utility.Array1D (data_matrix["Nodes"]);
                 GetDataInfo (duplicate_map, ^((lf_info["Datafilters"])[0]));
 
@@ -627,7 +627,24 @@ namespace IgSCUEAL {
         return {'aligned': sequence, 'stripped' : sequence ^ {{"\-",""}}};
     }
 
-    lfunction  strip_non_letters (sequence) {
+
+    lfunction  strip_in_frame_gaps (sequence) {
+        stripped = ""; stripped * Abs (sequence);
+        for (i = 0; i < Abs (sequence); i+=3) {
+            codon = sequence[i][i+2];
+            if ((codon $ "[ACGT][ACGT][ACGT]" )[0] == 0) {
+                stripped * codon;
+            } else {
+                if (codon != '---') {
+                    return null;
+                }
+            }
+        }
+        stripped * 0;
+        return {'aligned': sequence, 'stripped' : stripped};
+    }
+
+   lfunction  strip_non_letters (sequence) {
         return {'aligned': sequence, 'stripped' : sequence ^ {{"[^A-Z,a-z]",""}}};
     }
 
@@ -664,7 +681,13 @@ namespace IgSCUEAL {
        result = {'SITES' : data["sites"]};
 
        utility.ForEach (align_with_these, "_value_",
-        "`&result`[_value_] = IgSCUEAL.strip_gaps (alignments.GetSequenceByName ('`namespace`', _value_));"
+        "
+            `&result`[_value_] = IgSCUEAL.strip_in_frame_gaps (alignments.GetSequenceByName ('`namespace`', _value_));
+            if (`&result`[_value_] == None) {
+                `&result` - _value_;
+            }
+        "
+
         );
 
 

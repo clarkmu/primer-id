@@ -17,6 +17,7 @@ type OGVContextType = {
   removeFile: (filename: string) => void;
   filesByLib: () => object;
   submitOGV: () => Promise<string>;
+  isMissingStart2ART: () => boolean;
 };
 
 export const OGVContext = createContext<OGVContextType>({
@@ -26,6 +27,7 @@ export const OGVContext = createContext<OGVContextType>({
   removeFile: (filename: string) => {},
   filesByLib: () => ({}),
   submitOGV: () => Promise.resolve(""),
+  isMissingStart2ART: () => true,
 });
 
 export function useOGVContext(): OGVContextType {
@@ -94,7 +96,7 @@ export default function OGVContextProvider({
       return "Please name files as {subject}_{sample}.fasta";
     }
 
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     for (const file of newFiles) {
       const text = await file.text();
@@ -103,7 +105,6 @@ export default function OGVContextProvider({
       for (const line of lines) {
         if (line[0] === ">" && line.indexOf("WPI") === -1) {
           errors.push(file.name);
-
           break;
         }
       }
@@ -196,6 +197,18 @@ export default function OGVContextProvider({
     return "";
   };
 
+  const isMissingStart2ART = () =>
+    !!(
+      Object.keys(state.conversion).length !==
+        Object.keys(filesByLib()).length ||
+      Object.keys(
+        //make an object of conversions with empty strings
+        Object.fromEntries(
+          Object.entries(state.conversion).filter(([key, value]) => !value)
+        )
+      ).length
+    );
+
   return (
     <OGVContext.Provider
       value={{
@@ -205,6 +218,7 @@ export default function OGVContextProvider({
         removeFile,
         filesByLib,
         submitOGV,
+        isMissingStart2ART,
       }}
     >
       {children}

@@ -8,8 +8,9 @@ import RadioGroup from "../form/RadioGroup";
 
 export default function Submit() {
   const {
-    state: { email, jobID, resultsFormat, showSubmit },
+    state: { email, jobID, resultsFormat, showSubmit, conversion },
     setState,
+    isMissingStart2ART,
   } = useOGVContext();
 
   const [scrollToRef] = useScrollToDivOnVisibilityToggle(showSubmit);
@@ -63,7 +64,7 @@ export default function Submit() {
         }
       />
       <Alert msg={error} />
-      <Button onClick={handleSubmit} disabled={!email}>
+      <Button onClick={handleSubmit} disabled={!email || isMissingStart2ART()}>
         Submit
       </Button>
     </div>
