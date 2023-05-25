@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "cypress open",
+    "test": "concurrently 'yarn dev' 'cyress open'",
     "deploy": "rm -rf .next && yarn build && gcloud app deploy --project phylodynamics-213415"
   },
   "dependencies": {
@@ -29,7 +29,8 @@
     "@types/react": "18.0.10",
     "@types/react-dom": "18.0.5",
     "autoprefixer": "^10.4.8",
-    "cypress": "^10.7.0",
+    "concurrently": "^7.6.0",
+    "cypress": "12.2.0",
     "eslint": "8.16.0",
     "eslint-config-next": "12.1.6",
     "postcss": "^8.4.16",

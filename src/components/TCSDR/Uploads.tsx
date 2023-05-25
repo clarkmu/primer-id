@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Collapse from "@/components/form/Collapse";
 import { UPLOAD_PROCEDURES, useTCSDRContext } from "@/contexts/TCSDRContext";
-import useIsInputDirSupported from "@/hooks/useIsInputDirSupported";
 import Button from "../form/Button";
 import Paper from "@/components/form/Paper";
 import Alert from "../form/Alert";
@@ -78,45 +77,48 @@ const ListFiles = ({ errors }) => {
     }));
 
   return (
-    <div className="flex flex-col gap-4">
-      {files.map((file, i) => {
-        const hasError = errors.find((f) => f.name === file.name)?.errors;
+    <>
+      <div>{files.length} Files</div>
+      <div className="flex flex-col gap-4 max-h-[44vh] overflow-y-auto">
+        {files.map((file, i) => {
+          const hasError = errors.find((f) => f.name === file.name)?.errors;
 
-        return (
-          <div
-            key={`file_${i}`}
-            className="flex gap-4 justify-start items-center"
-          >
-            {!!hasError ? (
-              <XCircleIcon className="w-6 h-6 text-red" />
-            ) : (
-              <FolderIcon className="w-6 h-6 text-primary" />
-            )}
-            <div className="flex-1 flex flex-col gap-1">
-              <div>{file.file.name}</div>
-              <div className="text-sm">
-                {!!hasError
-                  ? `Errors: ${hasError.join(", ")}`
-                  : file.poolName
-                  ? `Lib: ${file.poolName}`
-                  : ""}
-              </div>
-            </div>
+          return (
             <div
-              className="cursor-pointer w-8 h-8 flex items-center justify-center hover:bg-grey rounded-full"
-              onClick={() => removeFile(file.file.name)}
+              key={`file_${i}`}
+              className="flex gap-4 justify-start items-center"
             >
-              {/* <Button
+              {!!hasError ? (
+                <XCircleIcon className="w-6 h-6 text-red" />
+              ) : (
+                <FolderIcon className="w-6 h-6 text-primary" />
+              )}
+              <div className="flex-1 flex flex-col gap-1">
+                <div>{file.file.name}</div>
+                <div className="text-sm">
+                  {!!hasError
+                    ? `Errors: ${hasError.join(", ")}`
+                    : file.poolName
+                    ? `Lib: ${file.poolName}`
+                    : ""}
+                </div>
+              </div>
+              <div
+                className="cursor-pointer w-8 h-8 flex items-center justify-center hover:bg-grey rounded-full"
+                onClick={() => removeFile(file.file.name)}
+              >
+                {/* <Button
               iconButton={true}
               onClick={() => removeFile(file.file.name)}
             > */}
-              <XCircleIcon className="w-6 h-6 text-red" />
-              {/* </Button> */}
+                <XCircleIcon className="w-6 h-6 text-red" />
+                {/* </Button> */}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </>
   );
 };
 
@@ -127,12 +129,11 @@ const Upload = () => {
   const [error, setError] = useState("");
   const [errors, setErrors] = useState([]);
 
-  const [isInputDirSupported] = useIsInputDirSupported();
-
   const { setState } = useTCSDRContext();
 
   const addFile = (e) => {
     const files = Array.from(e.target.files)
+      .filter((f) => f.name[0] !== ".")
       .filter(
         (f) =>
           f.name.indexOf(".fast") !== -1 &&
@@ -184,16 +185,6 @@ const Upload = () => {
     <div className="flex flex-col gap-4">
       <div className="flex justify-around w-full my-4">
         <InputFile multiple onChange={(e) => addFile(e)} label="Upload Files" />
-        {isInputDirSupported ? (
-          <InputFile
-            label="Upload a Directory"
-            multiple
-            directory=""
-            webkitdirectory=""
-          />
-        ) : (
-          <div>Your browser does not support directory uploads.</div>
-        )}
       </div>
       {state.files.length > 0 ? (
         <ListFiles errors={errors} />

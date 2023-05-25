@@ -23,3 +23,6 @@ package.json for setting up web application
 HPC/docker.sh for docker container setup
 
 Crons are not setup in docker container , run ogv.php and tcs-dr.php manually when there is a submission to process
+
+HPC/locations.example.php
+Rename to locations.php and set location variables

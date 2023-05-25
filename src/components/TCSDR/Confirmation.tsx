@@ -19,7 +19,7 @@ const UploadProgress = () => {
         msg="FILES ARE UPLOADING. PLEASE DO NOT CLOSE THIS WINDOW YET."
       />
       <div className="text-lg">Uploading Files:</div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto">
         {Object.keys(uploadedFiles).map((key, i) => (
           <div
             className="flex gap-4 justify-between items-center"
@@ -84,7 +84,7 @@ const Summary = () => {
       ) : files?.length > 0 && !submitting ? (
         <div className="flex flex-col gap-4">
           <div className="text-lg">Files to upload:</div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-h-[33vh] overfloy-y-auto">
             {files.map((file, i) => (
               <div
                 className="flex gap-4 justify-start items-center"
@@ -141,7 +141,7 @@ const Confirmation = () => {
   const handleClose = () => {
     if (submitted) {
       router.reload();
-    } else {
+    } else if (!submitting) {
       setOpen(false);
     }
   };

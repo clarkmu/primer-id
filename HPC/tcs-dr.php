@@ -1,24 +1,13 @@
 <?php
 
 $IS_DEV = ! empty($argv[1]);
-
 $TILDA = trim(shell_exec("echo ~"));
 
 $ADMIN_EMAIL = "clarkmu@email.unc.edu";
 $WEBSITE_URL = $IS_DEV ? "http://localhost:8080" : "https://primer-id.org";
-$API_URL =  "$WEBSITE_URL/api/tcsdr";
-$BASE = $IS_DEV ? "$TILDA/tcs-dr" : "/proj/swanslab/RUBY-PHP-LONGLEAF";
-$LOCK_FILE = "$BASE/var/run/locked-tcs-dr";
 
-$PRIVATE_KEY_FILE = $IS_DEV ? "$TILDA/code/tcs-dr/node/assets/storage-admin.json" : "{$BASE}/var/run/storage-admin.json";
-
-$SCRATCH_SPACE = $IS_DEV ? "$TILDA/tcs-dr" : "/pine/scr/r/c/rc_swans.svc/tcs-dr";
-
-$RUBY_SERVER = $IS_DEV ? "localhost:9292" : "https://api-ruby-secure-dept-tcs.apps.cloudapps.unc.edu";
-
-$BUCKET_URL = "gs://tcs-dr";
-
-$LOG_DIR = $IS_DEV ? $BASE : "$BASE/output/tcsdr";
+$IS_TCSDR = true;
+require "locations.php";
 
 if( $IS_DEV ){
     shell_exec("mkdir -p $BASE/var/run/output");

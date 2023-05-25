@@ -1,20 +1,9 @@
 import { useOGVContext } from "@/contexts/OGVContext";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Button from "@/components/form/Button";
 import InputFile from "@/components/form/InputFile";
 import Alert from "../form/Alert";
 import { XCircleIcon } from "@heroicons/react/solid";
-
-const checkDirSupport = () => {
-  const tmpInput = document.createElement("input");
-  return (
-    "webkitdirectory" in tmpInput ||
-    "mozdirectory" in tmpInput ||
-    "odirectory" in tmpInput ||
-    "msdirectory" in tmpInput ||
-    "directory" in tmpInput
-  );
-};
 
 export default function Uploads() {
   const {
@@ -25,13 +14,6 @@ export default function Uploads() {
   } = useOGVContext();
 
   const [error, setError] = useState("");
-  const [isInputDirSupported, setIsInputDirSupported] = useState(true);
-
-  useEffect(() => {
-    if (!checkDirSupport()) {
-      setIsInputDirSupported(false);
-    }
-  }, []);
 
   const disableButtons = files.length < 1 || error.length > 0;
 
@@ -62,19 +44,6 @@ export default function Uploads() {
       <div className="flex justify-around">
         <div className="flex flex-col gap-2">
           <InputFile multiple onChange={handleAdd} label="Upload Files" />
-        </div>
-        <div className="flex flex-col gap-2">
-          {isInputDirSupported ? (
-            <InputFile
-              label="Upload a Directory"
-              multiple
-              directory=""
-              webkitdirectory=""
-              onChange={handleAdd}
-            />
-          ) : (
-            <div>Your browser does not support directory uploads.</div>
-          )}
         </div>
       </div>
       <div className="max-h-[33vh] overflow-y-auto flex flex-col">

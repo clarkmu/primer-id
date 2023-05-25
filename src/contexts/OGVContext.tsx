@@ -44,8 +44,8 @@ function whitelistCharsInFilenames(file) {
   }
 
   return new File([file], filteredName, {
-    type: file.type,
-    lastModified: file.lastModified,
+    name: filteredName,
+    ...file,
   });
 }
 
@@ -96,24 +96,24 @@ export default function OGVContextProvider({
       return "Please name files as {subject}_{sample}.fasta";
     }
 
-    const errors: string[] = [];
+    // const errors: string[] = [];
 
-    for (const file of newFiles) {
-      const text = await file.text();
-      const lines = text.split(/\r?\n/);
+    // for (const file of newFiles) {
+    //   const text = await file.text();
+    //   const lines = text.split(/\r?\n/);
 
-      for (const line of lines) {
-        if (line[0] === ">" && line.indexOf("WPI") === -1) {
-          errors.push(file.name);
-          break;
-        }
-      }
-    }
+    //   for (const line of lines) {
+    //     if (line[0] === ">" && line.indexOf("WPI") === -1) {
+    //       errors.push(file.name);
+    //       break;
+    //     }
+    //   }
+    // }
 
-    if (errors.length) {
-      const errorFiles = errors.join(", ");
-      return `Sequence names require a string of '_xxxx_xxxWPI' to process.  The following files fail QC:  ${errorFiles}`;
-    }
+    // if (errors.length) {
+    //   const errorFiles = errors.join(", ");
+    //   return `Sequence names require a string of '_xxxx_xxxWPI' to process.  The following files fail QC:  ${errorFiles}`;
+    // }
 
     setState((s) => ({ ...s, files: [...s.files, ...newFiles] }));
 

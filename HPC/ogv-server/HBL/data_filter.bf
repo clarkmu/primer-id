@@ -118,8 +118,11 @@ utility.ForEach (filter.partitoned_sequence_names[""], "_seq_record_",
         filter.sequence_info[_seq_record_] = alignments.TranslateCodonsToAminoAcidsWithAmbigsAllFrames (filter.RNA_reads[_seq_record_],
                                filter.code_info, filter.lookup_cache);
 
+        // io.ReportProgressMessage ("filter.read_to_check", "`filter.read_to_check`" );
 
         for (frame = 0; frame < 3; frame += 1) {
+            //io.ReportProgressMessage ("Sequence Record", "`filter.sequence_info[_seq_record_]`" );
+            //io.ReportProgressMessage ("Frame Check", "Frame: " + frame + " , Filter: " + filter.unique [filter.read_to_check] );
 
             if (((filter.sequence_info[_seq_record_])[frame])[terms.stop_codons] == 0) {
                 if (((filter.sequence_info[_seq_record_])[frame])[terms.sense_codons] > filter.longest_seq_L) {
@@ -133,6 +136,8 @@ utility.ForEach (filter.partitoned_sequence_names[""], "_seq_record_",
                 }
                 filter.clean_seqs [_seq_record_] = ((filter.sequence_info[_seq_record_])[frame])[terms.data.sequence];
                 break;
+            } else {
+                //io.ReportProgressMessage ("Failed Frame Check", "Off By:" + ((filter.sequence_info[_seq_record_])[frame])[terms.stop_codons]);
             }
         }
 

@@ -29,17 +29,13 @@ $TILDA = "/home/node/app/ogv-server";
 
 $ADMIN_EMAIL = "clarkmu@email.unc.edu";
 $WEBSITE_URL = $IS_DEV ? "host.docker.internal:3000" : "https://primer-id.org";
-$API_URL = "$WEBSITE_URL/api/ogv";
-$BASE = $IS_DEV ? "$TILDA/ogv-submissions" : "/proj/swanslab/RUBY-PHP-LONGLEAF/var/run";
-$LOCK_FILE = $IS_DEV ? "$BASE/locked-ogv-dating" : "$BASE/locked-ogv-dating";
 
-$PRIVATE_KEY_FILE = $IS_DEV ? "$TILDA/storage-admin.json" : "$BASE/storage-admin.json";
-
-$SCRATCH_SPACE = $IS_DEV ? $BASE : "/pine/scr/r/c/rc_swans.svc/ogv-dating";
-
-$LOG_DIR = $IS_DEV ? $BASE : "$BASE/output/ogv-dating";
-
-$BUCKET_URL = "gs://ogv-dating";
+$IS_OGV = true;
+if( file_exists("./locations.php") ){
+    require "locations.php";
+}else{
+    require "../locations.php";
+}
 
 if( $IS_DEV ){
     shell_exec("mkdir -p $BASE");
@@ -213,10 +209,16 @@ class Pipeline {
             foreach($this->data['uploads'] as $f){
                 $receipt .= $f['fileName'] . "<br>";
             }
-            $receipt .= "<br>";
+            $receipt .= "<br><br>";
         }
 
-        $receipt .= "<br><br>";
+        if ( ! empty($this->data['conversion']) ) {
+            $receipt .= "<u>Start2ART</u>:<br>";
+            foreach($this->data['conversion'] as $key => $value){
+                $receipt .= $key . ": $value" . "<br>";
+            }
+            $receipt .= "<br><br>";
+        }
 
         $receipt = "<html><body>" .
             "Dear Primer-ID WebApp user,<br>" .
