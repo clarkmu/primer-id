@@ -1,23 +1,38 @@
-import { FC, useRef } from "react";
 import Button from "./Button";
+import { useDropzone } from "react-dropzone";
 
-const InputFile: FC<HTMLInputElement> = ({
-  label = "Choose Files",
+const InputFile = ({
+  onChange = () => null,
   disabled = false,
-  ...props
 }: {
-  label?: string;
+  onChange: () => void;
   disabled?: boolean;
 }) => {
-  const inputRef = useRef(null);
+  const { getRootProps, getInputProps, open } = useDropzone({
+    // Disable click and keydown behavior
+    noClick: true,
+    noKeyboard: true,
+    multiple: true,
+    onDrop: onChange,
+    disabled,
+  });
 
   return (
-    <>
-      <Button disabled={disabled} onClick={() => inputRef.current?.click()}>
-        {label}
+    <div
+      {...getRootProps({
+        className:
+          "dropzone w-full border-secondary hover:border-primary hover:cursor-pointer border-2 border-dashed flex flex-col justify-center items-center gap-4 p-4",
+      })}
+    >
+      <input {...getInputProps()} />
+      <p>
+        Drag and drop files and directories here or click the button below to
+        use selector
+      </p>
+      <Button disabled={disabled} onClick={open}>
+        Choose Files
       </Button>
-      <input ref={inputRef} type="file" {...props} className="hidden" />
-    </>
+    </div>
   );
 };
 

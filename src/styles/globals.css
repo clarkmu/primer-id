@@ -82,10 +82,10 @@ a {
   width: 80%;
 }
 
-::-webkit-scrollbar {
+/* ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
-}
+} */
 
 .text-center {
   text-align: center;

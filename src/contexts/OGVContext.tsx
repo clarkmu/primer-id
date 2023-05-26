@@ -13,7 +13,7 @@ import {
 type OGVContextType = {
   state: ogvType;
   setState: Dispatch<SetStateAction<ogvType>>;
-  addFiles: (event: Event) => string;
+  addFiles: (files: File[]) => string;
   removeFile: (filename: string) => void;
   filesByLib: () => object;
   submitOGV: () => Promise<string>;
@@ -23,7 +23,7 @@ type OGVContextType = {
 export const OGVContext = createContext<OGVContextType>({
   state: INITIAL_OGV,
   setState: () => null,
-  addFiles: (event: Event) => "",
+  addFiles: (files: File[]) => "",
   removeFile: (filename: string) => {},
   filesByLib: () => ({}),
   submitOGV: () => Promise.resolve(""),
@@ -71,16 +71,14 @@ export default function OGVContextProvider({
     }
   }, []);
 
-  const addFiles = async (event: Event) => {
+  const addFiles = async (files: File[]) => {
     // return isError
 
-    const input = event.target as HTMLInputElement;
-
-    if (!input.files?.length) {
+    if (!files?.length) {
       return "No files selected.";
     }
 
-    const newFiles = Array.from(input.files)
+    const newFiles = Array.from(files)
       .filter(
         (f) =>
           f.name.indexOf(".fast") !== -1 &&
@@ -95,25 +93,6 @@ export default function OGVContextProvider({
     if (newFiles.filter((f) => f.name.indexOf("_") === -1).length > 0) {
       return "Please name files as {subject}_{sample}.fasta";
     }
-
-    // const errors: string[] = [];
-
-    // for (const file of newFiles) {
-    //   const text = await file.text();
-    //   const lines = text.split(/\r?\n/);
-
-    //   for (const line of lines) {
-    //     if (line[0] === ">" && line.indexOf("WPI") === -1) {
-    //       errors.push(file.name);
-    //       break;
-    //     }
-    //   }
-    // }
-
-    // if (errors.length) {
-    //   const errorFiles = errors.join(", ");
-    //   return `Sequence names require a string of '_xxxx_xxxWPI' to process.  The following files fail QC:  ${errorFiles}`;
-    // }
 
     setState((s) => ({ ...s, files: [...s.files, ...newFiles] }));
 

@@ -131,8 +131,8 @@ const Upload = () => {
 
   const { setState } = useTCSDRContext();
 
-  const addFile = (e) => {
-    const files = Array.from(e.target.files)
+  const addFiles = (files: File[]) => {
+    const acceptedFiles = Array.from(files)
       .filter((f) => f.name[0] !== ".")
       .filter(
         (f) =>
@@ -144,7 +144,7 @@ const Upload = () => {
         errors: [],
       }));
 
-    setState((s) => ({ ...s, files: [...s.files, ...files] }));
+    setState((s) => ({ ...s, files: [...s.files, ...acceptedFiles] }));
   };
 
   const handleContinueButtonClick = async () => {
@@ -184,7 +184,7 @@ const Upload = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-around w-full my-4">
-        <InputFile multiple onChange={(e) => addFile(e)} label="Upload Files" />
+        <InputFile onChange={addFiles} />
       </div>
       {state.files.length > 0 ? (
         <ListFiles errors={errors} />

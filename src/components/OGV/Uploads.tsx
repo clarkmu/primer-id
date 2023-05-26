@@ -17,8 +17,8 @@ export default function Uploads() {
 
   const disableButtons = files.length < 1 || error.length > 0;
 
-  const handleAdd = async (event: Event) => {
-    const addError = await addFiles(event);
+  const handleAdd = async (files: File[]) => {
+    const addError = await addFiles(files);
     if (addError) {
       setError(addError);
     } else if (error) {
@@ -41,10 +41,8 @@ export default function Uploads() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex justify-around">
-        <div className="flex flex-col gap-2">
-          <InputFile multiple onChange={handleAdd} label="Upload Files" />
-        </div>
+      <div className="w-full">
+        <InputFile multiple onChange={handleAdd} label="Upload Files" />
       </div>
       <div className="max-h-[33vh] overflow-y-auto flex flex-col">
         {files.length < 1 ? (
