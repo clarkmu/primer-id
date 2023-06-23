@@ -79,10 +79,10 @@ export default function UseJSON() {
       </div>
       <InputFile
         label="Use a .json file"
-        onChange={(event) => {
+        onChange={(files) => {
           const reader = new FileReader();
           reader.onload = (e) => handleChange(e.target.result);
-          reader.readAsText(event.target.files[0]);
+          reader.readAsText(files[0]);
         }}
       />
       <Input
@@ -100,7 +100,7 @@ export default function UseJSON() {
         <Paper>
           <div>Verify JSON below:</div>
           <pre
-            style={{ whiteSpace: "pre-wrap" }}
+            style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
             name="json-output"
             dangerouslySetInnerHTML={{ __html: preHTML }}
           ></pre>
