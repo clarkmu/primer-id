@@ -9,6 +9,7 @@ export default function RadioGroup({
   error = "",
   row = false,
   showLabel = true,
+  ...props
 }: {
   label: string;
   radios: { label: string; value: any; tooltip?: string }[];
@@ -19,7 +20,7 @@ export default function RadioGroup({
   showLabel?: boolean;
 }) {
   return (
-    <div className={`flex flex-col gap-4 w-full relative`}>
+    <div className={`flex flex-col gap-4 w-full relative`} {...props}>
       {showLabel && <div className="font-lg text-lg">{label}</div>}
       <div
         className={`flex gap-2 ${row !== true ? "flex-col" : "justify-around"}`}

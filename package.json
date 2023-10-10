@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "concurrently 'yarn dev' 'cyress open'",
+    "test": "concurrently 'yarn dev' 'npx cypress open'",
     "deploy": "rm -rf .next && yarn build && gcloud app deploy --project phylodynamics-213415"
   },
   "dependencies": {

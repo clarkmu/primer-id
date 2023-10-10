@@ -79,6 +79,7 @@ export default function UseJSON() {
       </div>
       <InputFile
         label="Use a .json file"
+        data-cy="use_json_input_file"
         onChange={(files) => {
           const reader = new FileReader();
           reader.onload = (e) => handleChange(e.target.result);
@@ -90,6 +91,7 @@ export default function UseJSON() {
         rows={3}
         label="JSON Input"
         name="json-input"
+        data-cy="use-json-input"
         placeholder="Paste JSON here that you recieved from the TCS CLI tool"
         value={input}
         onChange={(e) => handleChange(e.target.value)}
@@ -102,6 +104,7 @@ export default function UseJSON() {
           <pre
             style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
             name="json-output"
+            data-cy="use-json-output"
             dangerouslySetInnerHTML={{ __html: preHTML }}
           ></pre>
         </Paper>

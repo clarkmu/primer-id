@@ -21,8 +21,11 @@ export default function TCSContainer() {
           <div className="font-xl text-xl">Parameters</div>
         </div>
         <div className="flex justify-around">
-          {[ParamTypes.NEW, ParamTypes.JSON].map((p) => (
+          {[ParamTypes.NEW, ParamTypes.JSON].map((p, i) => (
             <Button
+              data-cy={`form_procedure_${
+                p === ParamTypes.NEW ? "manual" : "json"
+              }`}
               key={`form_procedure_${p}`}
               color="secondary"
               variant={procedure === p ? "primary" : "outlined"}

@@ -132,7 +132,11 @@ class Pipeline {
 
         }else if( ! empty($this->data['uploads']) ){
 
-            $this->transferUploadedJobs();
+            $success = $this->transferUploadedJobs();
+
+            if(!$success){
+                return;
+            }
         }
 
         foreach( glob("{$this->DRDir}/*") AS $jobDir ){
@@ -314,11 +318,24 @@ class Pipeline {
 
         $dev = $GLOBALS['IS_DEV'] ? "dev/" : "";
 
-        $this->command("gsutil cp -r {$GLOBALS["BUCKET_URL"]}/$dev{$this->id}/* {$this->DRDir}");
+        $bucket = "{$GLOBALS["BUCKET_URL"]}/$dev{$this->id}";
+
+        # check if submitted files include a .fastq over 2GB or a .tar.gz over 1GB
+        $checkForOversizedJobs = $this->command("gsutil ls -l $bucket/ | awk -v total=0 '{if ($1 > 2000000000 || ($3 ~ /tar|zip/ && $1 > 1000000000)){total++}} END {print total}'");
+
+        if( int_val($checkForOversizedJobs) > 1 ){
+            $this->mailOversizeJob($bucket);
+            return false;
+        }
+
+        $this->command("gsutil cp -r $bucket/* {$this->DRDir}");
 
         if( ! count(glob("{$this->DRDir}/*")) ){
             $this->addError("File uploads missing.  Uploaded files are held for 7 days.  Job ID: {$this->id}");
+            return false;
         }
+
+        return true;
     }
 
     private function sortFilesIntoJobDir($fromDir){
@@ -423,6 +440,26 @@ class Pipeline {
             '-H "Content-Type: application/json" '.
             "--data '{$json}'"
         );
+    }
+
+    private function mailOversizeJob($location){
+        $email = new PHPMailer();
+        $email->isHTML(true);
+        $email->FromName = "SwansLabWeb";
+        $email->SetFrom($GLOBALS["ADMIN_EMAIL"], "SwanLabWeb");
+        $email->Subject = "Primer-ID Submission OVERSIZED";
+        $email->AddAddress( "shuntaiz@email.unc.edu" );
+        $email->AddAddress($GLOBALS["ADMIN_EMAIL"]);
+
+        $body = "This oversized submission has been cancelled.<br><br>" .
+            "Issuer: {$this->data['email']}<br><br>" .
+            "Bucket Location: $location";
+
+        $email->Body = $this->generateReceipt($body);
+
+        $this->patchPipeline(["pending" => false, "submit" => false]);
+
+        return $email->Send();
     }
 
     private function mailReceipt(){

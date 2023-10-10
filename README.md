@@ -8,6 +8,8 @@ A web application containing bioinformatics tools for processing viral NGS data.
 
 ## Documentation Links:
 
+This repo adds an interface and means of processing for the pipelines below:
+
 ### Viral_Seq (TCS + DR)
 
 https://github.com/ViralSeq/viral_seq
@@ -15,6 +17,9 @@ https://github.com/ViralSeq/viral_seq
 ### OGV
 
 http://github.com/clarkmu/ogv-dating
+
+OGV forked from:
+http://github.com/veg/ogv-dating
 
 ## Development setup
 

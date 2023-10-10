@@ -25,6 +25,7 @@ export default function GlobalSettings() {
           }
           radios={PLATFORM_FORMATS}
           error={false}
+          data-cy="miseq-radio-input"
         />
         <Input
           label="Platform Error Rate"
