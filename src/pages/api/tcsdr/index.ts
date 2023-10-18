@@ -38,7 +38,22 @@ async function post(req, res) {
   let newPipeline = new TCSDR(body);
 
   if (newPipeline.dropbox) {
-    newPipeline.dropbox = newPipeline.dropbox.replace("dl=0", "dl=1");
+    //append download param to dropbox url
+    //updated for dropbox's share-url format update 2023 (/s/ -> /scl/)
+
+    let db = newPipeline.dropbox;
+
+    if (db.indexOf("dl=1") !== -1 || db.indexOf("https://dl.") !== -1) {
+      //do nothing, download params are set
+    } else if (db.indexOf("dl=0") !== -1) {
+      db = db.replace("dl=0", "dl=1");
+    } else if (db.indexOf("?") !== -1) {
+      db += "&dl=1";
+    } else {
+      db += "?dl=1";
+    }
+
+    newPipeline.dropbox = db;
   } else if (uploads && uploads.length) {
     newPipeline.submit = false;
     newPipeline.uploaded = true;
