@@ -291,7 +291,7 @@ class Pipeline {
 
         $this->command("mkdir -p $dropboxTmp");
 
-        $this->command("curl -L -o $dropboxTmpFile $dropbox");
+        $this->command("curl -L -o $dropboxTmpFile '$dropbox'");
 
         if( file_exists($dropboxTmpFile) ){
 
@@ -306,7 +306,7 @@ class Pipeline {
                 $this->command("rm -rf $dropboxTmp");
             }else{
 
-                $this->addError("Could not download DropBox.  Please make sure url has public download access. $dropbox");
+                $this->addError("Failed to sort Dropbox items. Please submit only .fastq files in a single directory. \n$dropbox");
             }
         }else{
 
@@ -374,6 +374,8 @@ class Pipeline {
             }
         }else{
             $errors = "";
+
+            $this->mlog("Failed ViralSeq::TcsCore.validate_file_name\n");
 
             foreach($results["files"] as $f){
                 if( ! empty($f["errors"]) ){

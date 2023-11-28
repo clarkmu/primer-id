@@ -166,6 +166,79 @@ export default function TCSDRContextProvider({
     return `data:text/plain;charset=utf-8,${output}`;
   };
 
+  const initUploads = async (uploads) => {
+    const promises = uploads.map(
+      (upload) =>
+        new Promise((resolve, reject) => {
+          if (!upload) {
+            resolve(true);
+          }
+
+          (async () => {
+            const { signedURL } = upload;
+
+            const file = state.files.find(
+              (f) => f.file.name === upload.fileName
+            );
+
+            if (!file) {
+              return;
+            }
+
+            const config = {
+              onUploadProgress: (p) => {
+                setState((s) => ({
+                  ...s,
+                  uploadedFiles: {
+                    ...s.uploadedFiles,
+                    [file.file.name]: parseInt((p.loaded / p.total) * 100),
+                  },
+                }));
+              },
+              headers: {
+                "Content-Type": file.file.type,
+                //resumable uploads too slow
+                // "x-goog-resumable": "start",
+              },
+            };
+
+            try {
+              await axios.put(signedURL, file.file, config);
+            } catch (e) {
+              editState({
+                submittingError: "Network error. Please try again.",
+                submitting: false,
+              });
+              reject();
+              return false;
+            }
+
+            setState((s) => ({
+              ...s,
+              uploadedFiles: {
+                ...s.uploadedFiles,
+                [file.file.name]: true,
+              },
+            }));
+
+            resolve(true);
+          })();
+        })
+    );
+
+    await Promise.all(promises);
+    // await run(promises);
+  };
+
+  // async function run(array, batch = 2) {
+  //   let i = 0;
+  //   while (i < array.length) {
+  //     await Promise.all(array.slice(i, i + batch).map((fn) => fn()));
+  //     console.log(`finished [${i} - ${i + batch}]`);
+  //     i += batch;
+  //   }
+  // }
+
   const submitTCSDR = async () => {
     editState({ submitting: true, submittingError: false });
 
@@ -204,49 +277,7 @@ export default function TCSDRContextProvider({
 
       editState({ uploadedFiles, submitting: true });
 
-      for (const upload of uploads) {
-        const { signedURL } = upload;
-
-        const file = state.files.find((f) => f.file.name === upload.fileName);
-
-        if (!file) {
-          return;
-        }
-
-        const config = {
-          onUploadProgress: (p) => {
-            setState((s) => ({
-              ...s,
-              uploadedFiles: {
-                ...s.uploadedFiles,
-                [file.file.name]: parseInt((p.loaded / p.total) * 100),
-              },
-            }));
-          },
-          headers: {
-            "Content-Type": file.file.type,
-            // "x-goog-resumable": "start",
-          },
-        };
-
-        try {
-          await axios.put(signedURL, file.file, config);
-        } catch (e) {
-          editState({
-            submittingError: "Network error. Please try again.",
-            submitting: false,
-          });
-          return false;
-        }
-
-        setState((s) => ({
-          ...s,
-          uploadedFiles: {
-            ...s.uploadedFiles,
-            [file.file.name]: true,
-          },
-        }));
-      }
+      await initUploads(uploads);
 
       editState({ submitting: false });
 
