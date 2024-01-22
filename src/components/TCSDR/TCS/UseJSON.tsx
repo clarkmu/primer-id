@@ -8,6 +8,7 @@ import Alert from "@/components/form/Alert";
 import Input from "@/components/form/Input";
 import InputFile from "@/components/form/InputFile";
 import INITIAL_TCSDR from "@/utils/constants/INITIAL_TCSDR";
+import parse from "html-react-parser";
 
 const testData = { email: "tester@test.com" };
 
@@ -102,11 +103,12 @@ export default function UseJSON() {
         <Paper>
           <div>Verify JSON below:</div>
           <pre
-            style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+            className="whitespace-pre-wrap break-words"
             name="json-output"
             data-cy="use-json-output"
-            dangerouslySetInnerHTML={{ __html: preHTML }}
-          ></pre>
+          >
+            {parse(preHTML)}
+          </pre>
         </Paper>
       )}
       <Button name="submit-json-button" fullWidth onClick={finishJSON}>

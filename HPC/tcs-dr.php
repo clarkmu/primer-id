@@ -50,9 +50,8 @@ try{
 
 if( is_array($pipelines) && empty($pipelines['error']) ){
     foreach( $pipelines as $p ){
-        $pipeline = new Pipeline($p);
-
         try{
+            $pipeline = new Pipeline($p);
             if( $pipeline->isFirstRun ){
                 $pipeline->mlog("INIT PIPELINE RUN");
                 $pipeline->init();
@@ -285,6 +284,8 @@ class Pipeline {
     }
 
     private function transferDropboxJobs($dropbox){
+
+        $this->addError("Dropbox is no longer supported. Please upload your sequences again.");
 
         $dropboxTmp = "{$this->dir}/dropboxTmp";
         $dropboxTmpFile = "$dropboxTmp/dropbox.zip";

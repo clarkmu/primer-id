@@ -242,13 +242,14 @@ export default function Uploads() {
   return (
     <div className="flex flex-col gap-6" ref={scrollToDiv}>
       <div className="flex flex-col gap-6">
-        <div className="text-center font-lg text-lg">
-          Upload .fastq or .fastq.gz Files
+        <div className="text-center font-lg text-lg flex flex-col">
+          <span>Upload .fastq or .fastq.gz Files</span>
+          <small className="italic">Dropbox uploads have been disabled.</small>
         </div>
         <div className="flex justify-around">
           {[
             UPLOAD_PROCEDURES.UPLOAD,
-            UPLOAD_PROCEDURES.DROPBOX,
+            // UPLOAD_PROCEDURES.DROPBOX,
             UPLOAD_PROCEDURES.HTSF,
           ].map((p, i) => (
             <Button
