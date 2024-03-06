@@ -50,8 +50,13 @@ try{
 
 if( is_array($pipelines) && empty($pipelines['error']) ){
     foreach( $pipelines as $p ){
+        $pipeline = new Pipeline($p);
+
+        if( $pipeline->tcsError ){
+            continue;
+        }
+
         try{
-            $pipeline = new Pipeline($p);
             if( $pipeline->isFirstRun ){
                 $pipeline->mlog("INIT PIPELINE RUN");
                 $pipeline->init();
@@ -92,6 +97,8 @@ class Pipeline {
         $this->DRDir = "{$this->jobDir}/{$this->pool}";
         $this->data = $data;
 
+        $this->tcsError = false;
+
         $this->isFirstRun = $data['submit'];
 
         $this->isDR = count($data['primers']) === 0;
@@ -104,7 +111,8 @@ class Pipeline {
         $this->ranSDRM = $this->getFile("ran_sdrm");
 
         if( file_exists("{$this->DRDir}/.tcs_error") ){
-            $this->addError("TCS processing error:\n" . file_get_contents("{$this->DRDir}/.tcs_error") );
+            $this->addError("TCS processing error:\n" . file_get_contents("{$this->DRDir}/.tcs_error"), false );
+            $this->tcsError = true;
         }
 
         $this->command("mkdir -p {$this->DRDir}");

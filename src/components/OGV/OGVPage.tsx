@@ -3,7 +3,7 @@ import Conversion from "@/components/OGV/Conversion";
 import Submit from "@/components/OGV/Submit";
 import Uploads from "@/components/OGV/Uploads";
 import { useOGVContext } from "@/contexts/OGVContext";
-import Paper from "@/components/form/Paper";;
+import Paper from "@/components/form/Paper";
 
 export default function OGVPage() {
   const {
@@ -22,19 +22,40 @@ export default function OGVPage() {
             correlation coefficient.
           </div>
           <div>
-            <a
-              href="https://github.com/clarkmu/ogv-dating"
-              target="_BLANK"
-              rel="noreferrer"
-              className="underline"
-            >
-              Link to source code
-            </a>
-          </div>
-          <div>
             <b>FILE NAMING CONVENTION</b> File names should be formatted as
             {` {subject}_{sample}.fasta`}. Special characters (-/*) in filename
             will be filtered out.
+          </div>
+          <div>
+            <div>
+              <a
+                href="https://github.com/clarkmu/ogv-dating"
+                target="_BLANK"
+                rel="noreferrer"
+                className="underline"
+              >
+                This pipeline
+              </a>{" "}
+              was adapted from the{" "}
+              <a
+                href="https://github.com/veg/ogv-dating"
+                target="_BLANK"
+                rel="noreferrer"
+                className="underline"
+              >
+                Outgrowth Virus Dating pipeline
+              </a>{" "}
+              created by{" "}
+              <a
+                href="http://sdcsb.ucsd.edu/igem/"
+                target="_BLANK"
+                rel="noreferrer"
+                className="underline"
+              >
+                iGEM/UCSD evolutionary biology and bioinformatics group
+              </a>
+              .
+            </div>
           </div>
         </div>
       </Paper>

@@ -137,6 +137,7 @@ class Pipeline {
             $this->command($cmd);
         }else{
             $cmd .= " --keep-going --snakefile {$GLOBALS["BASE"]}/Snakefile";
+            $cmd = "conda run -n hyphy $cmd";
             $this->command("sbatch -o {$this->slurmOutput} -n $cores --job-name=\"{$this->slurmJobName}\" --mem=20000 -t 1440 --wrap=\"{$cmd}\"");
         }
 

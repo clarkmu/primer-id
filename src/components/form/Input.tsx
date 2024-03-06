@@ -8,6 +8,7 @@ export default function Input({
   disabled = false,
   tooltip = "",
   textArea = false,
+  className = "",
   ...props
 }: {
   label: string;
@@ -16,9 +17,11 @@ export default function Input({
   disabled?: boolean;
   tooltip?: string | ReactNode;
   textArea?: boolean;
+  className?: string;
 }) {
   const inputClassName =
-    "w-full bg-transparent border-0 border-b-2 appearance-none focus:outline-none focus:ring-0 focus:border-black dark:focus:border-white " +
+    className +
+    " w-full bg-transparent border-0 border-b-2 appearance-none focus:outline-none focus:ring-0 focus:border-black dark:focus:border-white " +
     (disabled ? " cursor-not-allowed border-gray-500" : "border-gray-200");
 
   return (

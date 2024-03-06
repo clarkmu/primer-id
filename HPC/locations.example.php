@@ -21,6 +21,14 @@ if( isset($IS_TCSDR ) ){
     $SCRATCH_SPACE = $IS_DEV ? $BASE : "/scratch/space/on/server";
     $LOG_DIR = $IS_DEV ? $BASE : "$BASE/output/ogv-dating";
     $BUCKET_URL = "gs://ogv-dating";
+}else if( isset($IS_INTACTNESS) ){
+    $API_URL = "$WEBSITE_URL/api/intactness";
+    $BASE = $IS_DEV ? "$TILDA/intact" : "/your/main/directory";
+    $LOCK_FILE = $IS_DEV ? "$BASE/locked-intact" : "$BASE/locked-intact";
+    $PRIVATE_KEY_FILE = $IS_DEV ? "$TILDA/storage-admin.json" : "$BASE/storage-admin.json";
+    $SCRATCH_SPACE = $IS_DEV ? $BASE : "/scratch/space/on/server";
+    $LOG_DIR = $IS_DEV ? $BASE : "$BASE/output/intact";
+    $BUCKET_URL = "gs://intact";
 }
 
 ?>
