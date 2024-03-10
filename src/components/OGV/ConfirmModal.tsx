@@ -19,7 +19,7 @@ export default function ConfirmModal() {
   const [submitError, setSubmitError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const listedFiles = useMemo(filesByLib, [showConfirm]);
+  const listedFiles = useMemo(filesByLib, [showConfirm, filesByLib]);
 
   const onClose = () => {
     if (submitted) {

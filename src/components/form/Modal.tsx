@@ -1,14 +1,33 @@
-import { Dialog } from "@headlessui/react";
-
-export default function Modal({ open, onClose, children }) {
+export default function Modal({
+  children,
+  open,
+  onClose,
+}: {
+  children: Element;
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
-    <Dialog open={open} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-sm rounded bg-white min-w-[50vw]">
-          {children}
-        </Dialog.Panel>
+    <div
+      onClick={onClose}
+      className={`z-10 absolute inset-0 hidden ${open ? " !block" : ""}`}
+    >
+      <div className="z-10 relative h-full w-full">
+        <div
+          className={
+            "absolute inset-0 z-20 bg-black opacity-0 transition-all duration-500 " +
+            (open ? "!opacity-60 !block" : "")
+          }
+        ></div>
+        <div
+          className={
+            "z-30 absolute inset-0 transition-all duration-500 mx-auto hidden justify-center items-center " +
+            (open ? "!opacity-100 !flex" : "")
+          }
+        >
+          <div className="bg-white container">{children}</div>
+        </div>
       </div>
-    </Dialog>
+    </div>
   );
 }

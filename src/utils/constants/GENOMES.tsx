@@ -10,7 +10,11 @@ const GENOMES: {
       <>
         Reference:
         <br />
-        <a href="https://www.ncbi.nlm.nih.gov/nuccore/K03455" target="_BLANK">
+        <a
+          href="https://www.ncbi.nlm.nih.gov/nuccore/K03455"
+          target="_BLANK"
+          rel="noreferrer"
+        >
           HIV-1 HXB2 (K03455)
         </a>
       </>
@@ -23,7 +27,11 @@ const GENOMES: {
       <>
         Reference:
         <br />
-        <a href="https://www.ncbi.nlm.nih.gov/nuccore/AF324493" target="_BLANK">
+        <a
+          href="https://www.ncbi.nlm.nih.gov/nuccore/AF324493"
+          target="_BLANK"
+          rel="noreferrer"
+        >
           HIV-1 NL4-3 (AF324493)
         </a>
       </>
@@ -36,7 +44,11 @@ const GENOMES: {
       <>
         Reference:
         <br />
-        <a href="https://www.ncbi.nlm.nih.gov/nuccore/M33262" target="_BLANK">
+        <a
+          href="https://www.ncbi.nlm.nih.gov/nuccore/M33262"
+          target="_BLANK"
+          rel="noreferrer"
+        >
           SIV MAC239 (M33262)
         </a>
       </>

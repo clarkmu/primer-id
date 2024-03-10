@@ -31,9 +31,9 @@ export default function Button({
         "flex items-center justify-center py-2 px-4 rounded text-white " +
         (fullWidth ? "w-full " : "") +
         (isDisabled
-          ? " bg-grey text-black border border-primary "
+          ? " bg-grey !text-gray-500 border border-primary cursor-not-allowed "
           : variant === "outlined"
-          ? "bg-transparent hover:bg-primary text-primary font-semibold hover:text-white border border-primary hover:border-transparent"
+          ? "bg-transparent hover:bg-primary !text-primary font-semibold hover:!text-white border border-primary hover:border-transparent"
           : variant === "none"
           ? `bg-transparent hover:bg-primary text-primary font-semibold hover:text-white `
           : iconButton

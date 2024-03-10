@@ -7,6 +7,7 @@ import EndJoin from "./primer/EndJoin";
 import QC from "./primer/QC";
 import Trim from "./primer/Trim";
 import Summary from "./primer/Summary";
+import PrimerContainer from "./primer/Container";
 
 export default function Primer() {
   const {
@@ -26,7 +27,7 @@ export default function Primer() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="h-[400px] overflow-y-auto">
+      <PrimerContainer>
         <Collapse open={page === 1}>
           <Region />
         </Collapse>
@@ -42,7 +43,7 @@ export default function Primer() {
         <Collapse open={page === 5}>
           <Summary />
         </Collapse>
-      </div>
+      </PrimerContainer>
       <div className="flex justify-around">
         <Button onClick={deletePrimer} disabled={primers.length < 2}>
           Delete Region

@@ -111,6 +111,9 @@ export default function IntactnessPage() {
         </div>
       </Paper>
       <Paper className="flex flex-col gap-4">
+        <div className="text-center text-lg">
+          Upload .fastq or .fastq.gz Files
+        </div>
         <InputFile onChange={loadFiles} />
         <Input
           label="Sequence"

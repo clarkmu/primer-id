@@ -7,7 +7,7 @@ import Paper from "@/components/form/Paper";
 import Alert from "@/components/form/Alert";
 import Input from "@/components/form/Input";
 import InputFile from "@/components/form/InputFile";
-import INITIAL_TCSDR from "@/utils/constants/INITIAL_TCSDR";
+import { INITIAL_TCSDR } from "@/utils/constants/INITIAL_TCSDR";
 import parse from "html-react-parser";
 
 const testData = { email: "tester@test.com" };

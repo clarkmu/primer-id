@@ -78,58 +78,10 @@ a {
   }
 }
 
-.divider {
-  width: 80%;
-}
-
 /* ::-webkit-scrollbar {
   width: 0px;
   background: transparent;
 } */
-
-.text-center {
-  text-align: center;
-}
-
-.MuiCardMedia-root {
-  height: 250px;
-}
-
-.MuiCollapse-container {
-  width: 100%;
-}
-
-.MuiPaper-root {
-  padding: 16px;
-}
-
-.primerTemplate {
-  padding: 0 16px;
-}
-
-/* page transition */
-
-.fade-enter {
-  opacity: 0.01;
-}
-
-.fade-enter.fade-enter-active {
-  opacity: 1;
-  transition: opacity 1000ms ease-in;
-}
-
-.fade-exit {
-  opacity: 1;
-}
-
-.fade-exit.fade-exit-active {
-  opacity: 0.01;
-  transition: opacity 300ms ease-in;
-}
-
-div.transition-group {
-  position: relative;
-}
 
 /* <pre> code styling */
 .string {

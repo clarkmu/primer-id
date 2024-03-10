@@ -13,6 +13,9 @@ let nextConfig = withPWA({
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    domains: ["github.com", "raw.githubusercontent.com"],
+  },
 });
 
 module.exports = nextConfig;

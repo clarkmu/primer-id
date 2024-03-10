@@ -13,7 +13,10 @@ export default function OGVPage() {
   return (
     <div className="flex flex-col gap-4 items-center justify-center">
       <Paper>
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
+          <div className="text-lg font-bold text-center">
+            Outgrowth Virus Dating Pipeline
+          </div>
           <div>
             <b>DESCRIPTION</b> This pipeline times outgrowth virus (OGV) strains
             from a single host using serially sampled RNA data. Four different

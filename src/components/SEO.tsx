@@ -1,43 +1,50 @@
 import Head from "next/head";
 
-export const SEOApp = ({ children }) => (
-  <>
-    <Head>
-      <title>Primer-ID</title>
-      <meta name="application-name" content="Primer-ID" />
-      <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-      <meta name="apple-mobile-web-app-title" content="PWA App" />
-      <meta name="description" content="TCS-DR OGV Pipelines" />
-      <meta name="format-detection" content="telephone=no" />
-      <meta name="mobile-web-app-capable" content="yes" />
-      <meta name="msapplication-config" content="/icons/browserconfig.xml" />
-      <meta name="msapplication-TileColor" content="#4B9CD3" />
-      <meta name="msapplication-tap-highlight" content="no" />
-      <meta name="theme-color" content="#4B9CD3" />
+const url = "https://primer-id.org";
+const favicon = `${url}/favicon.ico`;
+const logo = `${url}/logo.png`;
+const title = "Primer-ID";
+const description = "NGS TCS-DR OGV Intactness Pipelines";
 
-      <link rel="apple-touch-icon" href="/icons/touch-icon-iphone.png" />
-      <link rel="apple-touch-icon" sizes="512x512" href="/icon.png" />
-      <link rel="manifest" href="/manifest.json" />
-      <link rel="mask-icon" color="#4B9CD3" />
-      <link rel="shortcut icon" href="/favicon.ico" />
+export const SEOApp = ({ children }) => {
+  return (
+    <>
+      <Head>
+        <title>Primer-ID</title>
+        <meta name="application-name" content="Primer-ID" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content={title} />
+        <meta name="description" content={description} />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-config" content="/icons/browserconfig.xml" />
+        <meta name="msapplication-TileColor" content="#4B9CD3" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <meta name="theme-color" content="#4B9CD3" />
 
-      <meta name="twitter:card" content="TCS-DR OGV Pipelines" />
-      <meta name="twitter:url" content="https://primer-id.org" />
-      <meta name="twitter:title" content="Primer-ID" />
-      <meta name="twitter:description" content="" />
-      <meta name="twitter:image" content="https://primer-id.org/logo.png" />
-      <meta name="twitter:creator" content="@clarkmu" />
-      <meta property="og:type" content="website" />
-      <meta property="og:title" content="Primer-ID" />
-      <meta property="og:description" content="" />
-      <meta property="og:site_name" content="" />
-      <meta property="og:url" content="https://primer-id.org" />
-      <meta property="og:image" content="https://primer-id.org/logo.png" />
-    </Head>
-    {children}
-  </>
-);
+        <link rel="apple-touch-icon" href="/icons/touch-icon-iphone.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href={logo} />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="mask-icon" color="#4B9CD3" />
+        <link rel="shortcut icon" href={favicon} />
+
+        <meta name="twitter:card" content={description} />
+        <meta name="twitter:url" content={url} />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content="" />
+        <meta name="twitter:image" content="https://primer-id.org/logo.png" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:site_name" content={title} />
+        <meta property="og:url" content={url} />
+        <meta property="og:image" content={logo} />
+      </Head>
+      {children}
+    </>
+  );
+};
 
 export const SEOOGV = ({ children }) => (
   <>

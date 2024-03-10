@@ -1,37 +1,51 @@
-import { Switch as SwitchComponent } from "@headlessui/react";
 import Tooltip from "./Tooltip";
 
 export default function Switch({
+  title,
   checked,
   onChange,
-  title,
+  disabled = false,
   tooltip,
 }: {
+  title: string;
   checked: boolean;
   onChange: () => void;
-  title: string;
+  disabled?: boolean;
   tooltip?: string;
 }) {
   return (
-    <div className="flex gap-2 items-center justify-center">
-      <div className="">{title}</div>
-      {tooltip && <Tooltip tooltip={tooltip} />}
-      <div className="flex-1"></div>
-      <div>
-        <SwitchComponent
-          checked={checked}
-          onChange={onChange}
-          className={`${
-            checked ? "bg-primary" : "bg-grey border border-primary"
-          } relative inline-flex h-6 w-11 items-center rounded-full`}
-        >
-          <span
-            className={`${
-              checked ? "translate-x-6 bg-white" : "translate-x-1 bg-primary"
-            } inline-block h-4 w-4 transform rounded-full`}
-          />
-        </SwitchComponent>
+    <label
+      className={
+        "flex items-center cursor-pointer justify-between w-full" +
+        (disabled ? " cursor-not-allowed" : "")
+      }
+    >
+      <div className="font-medium flex gap-2">
+        {title}
+        {tooltip && <Tooltip tooltip={tooltip} />}
       </div>
-    </div>
+      <div className="relative">
+        <input
+          type="checkbox"
+          className="sr-only"
+          disabled={disabled}
+          checked={!!checked}
+          onChange={() => onChange(!checked)}
+        />
+        <div
+          className={
+            "w-10 h-4 rounded-full shadow-inner " +
+            (disabled ? "bg-gray-100" : "bg-gray-400")
+          }
+        ></div>
+        <div
+          className={
+            "absolute w-6 h-6 shadow-md shadow-red-600 rounded-full -left-1 -top-1 transition " +
+            (disabled ? "bg-gray-400" : "bg-white") +
+            (checked ? " translate-x-full !bg-secondary" : "")
+          }
+        ></div>
+      </div>
+    </label>
   );
 }
