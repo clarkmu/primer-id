@@ -24,7 +24,7 @@ export default function HomePage() {
     <div className="flex flex-col gap-4">
       <Card
         title="Primer ID Sequencing"
-        src="https://raw.githubusercontent.com/ViralSeq/viral_seq/master/docs/assets/img/cover.jpg"
+        src="/primeridbanner.jpg"
         alt="Primer ID Sequencing Diagram"
         priority={true}
         Buttons={() => (

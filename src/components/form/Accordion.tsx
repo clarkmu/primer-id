@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "@heroicons/react/solid";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { ReactNode } from "react";
 import Collapse from "./Collapse";
 import Paper from "./Paper";

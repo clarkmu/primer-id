@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Collapse from "@/components/form/Collapse";
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/solid";
+import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/20/solid";
 import { useTCSDRContext } from "@/contexts/TCSDRContext";
 import Button from "../form/Button";
 import Alert from "../form/Alert";

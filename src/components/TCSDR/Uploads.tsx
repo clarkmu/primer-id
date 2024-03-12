@@ -5,7 +5,7 @@ import Button from "../form/Button";
 import Paper from "@/components/form/Paper";
 import Alert from "../form/Alert";
 import Input from "../form/Input";
-import { FolderIcon, XCircleIcon } from "@heroicons/react/solid";
+import { FolderIcon, XCircleIcon } from "@heroicons/react/20/solid";
 import InputFile from "../form/InputFile";
 import useScrollToDivOnChange from "@/hooks/useScrollToDivOnChange";
 

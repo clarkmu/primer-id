@@ -3,7 +3,7 @@ import { useState } from "react";
 import Button from "@/components/form/Button";
 import InputFile from "@/components/form/InputFile";
 import Alert from "../form/Alert";
-import { XCircleIcon } from "@heroicons/react/solid";
+import { XCircleIcon } from "@heroicons/react/20/solid";
 
 export default function Uploads() {
   const {

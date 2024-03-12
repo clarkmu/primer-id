@@ -14,7 +14,13 @@ let nextConfig = withPWA({
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["github.com", "raw.githubusercontent.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "github.com",
+        port: "",
+      },
+    ],
   },
 });
 

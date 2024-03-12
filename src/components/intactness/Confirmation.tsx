@@ -3,7 +3,7 @@ import Modal from "../form/Modal";
 import Alert from "../form/Alert";
 import Button from "../form/Button";
 import { useState } from "react";
-import { CheckCircleIcon } from "@heroicons/react/solid";
+import { CheckCircleIcon } from "@heroicons/react/20/solid";
 
 export default function Confirmation({
   onClose,

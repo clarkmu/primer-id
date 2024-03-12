@@ -2,7 +2,7 @@ import {
   ExclamationCircleIcon,
   InformationCircleIcon,
   CheckCircleIcon,
-} from "@heroicons/react/solid";
+} from "@heroicons/react/20/solid";
 
 export default function Alert({
   severity = "error",
