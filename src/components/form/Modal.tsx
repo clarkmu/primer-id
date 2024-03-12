@@ -25,7 +25,12 @@ export default function Modal({
             (open ? "!opacity-100 !flex" : "")
           }
         >
-          <div className="bg-white container">{children}</div>
+          <div
+            className="bg-white container"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
