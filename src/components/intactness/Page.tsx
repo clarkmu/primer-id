@@ -36,8 +36,9 @@ export default function IntactnessPage() {
   const [error, setError] = useState("");
   const [jobID, setJodID] = useState("");
   const [resultsFormat, setResultsFormat] = useState<"tar" | "zip">("tar");
+  const [continued, setContinued] = useState(false);
 
-  const [scrollToRef] = useScrollToDivOnVisibilityToggle(sequences.length > 0);
+  const [scrollToRef] = useScrollToDivOnVisibilityToggle(continued);
 
   const onSubmit = () => {
     // check email seqs
@@ -112,7 +113,7 @@ export default function IntactnessPage() {
       </Paper>
       <Paper className="flex flex-col gap-4">
         <div className="text-center text-lg">
-          Upload .fastq or .fastq.gz Files
+          Upload sequence files in FASTA format or paste the sequences here
         </div>
         <InputFile onChange={loadFiles} />
         <Input
@@ -125,8 +126,14 @@ export default function IntactnessPage() {
           placeholder="Or paste sequences here."
           wrap="off"
         />
+        <Button
+          disabled={sequences.length < 1}
+          onClick={() => setContinued(true)}
+        >
+          Continue
+        </Button>
       </Paper>
-      {sequences.length > 0 && (
+      {continued && (
         <div className="" ref={scrollToRef}>
           <Paper className="flex flex-col gap-4">
             <Input
