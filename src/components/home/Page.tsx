@@ -24,7 +24,7 @@ export default function HomePage() {
     <div className="flex flex-col gap-4">
       <Card
         title="Primer ID Sequencing"
-        src="/primeridbanner.jpg"
+        src="/primeridbanner.webp"
         alt="Primer ID Sequencing Diagram"
         priority={true}
         Buttons={() => (
@@ -37,7 +37,7 @@ export default function HomePage() {
       <Card
         priority={false}
         title="Outgrowth Virus Dating"
-        src="https://github.com/veg/ogv-dating/blob/master/img/3.png?raw=true"
+        src="/ogvbanner.webp"
         alt="OGV Diagram"
         Buttons={() => (
           <Button onClick={() => push("/ogv")}>OGV Pipeline</Button>
@@ -46,7 +46,7 @@ export default function HomePage() {
       <Card
         priority={false}
         title="HIV Proviral Intactness"
-        src="/intactness.png"
+        src="/intactness.webp"
         alt="Intactness Diagram"
         Buttons={() => (
           <Button onClick={() => push("/intactness")}>

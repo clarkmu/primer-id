@@ -13,15 +13,6 @@ let nextConfig = withPWA({
   typescript: {
     ignoreBuildErrors: true,
   },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "github.com",
-        port: "",
-      },
-    ],
-  },
 });
 
 module.exports = nextConfig;

@@ -12,6 +12,17 @@ export default function ImageWithOverlay({
 }) {
   const [open, setOpen] = useState(false);
 
+  const ImageComponent = () => (
+    <Image
+      priority={priority}
+      alt={alt}
+      src={src}
+      unoptimized
+      fill
+      className="object-contain"
+    />
+  );
+
   const Overlay = () =>
     !open ? null : (
       <div className="absolute inset-0 bg-[rgba(0,0,0,0.75)] flex items-center justify-center z-[999]">
@@ -19,13 +30,7 @@ export default function ImageWithOverlay({
           X
         </div>
         <div className="relative rounded-lg w-[90vw] h-[90vh]">
-          <Image
-            priority={priority}
-            alt={alt}
-            src={src}
-            fill
-            className="object-contain"
-          />
+          <ImageComponent />
         </div>
       </div>
     );
@@ -34,13 +39,7 @@ export default function ImageWithOverlay({
     <div onClick={() => setOpen((b) => !b)} className="cursor-pointer">
       <Overlay />
       <div className="relative rounded-lg max-w-[600px] w-[80vw] h-[50vh]">
-        <Image
-          priority={priority}
-          alt={alt}
-          src={src}
-          fill
-          className="object-contain"
-        />
+        <ImageComponent />
       </div>
     </div>
   );
