@@ -64,7 +64,7 @@ export default function IntactnessPage() {
 
     const text = await getFilesContents(acceptedFiles);
 
-    setSequences((s) => s + text + "\n");
+    setSequences((s) => s.trim() + "\n" + (text || "").trim() + "\n");
   };
 
   return (
@@ -119,7 +119,15 @@ export default function IntactnessPage() {
         <Input
           label="Sequence"
           value={sequences}
-          onChange={(e) => setSequences(e.target.value + "\n")}
+          onChange={(e) => {
+            let value = e.target.value;
+
+            if (e.nativeEvent.inputType === "insertFromPaste") {
+              value = value.trim() + "\n";
+            }
+
+            setSequences(value);
+          }}
           textArea={true}
           rows={10}
           className="p-1 shadow-lg"
