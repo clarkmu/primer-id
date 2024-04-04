@@ -4,6 +4,7 @@ import Alert from "../form/Alert";
 import Button from "../form/Button";
 import { useState } from "react";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
+import { useRouter } from "next/router";
 
 export default function Confirmation({
   onClose,
@@ -13,14 +14,15 @@ export default function Confirmation({
   jobID,
   resultsFormat,
 }) {
+  const { reload } = useRouter();
+
   const { mutateSubmit } = useIntactness();
   const [submitted, setSubmitted] = useState(false);
 
   const onSubmit = async () => {
     mutateSubmit.mutate({
       body: { sequences, email, jobID, resultsFormat },
-      callback: ({ id }) => {
-        // setId(id);
+      callback: () => {
         setSubmitted(true);
       },
     });
@@ -28,8 +30,16 @@ export default function Confirmation({
 
   const { error, isLoading } = mutateSubmit;
 
+  const onCloseConfirmation = () => {
+    if (submitted) {
+      reload();
+    } else {
+      onClose();
+    }
+  };
+
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onCloseConfirmation}>
       <div className="flex flex-col gap-4 overflow-y-auto max-h-[80vh] p-4">
         {submitted && (
           <Alert
@@ -63,7 +73,7 @@ export default function Confirmation({
         </ol>
         {!!error && <Alert severity="error" msg={error} />}
         <div className="self-end place-self-end justify-self-end flex justify-end items-end gap-4">
-          <Button onClick={onClose} variant="none" color="error">
+          <Button onClick={onCloseConfirmation} variant="none" color="error">
             {submitted ? "Finish" : "Back"}
           </Button>
           <Button

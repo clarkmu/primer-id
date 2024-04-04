@@ -113,7 +113,7 @@ export default function IntactnessPage() {
       </Paper>
       <Paper className="flex flex-col gap-4">
         <div className="text-center text-lg">
-          Upload sequence files in FASTA format or paste the sequences here
+          Upload sequence files in FASTA format or paste the sequences here.
         </div>
         <InputFile onChange={loadFiles} />
         <Input
@@ -127,7 +127,7 @@ export default function IntactnessPage() {
           wrap="off"
         />
         <Button
-          disabled={sequences.length < 1}
+          disabled={sequences.indexOf(">") === -1}
           onClick={() => setContinued(true)}
         >
           Continue

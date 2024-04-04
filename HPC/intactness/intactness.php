@@ -174,7 +174,25 @@ class Pipeline {
         return $email->Send();
     }
 
+    private function mailNoResults(){
+        $email = new PHPMailer();
+        $email->isHTML(true);
+        $email->SetFrom($GLOBALS["ADMIN_EMAIL"], "SwanLabWeb");
+        $email->Subject = "Intactness Results";
+        $email->AddAddress($this->data['email']);
+        $email->Body = $this->generateReceipt("All sequences were filtered out during Blast. No results will be generated.<br><br>");
+        $email->Send();
+
+        $this->patchPipeline(["pending" => false, "submit" => false]);
+        $this->getFile($this->isDoneFile,1);
+    }
+
     public function mailResults(){
+
+        if( $this->getFile("no_seqs_found.txt") ){
+            $this->mailNoResults();
+            return;
+        }
 
         $error = "";
 
