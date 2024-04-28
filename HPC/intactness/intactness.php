@@ -174,13 +174,13 @@ class Pipeline {
         return $email->Send();
     }
 
-    private function mailNoResults(){
+    private function mailNoResults($msg){
         $email = new PHPMailer();
         $email->isHTML(true);
         $email->SetFrom($GLOBALS["ADMIN_EMAIL"], "SwanLabWeb");
         $email->Subject = "Intactness Results";
         $email->AddAddress($this->data['email']);
-        $email->Body = $this->generateReceipt("All sequences were filtered out during Blast. No results will be generated.<br><br>");
+        $email->Body = $this->generateReceipt($msg);
         $email->Send();
 
         $this->patchPipeline(["pending" => false, "submit" => false]);
@@ -190,7 +190,12 @@ class Pipeline {
     public function mailResults(){
 
         if( $this->getFile("no_seqs_found.txt") ){
-            $this->mailNoResults();
+            $this->mailNoResults("All sequences were filtered out during Blast. No results will be generated.<br><br>");
+            return;
+        }
+
+        if( $this->getFile("no_gaps.txt") ){
+            $this->mailNoResults("No gapped position found given a position on the reference genome. No results will be generated.");
             return;
         }
 

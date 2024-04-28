@@ -67,6 +67,13 @@ export default function IntactnessPage() {
     setSequences((s) => s.trim() + "\n" + (text || "").trim() + "\n");
   };
 
+  const sequenceWithoutEmptyLines = sequences.replace(/^\s*\n/gm, "");
+
+  const sequencesMissingTags =
+    sequences.length > 0 &&
+    (sequences.match(/>/g) || []).length !==
+      sequenceWithoutEmptyLines.split(/\r\n|\r|\n/).length / 2;
+
   return (
     <div className="flex flex-col gap-4 m-4">
       <Paper className="flex flex-col gap-8">
@@ -134,8 +141,11 @@ export default function IntactnessPage() {
           placeholder="Or paste sequences here."
           wrap="off"
         />
+        {sequencesMissingTags && (
+          <Alert severity="info" msg="Each sequence must have a tag." />
+        )}
         <Button
-          disabled={sequences.indexOf(">") === -1}
+          disabled={sequencesMissingTags}
           onClick={() => setContinued(true)}
         >
           Continue
