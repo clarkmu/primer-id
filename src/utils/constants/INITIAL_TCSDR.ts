@@ -13,6 +13,7 @@ const INITIAL_TCSDR_PIPELINE = {
 };
 
 export const INITIAL_TCSDR = {
+  expandedPrimer: 0,
   pipeline: INITIAL_TCSDR_PIPELINE,
   showUploads: false,
   showSubmit: false,
@@ -26,6 +27,7 @@ export const INITIAL_TCSDR = {
 };
 
 export type tcsdrType = {
+  expandedPrimer: 0;
   pipeline: {
     email: string;
     jobID: string;

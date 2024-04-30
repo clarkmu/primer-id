@@ -120,6 +120,7 @@ export default function TCSDRContextProvider({
         ...s.pipeline,
         primers: [...s.pipeline.primers, primer || INITIAL_PRIMER],
       },
+      expandedPrimer: s.pipeline.primers.length,
     }));
   };
 
@@ -128,8 +129,9 @@ export default function TCSDRContextProvider({
       ...s,
       pipeline: {
         ...s.pipeline,
-        primers: s.pipeline.primers.filter((p) => p.region === region),
+        primers: s.pipeline.primers.filter((p) => p.region !== region),
       },
+      expandedPrimer: s.pipeline.primers.length - 2,
     }));
   };
 
@@ -150,8 +152,9 @@ export default function TCSDRContextProvider({
       ...s,
       pipeline: {
         ...s.pipeline,
-        primers: s.pipeline.primers.filter((p, i) => i === index),
+        primers: s.pipeline.primers.filter((p, i) => i !== index),
       },
+      expandedPrimer: s.pipeline.primers.length - 2,
     }));
   };
 
