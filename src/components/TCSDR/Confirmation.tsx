@@ -45,7 +45,7 @@ const UploadProgress = () => {
 const Summary = () => {
   const {
     state: {
-      pipeline: { primers, email, dropbox, htsf },
+      pipeline: { primers, email, dropbox, htsf, drVersion },
       isDR,
       files,
       submitting,
@@ -54,11 +54,19 @@ const Summary = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>You are using the {isDR ? "DR" : "TCS"} pipeline.</div>
+      <div>
+        You are using the {isDR ? "DR" : "TCS"} pipeline
+        {isDR ? (
+          <span className="underline ml-1">{`version ${drVersion}`}</span>
+        ) : (
+          ""
+        )}
+        .
+      </div>
       {!isDR && primers?.length > 0 && (
         <>
           <div className="text-lg">Your selected primers:</div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto">
             {primers?.map((primer, i) => (
               <div
                 className="flex gap-2 justify-start items-center"

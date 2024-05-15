@@ -4,6 +4,7 @@ import PLATFORM_FORMATS from "@/utils/constants/PLATFORM_FORMATS";
 import RadioGroup from "@/components/form/RadioGroup";
 import Paper from "@/components/form/Paper";
 import Input from "@/components/form/Input";
+import SavedPrimers from "./SavedPrimers";
 
 export default function GlobalSettings() {
   const {
@@ -36,6 +37,7 @@ export default function GlobalSettings() {
           type="number"
           step={0.01}
         />
+        <SavedPrimers />
       </div>
     </Paper>
   );

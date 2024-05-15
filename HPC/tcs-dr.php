@@ -155,7 +155,7 @@ class Pipeline {
             $this->mlog("NAME: $name");
 
             $cmd = $this->isDR ?
-                "tcs -dr -i $jobDir" :
+                "tcs -d {$this->data['drVersion']} -i $jobDir" :
                 "tcs -p {$this->generateJSONFile($jobDir, $name)}";
 
             $this->mlog("CMD: $cmd");
@@ -329,13 +329,16 @@ class Pipeline {
 
         $bucket = "{$GLOBALS["BUCKET_URL"]}/$dev{$this->id}";
 
-        # check if submitted files include a .fastq over 2GB or a .tar.gz over 1GB
-        $checkForOversizedJobs = $this->command("gsutil ls -l $bucket/ | awk -v total=0 '{if ($1 > 2000000000 || ($3 ~ /tar|zip/ && $1 > 1000000000)){total++}} END {print total}'");
-
-        if( int_val($checkForOversizedJobs) > 1 ){
-            $this->mailOversizeJob($bucket);
-            return false;
-        }
+        // try{
+        //     # check if submitted files include a .fastq over 2GB or a .tar.gz over 1GB
+        //     $checkForOversizedJobs = $this->command("gsutil ls -l $bucket/{$this->id} | awk -v total=0 '{if ($1 > 2000000000 || ($3 ~ /tar|zip/ && $1 > 1000000000)){total++}} END {print total}'");
+        //     if( int_val($checkForOversizedJobs) > 1 ){
+        //         $this->mailOversizeJob($bucket);
+        //         return false;
+        //     }
+        // }catch(Exception $e){
+        //     //
+        // }
 
         $this->command("gsutil cp -r $bucket/* {$this->DRDir}");
 
@@ -401,6 +404,12 @@ class Pipeline {
     private function generateReceipt($message, $link = ""){
 
         $receipt = "";
+
+        if(empty($this->data['primers'])){
+            $receipt = "Using DR with params Version {$this->data['drVersion']}.<br><br>";
+        }else{
+            $receipt = "Using TCS Pipeline.<br><br>";
+        }
 
         if ( ! empty($this->data['htsf']) ) {
             $receipt .= "<u>HTSF Location</u>: {$this->data['htsf']}<br><u>Pool Name</u>: {$this->data['poolName']}";

@@ -11,6 +11,7 @@ import Paper from "../form/Paper";
 import LINKS from "@/utils/constants/LINKS";
 // import TCSContainer from "./TCS/TCSContainer";
 import dynamic from "next/dynamic";
+import DRVersion from "./DRVersion";
 const TCSContainer = dynamic(() => import("./TCS/TCSContainer"), {
   loading: () => null,
 });
@@ -77,7 +78,7 @@ export default function Form() {
           </div>
         </div>
       </Paper>
-      {!isDR && <TCSContainer />}
+      {isDR ? <DRVersion /> : <TCSContainer />}
       <div ref={scrollToUploads}>
         <MyCollapse show={showUploads}>
           <Uploads />

@@ -1,6 +1,7 @@
 const publicBucketPath = "https://storage.googleapis.com/tcs-dr-public/";
 
 const LINKS = {
+  RUBY_API_SERVER: "https://api-ruby-secure-dept-tcs.apps.cloudapps.unc.edu",
   TCS_VERSION_SOURCE:
     "https://api.github.com/repos/viralseq/viral_seq/releases/latest",
   IMAGES: {

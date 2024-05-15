@@ -1,3 +1,4 @@
+import LINKS from "@/utils/constants/LINKS";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -12,7 +13,7 @@ export default async function handler(
     const { fileNames } = req.body;
     // http://localhost:9292
     const resRuby = await fetch(
-      "https://api-ruby-secure-dept-tcs.apps.cloudapps.unc.edu/validate_file_names",
+      `${LINKS.RUBY_API_SERVER}/validate_file_names`,
       {
         method: "POST",
         body: fileNames.join(","),

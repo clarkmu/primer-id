@@ -20,7 +20,7 @@ export default function TCSContainer() {
         <div className="text-center">
           <div className="font-xl text-xl">Parameters</div>
         </div>
-        <div className="flex justify-around">
+        <div className="flex justify-around gap-8 mx-8">
           {[ParamTypes.NEW, ParamTypes.JSON].map((p, i) => (
             <Button
               data-cy={`form_procedure_${
@@ -30,6 +30,7 @@ export default function TCSContainer() {
               color="secondary"
               variant={procedure === p ? "primary" : "outlined"}
               onClick={() => setProcedure(p)}
+              fullWidth
             >
               {p}
             </Button>

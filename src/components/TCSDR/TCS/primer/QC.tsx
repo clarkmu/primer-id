@@ -39,6 +39,7 @@ export default function QC() {
             error={errors.refEnd}
           />
           <Checkbox
+            id={`primer_${primer.region}`}
             label="Allow indels?"
             tooltip="If indels are not allowed TCS with indels when aligned with reference genomes will be discarded."
             checked={!!primer.allowIndels}

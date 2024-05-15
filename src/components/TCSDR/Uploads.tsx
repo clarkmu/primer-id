@@ -246,7 +246,7 @@ export default function Uploads() {
           <span>Upload .fastq or .fastq.gz Files</span>
           <small className="italic">Dropbox uploads have been disabled.</small>
         </div>
-        <div className="flex justify-around">
+        <div className="flex justify-around gap-8 mx-8">
           {[
             UPLOAD_PROCEDURES.UPLOAD,
             // UPLOAD_PROCEDURES.DROPBOX,
@@ -257,6 +257,7 @@ export default function Uploads() {
               color="secondary"
               variant={uploadProcedure === p ? "primary" : "outlined"}
               onClick={() => setProcedure(p)}
+              fullWidth
             >
               {p}
             </Button>

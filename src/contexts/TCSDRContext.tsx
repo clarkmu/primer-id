@@ -14,6 +14,9 @@ import { variablesToViralSeqCLI } from "@/utils/translateVariablesForCLI";
 import { useRouter } from "next/router";
 import { PrimerInterface } from "@/models/TCSDR";
 
+const USE_SAVED_PRIMERS_KEY = "primer-id-use-saved-primers";
+const STORAGE_SAVED_PRIMERS_KEY = "primer-id-saved-primers";
+
 export enum UPLOAD_PROCEDURES {
   HTSF = "HTSF",
   UPLOAD = "Upload",
@@ -33,6 +36,7 @@ type ContextType = {
   downloadJSON: () => void;
   submitTCSDR: () => void;
   validateFileNames: () => void;
+  handleLocalPrimersCheckboxChange: (checked: boolean) => void;
 };
 
 const TCSDRContext = createContext<ContextType>({
@@ -48,6 +52,7 @@ const TCSDRContext = createContext<ContextType>({
   downloadJSON: () => null,
   submitTCSDR: () => null,
   validateFileNames: () => null,
+  handleLocalPrimersCheckboxChange: () => null,
 });
 
 export function useTCSDRContext(): ContextType {
@@ -66,7 +71,6 @@ export default function TCSDRContextProvider({
   const [state, setState] = useState<tcsdrType>({
     ...INITIAL_TCSDR,
     isDR,
-    showUploads: isDR,
   });
 
   const router = useRouter();
@@ -288,6 +292,10 @@ export default function TCSDRContextProvider({
     }
 
     editState({ submitted: true, submitting: false });
+
+    if (!isDR && state.useSaved) {
+      saveLocalPrimers();
+    }
   };
 
   const validateFileNames = async () => {
@@ -304,6 +312,50 @@ export default function TCSDRContextProvider({
     return response;
   };
 
+  // SAVED PRIMERS
+
+  useEffect(() => {
+    const storedSavedPrimers = localStorage.getItem(USE_SAVED_PRIMERS_KEY);
+    if (storedSavedPrimers && storedSavedPrimers === "true") {
+      const savedPrimers =
+        localStorage.getItem(STORAGE_SAVED_PRIMERS_KEY) || "[]";
+
+      setState((s) => ({
+        ...s,
+        useSaved: true,
+        savedPrimers: JSON.parse(savedPrimers),
+      }));
+    }
+  }, []);
+
+  const handleLocalPrimersCheckboxChange = (checked: boolean) => {
+    localStorage.setItem(USE_SAVED_PRIMERS_KEY, checked ? "true" : "");
+    setState((s) => ({ ...s, useSaved: checked }));
+
+    // todo ? delete saved primers if prevChecked === true
+  };
+
+  const saveLocalPrimers = () => {
+    if (!state.useSaved) {
+      return;
+    }
+
+    const locallySaved = state.savedPrimers;
+
+    state.pipeline.primers.forEach((p) => {
+      if (locallySaved.find((sp) => sp.region === p.region) === undefined) {
+        locallySaved.push(p);
+      }
+    });
+
+    localStorage.setItem(
+      STORAGE_SAVED_PRIMERS_KEY,
+      JSON.stringify(locallySaved)
+    );
+  };
+
+  // END SAVED PRIMERS
+
   return (
     <TCSDRContext.Provider
       value={{
@@ -319,6 +371,7 @@ export default function TCSDRContextProvider({
         downloadJSON,
         submitTCSDR,
         validateFileNames,
+        handleLocalPrimersCheckboxChange,
       }}
     >
       {children}

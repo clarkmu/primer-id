@@ -129,14 +129,14 @@ class Pipeline {
 
         $this->generateSamplesFile();
 
-        $cores = 4 * max([1, count($this->data['conversion'])]);
+        $cores = 4;
 
-        $cmd = "snakemake --cores $cores --config job_dir=\"{$this->dir}\"";
+        $cmd = "snakemake --cores $cores --config job_dir=\"{$this->dir}/\" --configfile {$this->dir}/samples.json --directory $BASE/ogv_hyphy/ogv-dating/";
 
         if( $GLOBALS['IS_DEV'] ){
             $this->command($cmd);
         }else{
-            $cmd .= " --keep-going --snakefile {$GLOBALS["BASE"]}/Snakefile";
+            $cmd .= " --keep-going --snakefile {$GLOBALS["BASE"]}/ogv_hyphy/ogv-dating/Snakefile";
             $cmd = "conda run -n hyphy $cmd";
             $this->command("sbatch -o {$this->slurmOutput} -n $cores --job-name=\"{$this->slurmJobName}\" --mem=20000 -t 1440 --wrap=\"{$cmd}\"");
         }
@@ -273,7 +273,7 @@ class Pipeline {
 
         file_put_contents($inputLocation, json_encode($conversionJSON));
 
-        $scriptLocation = $GLOBALS['IS_DEV'] ? "{$GLOBALS['TILDA']}/result-summary.py" : "{$GLOBALS['BASE']}/result-summary.py";
+        $scriptLocation = $GLOBALS['IS_DEV'] ? "{$GLOBALS['TILDA']}/result-summary.py" : "{$GLOBALS['BASE']}/ogv_hyphy/ogv-dating/scripts/result-summary.py";
         $this->command("python3 $scriptLocation -d {$this->dir}/results/dating/ -j $inputLocation -o $outputLocation");
     }
 

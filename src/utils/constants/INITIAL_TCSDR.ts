@@ -1,5 +1,7 @@
 import { PrimerInterface } from "@/models/TCSDR";
 
+export type drVersionType = "v1" | "v2";
+
 const INITIAL_TCSDR_PIPELINE = {
   email: "",
   jobID: "",
@@ -10,6 +12,7 @@ const INITIAL_TCSDR_PIPELINE = {
   poolName: "",
   dropbox: "",
   primers: [],
+  drVersion: "v1",
 };
 
 export const INITIAL_TCSDR = {
@@ -24,6 +27,8 @@ export const INITIAL_TCSDR = {
   files: [],
   uploadedFiles: {},
   isDR: false,
+  useSaved: false,
+  savedPrimers: [],
 };
 
 export type tcsdrType = {
@@ -38,6 +43,7 @@ export type tcsdrType = {
     poolName: string;
     dropbox: string;
     primers: PrimerInterface[];
+    drVersion: drVersionType;
   };
   showUploads: boolean;
   showSubmit: boolean;
@@ -52,4 +58,6 @@ export type tcsdrType = {
   }[];
   uploadedFiles: { [filename: string]: number | boolean };
   isDR: boolean;
+  useSaved: boolean;
+  savedPrimers: PrimerInterface[];
 };

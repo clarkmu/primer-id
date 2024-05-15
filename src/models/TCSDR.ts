@@ -1,3 +1,4 @@
+import { drVersionType } from "@/utils/constants/INITIAL_TCSDR";
 import mongoose, { Schema } from "mongoose";
 
 export interface UploadInterface {
@@ -42,6 +43,7 @@ export interface TCSDRInterface {
   pending: boolean;
   results?: string;
   processingError: boolean;
+  drVersion: drVersionType;
 }
 
 const PrimerSchema = new Schema<PrimerInterface>(
@@ -106,6 +108,7 @@ const TCSDRSchema = new Schema<TCSDRInterface>(
     pending: { type: Boolean, default: false },
     results: String,
     processingError: { type: Boolean, default: false },
+    drVersion: { type: String, default: "v1" },
   },
   {
     toJSON: {
