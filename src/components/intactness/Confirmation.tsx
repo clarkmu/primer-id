@@ -5,30 +5,50 @@ import Button from "../form/Button";
 import { useState } from "react";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
+import { fasta } from "bioinformatics-parser";
+import { BioinformaticsParserType } from "./Page";
 
 export default function Confirmation({
   onClose,
   open,
   email,
   sequences,
+  filename,
   jobID,
   resultsFormat,
+}: {
+  sequences: BioinformaticsParserType;
+  email: string;
+  jobID: string;
+  resultsFormat: string;
+  onClose: () => void;
+  open: boolean;
+  filename: string;
 }) {
   const { reload } = useRouter();
+  const [error, setError] = useState("");
 
-  const { mutateSubmit } = useIntactness();
+  const { mutate, isLoading } = useIntactness();
   const [submitted, setSubmitted] = useState(false);
 
   const onSubmit = async () => {
-    mutateSubmit.mutate({
-      body: { sequences, email, jobID, resultsFormat },
-      callback: () => {
-        setSubmitted(true);
+    setError("");
+    mutate({
+      body: {
+        sequences: fasta.stringify(sequences?.result),
+        email,
+        jobID,
+        resultsFormat,
+      },
+      callback: (data) => {
+        if (data?.error) {
+          setError(data?.error || "An error has occurred. Please try again.");
+        } else {
+          setSubmitted(true);
+        }
       },
     });
   };
-
-  const { error, isLoading } = mutateSubmit;
 
   const onCloseConfirmation = () => {
     if (submitted) {
@@ -56,20 +76,20 @@ export default function Confirmation({
             Job ID: <span className="underline font-bold">{jobID}</span>
           </span>
         )}
+        <span className="">
+          File: <span className="underline font-bold">{filename}</span>
+        </span>
         <span>
           Results Format:{" "}
           <span className="underline font-bold">{resultsFormat}</span>
         </span>
-        <span>{(sequences.match(/>/g) || []).length} Sequences Detected</span>
-        <ol className="list-decimal overflow-x-auto whitespace-nowrap max-h-[50vh]">
-          {sequences
-            .split("\n")
-            .filter((s) => s[0] === ">")
-            .map((seq) => (
-              <li key={seq} className="">
-                {seq.replace(">", "")}
-              </li>
-            ))}
+        <span>{sequences?.result?.length} Sequences Detected</span>
+        <ol className="list-decimal overflow-x-auto whitespace-nowrap max-h-[30vh]">
+          {(sequences?.result || []).map((seq) => (
+            <li key={seq?.description} className="">
+              {seq?.description}
+            </li>
+          ))}
         </ol>
         {!!error && <Alert severity="error" msg={error} />}
         <div className="self-end place-self-end justify-self-end flex justify-end items-end gap-4">

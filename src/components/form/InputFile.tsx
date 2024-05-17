@@ -4,15 +4,17 @@ import { useDropzone } from "react-dropzone";
 const InputFile = ({
   onChange = () => null,
   disabled = false,
+  multiple = true,
 }: {
   onChange: () => void;
   disabled?: boolean;
+  multiple?: boolean;
 }) => {
   const { getRootProps, getInputProps, open } = useDropzone({
     // Disable click and keydown behavior
     noClick: true,
     noKeyboard: true,
-    multiple: true,
+    multiple,
     onDrop: onChange,
     disabled,
   });
@@ -26,8 +28,8 @@ const InputFile = ({
     >
       <input {...getInputProps()} />
       <p>
-        Drag and drop files and directories here or click the button below to
-        use selector
+        Drag and drop {multiple ? "files and directories" : "a file"} here or
+        click the button below to use selector
       </p>
       <Button disabled={disabled} onClick={open}>
         Choose Files

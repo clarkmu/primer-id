@@ -27,5 +27,5 @@ export default function useIntactness() {
     }
   );
 
-  return { mutateSubmit };
+  return mutateSubmit;
 }

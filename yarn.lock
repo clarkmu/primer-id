@@ -2051,6 +2051,11 @@ binary-extensions@^2.0.0:
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-2.2.0.tgz#75f502eeaf9ffde42fc98829645be4ea76bd9e2d"
   integrity sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==
 
+bioinformatics-parser@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/bioinformatics-parser/-/bioinformatics-parser-1.1.2.tgz#297fdf472772b3d1fdaf9ae6bd67e3464402e99b"
+  integrity sha512-9jQlWHsVuXD1afY1fYyDagwhNJrAB+zCGlzgZmZ9cv1bQQp/3j5BOhE9zEWBtU7kGDwZ13lkpgauRyNKUrSI9Q==
+
 blob-util@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/blob-util/-/blob-util-2.0.2.tgz#3b4e3c281111bb7f11128518006cdc60b403a1eb"

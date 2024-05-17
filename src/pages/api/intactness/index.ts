@@ -21,9 +21,9 @@ async function post(req, res) {
   const { sequences, email, resultsFormat, jobID } = JSON.parse(req.body);
 
   if (!sequences)
-    return res.status(400).json({ error: "Sequence is required." });
+    return res.status(500).json({ error: "Sequence is required." });
 
-  if (!email) return res.status(400).json({ error: "Email is required." });
+  if (!email) return res.status(500).json({ error: "Email is required." });
 
   let newIntact = new Intact({
     sequences: sequences.trim(),

@@ -7,36 +7,24 @@ import Confirmation from "@/components/intactness/Confirmation";
 import RadioGroup from "@/components/form/RadioGroup";
 import Paper from "@/components/form/Paper";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
+import { fasta } from "bioinformatics-parser";
 
-const getFilesContents = async (files: File[]) => {
-  const contents = await Promise.all(
-    files.map((file) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          resolve(e.target?.result?.trim());
-        };
-        reader.onerror = reject;
-        reader.readAsText(file);
-      });
-    })
-  )
-    .then((fileContents) => fileContents.join("\n"))
-    .catch((error) => {
-      alert("Error reading files", error);
-    });
-
-  return contents;
+export type BioinformaticsParserType = {
+  ok?: boolean;
+  result?: { id: string; seq: string; description: string }[];
+  error?: { message: string };
 };
 
 export default function IntactnessPage() {
   const [email, setEmail] = useState("");
-  const [sequences, setSequences] = useState("");
+  const [sequences, setSequences] = useState<BioinformaticsParserType>({});
   const [open, setOpen] = useState(false);
+  const [parseError, setParseError] = useState("");
   const [error, setError] = useState("");
   const [jobID, setJodID] = useState("");
   const [resultsFormat, setResultsFormat] = useState<"tar" | "zip">("tar");
   const [continued, setContinued] = useState(false);
+  const [filename, setFilename] = useState("");
 
   const [scrollToRef] = useScrollToDivOnVisibilityToggle(continued);
 
@@ -58,21 +46,36 @@ export default function IntactnessPage() {
   };
 
   const loadFiles = async (files: FileList) => {
-    const acceptedFiles = Array.from(files)
-      .filter((f) => f.name[0] !== ".")
-      .filter((f) => f.name.indexOf(".fast") !== -1);
+    const file = Array.from(files)[0];
 
-    const text = await getFilesContents(acceptedFiles);
+    setFilename("");
+    setParseError("");
 
-    setSequences((s) => s.trim() + "\n" + (text || "").trim() + "\n");
+    if (!file) {
+      return;
+    }
+
+    if (!file.name.includes(".fasta")) {
+      setParseError("Please use .fasta files.");
+    }
+
+    const text = await file.text();
+    const parsed = fasta.parse(text);
+
+    if (parsed?.error?.message) {
+      setParseError(parsed.error.message);
+    }
+
+    if (parsed.result?.length > 100 || file.size > 16000000) {
+      setParseError(
+        "Maximum exceeded of 100 sequences or 16MB per submission."
+      );
+      return;
+    }
+
+    setFilename(file.name);
+    setSequences(parsed);
   };
-
-  const sequenceWithoutEmptyLines = sequences.replace(/^\s*\n/gm, "");
-
-  const sequencesMissingTags =
-    sequences.length > 0 &&
-    (sequences.match(/>/g) || []).length !==
-      sequenceWithoutEmptyLines.split(/\r\n|\r|\n/).length / 2;
 
   return (
     <div className="flex flex-col gap-4 m-4">
@@ -120,34 +123,20 @@ export default function IntactnessPage() {
       </Paper>
       <Paper className="flex flex-col gap-4">
         <div className="text-center text-lg">
-          Upload sequence files in FASTA format or paste the sequences here.
+          Upload a .fastq file (uncompressed)
         </div>
-        <InputFile onChange={loadFiles} />
-        <Input
-          label="Sequence"
-          value={sequences}
-          onChange={(e) => {
-            let value = e.target.value;
-
-            if (e.nativeEvent.inputType === "insertFromPaste") {
-              value = value.trim() + "\n";
-            }
-
-            setSequences(value);
-          }}
-          textArea={true}
-          rows={10}
-          className="p-1 shadow-lg"
-          placeholder="Or paste sequences here."
-          wrap="off"
-        />
-        {sequencesMissingTags && (
-          <Alert severity="info" msg="Each sequence must have a tag." />
-        )}
-        <Button
-          disabled={sequencesMissingTags}
-          onClick={() => setContinued(true)}
-        >
+        <InputFile onChange={loadFiles} multiple={false} />
+        {!!parseError && filename.length ? (
+          <Alert severity="info" msg={parseError} />
+        ) : !!sequences?.result?.length && filename.length ? (
+          <div className="flex flex-col gap-2 font-bold my-2">
+            <div className="">Files: {filename}</div>
+            <div className="">
+              {sequences?.result?.length || ""} sequences found.
+            </div>
+          </div>
+        ) : null}
+        <Button disabled={!sequences?.ok} onClick={() => setContinued(true)}>
           Continue
         </Button>
       </Paper>
@@ -181,7 +170,7 @@ export default function IntactnessPage() {
             {!!error && <Alert severity="error" msg={error} />}
             <Button
               onClick={onSubmit}
-              disabled={!sequences || !email}
+              disabled={!sequences || !email || !sequences?.ok}
               fullWidth
             >
               Submit
@@ -194,6 +183,7 @@ export default function IntactnessPage() {
         onClose={() => setOpen(false)}
         email={email}
         sequences={sequences}
+        filename={filename}
         resultsFormat={resultsFormat}
         jobID={jobID}
       />
