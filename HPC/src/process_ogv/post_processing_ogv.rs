@@ -6,7 +6,7 @@ use std::{
     process::Command,
 };
 use chrono::format;
-use crate::{ pipeline::Pipeline, send_email::Email };
+use crate::{ pipeline::Pipeline };
 
 pub async fn init_post_processing(pipeline: Pipeline) -> Result<(), Box<dyn std::error::Error>> {
     process_conversion(
@@ -150,17 +150,12 @@ async fn email_results(pipeline: Pipeline) -> Result<(), Box<dyn std::error::Err
         );
     }
 
-    let email: Email = Email::new(
-        String::from(&pipeline.data.email),
-        "clarkmu@unc.edu".to_string(),
-        "OGV-Dating Results".to_string(),
-        format!(
-            "<html><body>Your OGV results are ready for download.<br><br>{}<br><br>{}<br><br></body></html>",
-            download_link,
-            error
-        )
+    let body = format!(
+        "<html><body>Your OGV results are ready for download.<br><br>{}<br><br>{}<br><br></body></html>",
+        download_link,
+        error
     );
-    let _ = email.send(false, &pipeline.is_dev).await;
+    let _ = pipeline.send_email(&"OGV-Dating Results", &body, false).await;
 
     //patch pipeline
 

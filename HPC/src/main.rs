@@ -5,7 +5,6 @@
 use std::{ env, process::exit };
 
 mod pipeline;
-mod send_email;
 mod process_ogv;
 
 mod load_locations {

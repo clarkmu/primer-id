@@ -10,6 +10,11 @@ use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
 
+use lettre::{
+    message::{ header::{ self, ContentType }, Mailbox, Mailboxes, Message, MessageBuilder },
+    SmtpTransport,
+};
+
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct Upload {
     #[serde(rename = "_id")]
@@ -57,6 +62,7 @@ pub struct Pipeline<State = OgvAPI> {
     pub private_key_location: String,
     api_url: String,
     pub bucket_url: String,
+    admin_email: String,
 }
 
 impl Pipeline {
@@ -99,6 +105,7 @@ impl Pipeline {
             api_url,
             bucket_url,
             private_key_location: locations.private_key_location.clone(),
+            admin_email: locations.admin_email.clone(),
             data,
         }
     }
@@ -168,6 +175,41 @@ impl Pipeline {
             .patch(&self.api_url)
             .json(&serde_json::json!({"pending": true, "submit": false}))
             .send().await?;
+
+        Ok(())
+    }
+
+    pub async fn send_email(
+        &self,
+        subject: &str,
+        body: &str,
+        include_admin: bool
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if self.is_dev {
+            return Ok(());
+        }
+
+        let mut to = String::from(self.data.email.clone());
+
+        if include_admin {
+            to.push_str(&format!(", {}", &self.admin_email));
+        }
+
+        // print!("TO: {:#?}\n", to);
+
+        let mailboxes: Mailboxes = to.parse().unwrap();
+        let to_header: header::To = mailboxes.into();
+
+        //todo from and SmtpTransport::relay
+        let email = Message::builder()
+            .from("".parse().unwrap())
+            .mailbox(to_header)
+            .subject(subject)
+            .header(ContentType::TEXT_HTML)
+            .body(String::from(body))
+            .unwrap();
+
+        let mailer = SmtpTransport::relay("").unwrap().build();
 
         Ok(())
     }

@@ -2,7 +2,6 @@ use std::io::Write;
 use std::fs::OpenOptions;
 use std::collections::HashMap;
 use crate::{ load_locations::Locations, pipeline::{ Pipeline, Upload } };
-use crate::send_email::Email;
 use lettre::message;
 use serde_json::Value;
 
@@ -10,13 +9,7 @@ pub async fn initialize_run(pipeline: Pipeline) -> Result<(), Box<dyn std::error
     //email receipt
     let _ = pipeline.add_log("Emailing receipt.");
     let receipt = generate_receipt(&pipeline.data.conversion, &pipeline.data.uploads).await;
-    let email: Email = Email::new(
-        String::from(&pipeline.data.email),
-        "clarkmu@unc.edu".to_string(),
-        "OGV-Dating Submission".to_string(),
-        receipt
-    );
-    let _ = email.send(true, &pipeline.is_dev).await;
+    let _ = pipeline.send_email(&"OGV-Dating Submission", &receipt, true).await;
 
     //transfer files
     let result = download_files(&pipeline);

@@ -1,17 +1,7 @@
 use serde_json::Value;
 use cloud_storage::Client;
-use std::{
-    collections::HashMap,
-    f32::consts::E,
-    fs::{ File, OpenOptions },
-    io::BufWriter,
-    ptr::null,
-};
-use crate::{
-    load_locations::{ self, Locations },
-    pipeline::{ Pipeline, OgvAPI },
-    send_email::Email,
-};
+use std::{ collections::HashMap, f32::consts::E, ptr::null };
+use crate::{ load_locations::{ self, Locations }, pipeline::{ Pipeline, OgvAPI } };
 use glob::glob;
 use std::io::Write;
 
