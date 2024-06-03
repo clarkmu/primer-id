@@ -1,9 +1,5 @@
-use std::borrow::Borrow;
-use std::ops::Index;
-use std::slice::SliceIndex;
 use std::{ collections::HashMap, fs::OpenOptions };
 use crate::load_locations::{ Locations, PipelineKeys };
-use reqwest::header::Keys;
 use serde::Deserialize;
 use serde_json::Value;
 use chrono::prelude::*;
@@ -194,8 +190,6 @@ impl Pipeline {
         if include_admin {
             to.push_str(&format!(", {}", &self.admin_email));
         }
-
-        // print!("TO: {:#?}\n", to);
 
         let mailboxes: Mailboxes = to.parse().unwrap();
         let to_header: header::To = mailboxes.into();

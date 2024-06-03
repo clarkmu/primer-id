@@ -1,8 +1,7 @@
 use std::io::Write;
 use std::fs::OpenOptions;
 use std::collections::HashMap;
-use crate::{ load_locations::Locations, pipeline::{ Pipeline, Upload } };
-use lettre::message;
+use crate::pipeline::{ Pipeline, Upload };
 use serde_json::Value;
 
 pub async fn initialize_run(pipeline: Pipeline) -> Result<(), Box<dyn std::error::Error>> {

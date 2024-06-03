@@ -1,15 +1,13 @@
 use serde_json::Value;
-use cloud_storage::Client;
 use std::{ collections::HashMap, f32::consts::E, ptr::null };
 use crate::{ load_locations::{ self, Locations }, pipeline::{ Pipeline, OgvAPI } };
 use glob::glob;
-use std::io::Write;
 
 mod initialize_ogv;
 
 mod post_processing_ogv;
 
-pub async fn init(locations: Locations) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn init(locations: &Locations) -> Result<(), Box<dyn std::error::Error>> {
     let pipeline_type: &str = "ogv";
 
     let json = reqwest
