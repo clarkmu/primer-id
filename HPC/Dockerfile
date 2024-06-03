@@ -1,12 +1,17 @@
-FROM ubuntu:18.04
+FROM rust:1.78
 
-# set Miniconda3 in path
+
+ENV CARGO_TARGET_DIR=/app/target
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
 ENV PORT=8180
 
+WORKDIR /app
+
+RUN cargo install cargo-watch
+
 RUN apt update && apt upgrade -y
-RUN apt install software-properties-common wget curl libcurl4 -y
+RUN apt install software-properties-common wget curl libcurl4 git vim -y
 
 #Install GCP CLI for file transfers
 RUN curl -sSL https://sdk.cloud.google.com | bash
@@ -31,28 +36,24 @@ RUN conda config --add channels bioconda
 RUN conda config --add channels conda-forge
 RUN conda config --set channel_priority strict
 
-# Snakefile dependencies
-RUN conda update conda
-RUN conda install snakemake
-RUN conda install raxml-ng
-RUN conda install fasttree
-RUN conda install hyphy
-RUN conda install mafft
-RUN conda install nodejs
-RUN conda install php
-RUN conda install ruby
-RUN conda install r-base
+# TCS-DR dependencies
+RUN conda create -n tcsdr python=3.9 ruby=2.7.2 r-base
+RUN conda run -n tcsdr gem install viral_seq
 
-# result-summary.py dependency
-RUN pip3 install biopython
+# OGV dependencies
+RUN conda create -n ogv python=3.9 snakemake raxml-ng bioconda:hyphy==2.5.61 mafft nodejs==12.4.0
+RUN conda run -n ogv pip3 install requests biopython
+RUN mkdir /app/ogv-dating
+RUN git clone https://github.com/clarkmu/ogv-dating /app/ogv-dating -b env-setup
+RUN chmod +X /app/ogv-dating/FastTree
+### ON SETUP - edit /app/ogv-dating/Snakefile::callables - 'fasttree' : '/app/ogv-dating/FastTree', 'classifier' : '/app/ogv-dating/scripts/compute-distance.js'
 
-RUN gem install viral_seq
+# INTACTNESS dependencies
+RUN conda create -n intactness python=3.8 bioconda::blast=2.12.0 bioconda::muscle=5.1
+RUN conda run -n intactness pip3 install requests biopython==1.79 reportlab==4.1.0 lxml==5.1.0 PyPDF2==1.26.0 scipy==1.10.1
+RUN mkdir /app/intactness
+RUN git clone https://github.com/clarkmu/intactness-pipeline /app/intactness
 
-#Commands that need to be ran after launch
-#gcloud auth activate-service-account --key-file /home/node/app/ogv-server/storage-admin.json
-
-EXPOSE 8180
-
-WORKDIR /home/node/app
-
-CMD [ "npm", "start" ]
+COPY entrypoint.sh /app/entrypoint.sh
+COPY storage-admin.json /app/storage-admin.json
+ENTRYPOINT [ "/app/entrypoint.sh" ]

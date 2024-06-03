@@ -1,0 +1,24 @@
+name: primerid
+services:
+  primerid:
+    # Apple Silicon
+    platform: linux/amd64
+    # Windows
+    #platform: darwin/amd64
+    #Linux AMD
+    #platform: linux/amd64
+    #Linux ARM
+    #platform: linux/arm64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    ports:
+      - 8180:8181
+    container_name: primerid
+    volumes:
+      - ".:/app"
+      - /app/target
+    image: primerid
+    network_mode: host
