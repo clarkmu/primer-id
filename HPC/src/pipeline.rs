@@ -169,7 +169,7 @@ impl Pipeline {
         let _ = reqwest::Client
             ::new()
             .patch(&self.api_url)
-            .json(&serde_json::json!({"pending": true, "submit": false}))
+            .json(&serde_json::json!({"_id": self.data.id, "patch": data}))
             .send().await?;
 
         Ok(())
@@ -213,16 +213,21 @@ impl Pipeline {
         mut cmd: String,
         program: &str
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.is_dev {
+        let forward_program = if self.is_dev { "ts" } else { "sbatch" };
+
+        if self.is_dev {
+            cmd = format!("-d {} {} {}", self.slurm_job_name, &program, &cmd);
+        } else {
             cmd = format!(
-                "sbatch -o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                "-o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{} {}'",
                 &self.slurm_output,
+                &program,
                 &self.slurm_job_name,
                 &cmd
             );
         }
 
-        let _ = self.run_command(&cmd, "", program)?;
+        let _ = self.run_command(&cmd, "", &forward_program)?;
 
         Ok(())
     }

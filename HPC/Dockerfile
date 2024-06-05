@@ -11,7 +11,7 @@ WORKDIR /app
 RUN cargo install cargo-watch
 
 RUN apt update && apt upgrade -y
-RUN apt install software-properties-common wget curl libcurl4 git vim -y
+RUN apt install software-properties-common wget curl libcurl4 git vim task-spooler -y
 
 #Install GCP CLI for file transfers
 RUN curl -sSL https://sdk.cloud.google.com | bash
@@ -45,7 +45,8 @@ RUN conda create -n ogv python=3.9 snakemake raxml-ng bioconda:hyphy==2.5.61 maf
 RUN conda run -n ogv pip3 install requests biopython
 RUN mkdir /app/ogv-dating
 RUN git clone https://github.com/clarkmu/ogv-dating /app/ogv-dating -b env-setup
-RUN chmod +X /app/ogv-dating/FastTree
+RUN chmod +x /app/ogv-dating/FastTree
+RUN conda run -n ogv npm i --prefix /app/ogv-dating/
 ### ON SETUP - edit /app/ogv-dating/Snakefile::callables - 'fasttree' : '/app/ogv-dating/FastTree', 'classifier' : '/app/ogv-dating/scripts/compute-distance.js'
 
 # INTACTNESS dependencies
@@ -55,5 +56,7 @@ RUN mkdir /app/intactness
 RUN git clone https://github.com/clarkmu/intactness-pipeline /app/intactness
 
 COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 COPY storage-admin.json /app/storage-admin.json
-ENTRYPOINT [ "/app/entrypoint.sh" ]
+
+ENTRYPOINT [ "sh", "/app/entrypoint.sh" ]

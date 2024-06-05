@@ -27,6 +27,9 @@ pub async fn init(locations: &Locations) -> Result<(), Box<dyn std::error::Error
             pipeline.add_log("Initializing OGV pipeline.")?;
             let _ = initialize_ogv::initialize_run(pipeline).await;
         } else {
+            println!("Begin OGV post processing.");
+            return Ok(());
+
             let finished_files_pattern: &str = &format!(
                 "{}/results/dating/*/*.csv",
                 &pipeline.scratch_dir

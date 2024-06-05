@@ -19,16 +19,16 @@ pub async fn initialize_run(pipeline: Pipeline) -> Result<(), Box<dyn std::error
 
     //run OGV
     let run_pipeline_command: String = format!(
-        "conda run -n ogv snakemake --cores 4 --config job_dir='{}/' --configfile {} --directory {}/ --keep-going --snakefile {}/Snakefile",
+        "run -n ogv snakemake --cores 4 --config job_dir='{}/' --configfile {} --directory {}/ --keep-going --snakefile {}/Snakefile",
         &pipeline.job_dir,
         samples_file_location,
         &pipeline.ogv_base_path,
         &pipeline.ogv_base_path
     );
 
-    let _ = pipeline.init_sbatch(run_pipeline_command, "/usr/bin/env python");
+    let _ = pipeline.init_sbatch(run_pipeline_command, "conda");
 
-    // pipeline.patch_pipeline(serde_json::json!({"pending": true, "submit": false}));
+    let _ = pipeline.patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await;
 
     Ok(())
 }
@@ -65,17 +65,13 @@ fn download_files(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>>
     // if data_dir does not exist, create it
     if !std::path::Path::new(&data_dir).exists() {
         let _ = std::fs::create_dir_all(&data_dir);
+    } else {
+        return Ok(());
     }
 
+    //todo count glob , below does not appear to be correct (c=1 when empty directory)
     // let output_pattern: &str = &format!("{}/**/*.fasta", &pipeline.scratch_dir);
-
     // let c = glob::glob(output_pattern).into_iter().count();
-
-    // // dbg!(c, output_pattern, &glob::glob(output_pattern).into_iter());
-
-    // if glob::glob(output_pattern).into_iter().count() > 0 {
-    //     return Ok(());
-    // }
 
     let cmd = format!("gsutil cp -r {}/{}/* {}", &pipeline.bucket_url, &pipeline.data.id, data_dir);
     pipeline.run_command(&cmd, "", "")?;
