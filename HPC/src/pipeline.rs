@@ -112,20 +112,19 @@ impl Pipeline {
         current_dir: &str,
         program: &str
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.add_log(&format!("Exec: {:?}", &cmd))?;
+        self.add_log(&format!("Exec: {:?} {:?}", &program, &cmd))?;
 
         let dir = if current_dir.is_empty() { &self.base } else { current_dir };
         let prog = if program.is_empty() { "bash" } else { program };
 
         let outp = std::process::Command::new(prog).args(cmd.split(" ")).current_dir(dir).output();
 
-        let err = outp.unwrap().stderr;
-
-        if !err.is_empty() {
-            let _ = self.add_error(
-                &format!("Error running pipeline -\n{}\n{:?}", &cmd, String::from_utf8(err))
-            );
-        }
+        // let err = outp.unwrap().stderr;
+        // if !err.is_empty() {
+        //     let _ = self.add_error(
+        //         &format!("Error running pipeline -\n{}\n{:?}", &cmd, String::from_utf8(err))
+        //     );
+        // }
 
         Ok(())
     }
@@ -213,10 +212,10 @@ impl Pipeline {
         mut cmd: String,
         program: &str
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let forward_program = if self.is_dev { "ts" } else { "sbatch" };
+        let forward_program = if self.is_dev { "tsp" } else { "sbatch" };
 
         if self.is_dev {
-            cmd = format!("-d {} {} {}", self.slurm_job_name, &program, &cmd);
+            cmd = format!("-L {} {} {}", self.slurm_job_name, &program, &cmd);
         } else {
             cmd = format!(
                 "-o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{} {}'",
