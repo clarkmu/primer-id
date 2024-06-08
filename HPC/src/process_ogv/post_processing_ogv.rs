@@ -1,7 +1,7 @@
 use std::{ collections::HashMap, fs::File, io::{ BufWriter, Write }, process::Command };
 use crate::pipeline::Pipeline;
 
-pub async fn init_post_processing(pipeline: Pipeline) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn init_post_processing(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>> {
     process_conversion(
         pipeline.data.conversion.clone(),
         &pipeline.scratch_dir,
@@ -57,7 +57,7 @@ fn process_conversion(
     Ok(())
 }
 
-async fn email_results(pipeline: Pipeline) -> Result<(), Box<dyn std::error::Error>> {
+async fn email_results(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>> {
     let extension: &str = if &pipeline.data.results_format == "tar" { ".tar.gz" } else { ".zip" };
     let results_id = if pipeline.data.job_id.is_empty() {
         &pipeline.data.id

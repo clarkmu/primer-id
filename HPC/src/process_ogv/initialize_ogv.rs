@@ -4,18 +4,23 @@ use std::collections::HashMap;
 use crate::pipeline::{ Pipeline, Upload };
 use serde_json::Value;
 
-pub async fn initialize_run(pipeline: Pipeline) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn initialize_run(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>> {
     //email receipt
     let _ = pipeline.add_log("Emailing receipt.");
-    let receipt = generate_receipt(&pipeline.data.conversion, &pipeline.data.uploads).await;
+    let receipt = generate_receipt(&pipeline.data.conversion, &pipeline.data.uploads);
     let _ = pipeline.send_email(&"OGV-Dating Submission", &receipt, true).await;
 
     //transfer files
-    let result = download_files(&pipeline);
+    let download_cmd = download_files_command(
+        &pipeline.data.id,
+        &pipeline.scratch_dir,
+        &pipeline.bucket_url
+    );
+    pipeline.run_command(&download_cmd, "", "")?;
 
     //generate samples file
     let samples_file_location = format!("{}/samples.json", &pipeline.scratch_dir);
-    generate_samples_file(&pipeline.data.uploads.clone(), &pipeline, &samples_file_location)?;
+    generate_samples_file(&pipeline.data.uploads, &samples_file_location)?;
 
     //run OGV
     let run_pipeline_command: String = format!(
@@ -33,7 +38,7 @@ pub async fn initialize_run(pipeline: Pipeline) -> Result<(), Box<dyn std::error
     Ok(())
 }
 
-async fn generate_receipt(conversion: &HashMap<String, String>, uploads: &Vec<Upload>) -> String {
+fn generate_receipt(conversion: &HashMap<String, String>, uploads: &Vec<Upload>) -> String {
     let conversion_html =
         "<u>Start2Art</u>:<br>".to_string() +
         &conversion
@@ -59,29 +64,26 @@ async fn generate_receipt(conversion: &HashMap<String, String>, uploads: &Vec<Up
     receipt
 }
 
-fn download_files(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>> {
-    let data_dir = format!("{}/data", &pipeline.scratch_dir);
+fn download_files_command(id: &String, scratch_dir: &String, bucket_url: &String) -> String {
+    let data_dir: &str = &format!("{}/data", scratch_dir);
 
     // if data_dir does not exist, create it
-    if !std::path::Path::new(&data_dir).exists() {
-        let _ = std::fs::create_dir_all(&data_dir);
-    } else {
-        return Ok(());
+    if std::path::Path::new(&data_dir).exists() {
+        return String::from("");
     }
+
+    let _ = std::fs::create_dir_all(&data_dir);
 
     //todo count glob , below does not appear to be correct (c=1 when empty directory)
     // let output_pattern: &str = &format!("{}/**/*.fasta", &pipeline.scratch_dir);
     // let c = glob::glob(output_pattern).into_iter().count();
 
-    let cmd = format!("gsutil cp -r {}/{}/* {}", &pipeline.bucket_url, &pipeline.data.id, data_dir);
-    pipeline.run_command(&cmd, "", "")?;
-
-    Ok(())
+    let cmd: String = format!("gsutil cp -r {}/{}/* {}", bucket_url, id, data_dir);
+    cmd
 }
 
 fn generate_samples_file(
     uploads: &Vec<Upload>,
-    pipeline: &Pipeline,
     samples_file_location: &str
 ) -> Result<(), Box<dyn std::error::Error>> {
     #[derive(serde::Serialize)]
@@ -106,4 +108,70 @@ fn generate_samples_file(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_receipt() {
+        let conversion = vec![("Start2Art".to_string(), "1".to_string())].into_iter().collect();
+
+        let uploads = vec![
+            Upload {
+                id: "1".to_string(),
+                lib_name: "lib1".to_string(),
+                file_name: "file1".to_string(),
+            },
+            Upload {
+                id: "2".to_string(),
+                lib_name: "lib2".to_string(),
+                file_name: "file2".to_string(),
+            }
+        ];
+
+        let receipt = generate_receipt(&conversion, &uploads);
+
+        assert_eq!(receipt.contains("Start2Art: 1"), true);
+        assert_eq!(receipt.contains("lib1: file1"), true);
+        assert_eq!(receipt.contains("lib2: file2"), true);
+    }
+
+    #[test]
+    fn test_generate_samples_file() {
+        let uploads = vec![
+            Upload {
+                id: "1".to_string(),
+                lib_name: "lib1".to_string(),
+                file_name: "file1".to_string(),
+            },
+            Upload {
+                id: "2".to_string(),
+                lib_name: "lib2".to_string(),
+                file_name: "file2".to_string(),
+            }
+        ];
+
+        let samples_file_location = "samples.json";
+        let _ = generate_samples_file(&uploads, samples_file_location);
+
+        let file = std::fs::read_to_string(samples_file_location).unwrap();
+        let samples_json: Value = serde_json::from_str(&file).unwrap();
+
+        assert_eq!(samples_json["samples"][0], "lib1/file1");
+        assert_eq!(samples_json["samples"][1], "lib2/file2");
+
+        let _ = std::fs::remove_file(samples_file_location);
+    }
+
+    #[test]
+    fn test_download_files_cmd() {
+        let id = "1".to_string();
+        let scratch_dir = "scratch_dir".to_string();
+        let bucket_url = "bucket_url".to_string();
+
+        let cmd = download_files_command(&id, &scratch_dir, &bucket_url);
+        assert_eq!(cmd, "gsutil cp -r bucket_url/1/* scratch_dir/data");
+    }
 }

@@ -1,15 +1,15 @@
 use std::{ collections::HashMap, fs::OpenOptions };
-use crate::load_locations::{ Locations, PipelineKeys };
+use crate::load_locations::{ Locations, PipelineKeys, PipelineType };
 use serde::Deserialize;
 use serde_json::Value;
 use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
-
 use lettre::{
     message::{ header::{ self, ContentType }, Mailbox, Mailboxes, Message, MessageBuilder },
     SmtpTransport,
 };
+use std::error::Error;
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct Upload {
@@ -42,8 +42,8 @@ pub struct OgvAPI {
 struct TcsAPI;
 struct IntactAPI;
 
-#[derive(Debug, Deserialize)]
-pub struct Pipeline<State = OgvAPI> {
+#[derive(Debug, Deserialize, Clone)]
+pub struct Pipeline<ApiData = OgvAPI> {
     pub id: String,
     pub is_dev: bool,
     pub base: String,
@@ -53,16 +53,17 @@ pub struct Pipeline<State = OgvAPI> {
     slurm_output: String,
     log_file: String,
     log_error_file: String,
-    pub data: State,
+    pub data: ApiData,
     pub ogv_base_path: String,
     pub private_key_location: String,
     api_url: String,
     pub bucket_url: String,
     admin_email: String,
+    api_key: String,
 }
 
 impl Pipeline {
-    pub fn new(data: OgvAPI, locations: &Locations, pipeline_type: &str) -> Pipeline {
+    pub fn new(data: OgvAPI, locations: &Locations, pipeline_type: PipelineType) -> Pipeline {
         let id: String = data.id.clone();
 
         let api_url: String = String::from(&locations.api_url[pipeline_type]);
@@ -102,6 +103,7 @@ impl Pipeline {
             bucket_url,
             private_key_location: locations.private_key_location.clone(),
             admin_email: locations.admin_email.clone(),
+            api_key: locations.api_key.clone(),
             data,
         }
     }
@@ -111,25 +113,23 @@ impl Pipeline {
         cmd: &str,
         current_dir: &str,
         program: &str
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn Error>> {
         self.add_log(&format!("Exec: {:?} {:?}", &program, &cmd))?;
 
         let dir = if current_dir.is_empty() { &self.base } else { current_dir };
         let prog = if program.is_empty() { "bash" } else { program };
 
-        let outp = std::process::Command::new(prog).args(cmd.split(" ")).current_dir(dir).output();
+        let outp = std::process::Command::new(prog).args(cmd.split(" ")).current_dir(dir).status();
 
-        // let err = outp.unwrap().stderr;
-        // if !err.is_empty() {
-        //     let _ = self.add_error(
-        //         &format!("Error running pipeline -\n{}\n{:?}", &cmd, String::from_utf8(err))
-        //     );
-        // }
+        if outp.is_err() {
+            let _ = self.add_error(&format!("Error running pipeline - {:?}", &cmd));
+            // return Err(anyhow::anyhow!("Error running pipeline."));
+        }
 
         Ok(())
     }
 
-    pub fn add_log(&self, msg: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add_log(&self, msg: &str) -> Result<(), Box<dyn Error>> {
         let date = Utc::now().to_string();
         let message = format!("[{}] {}", date, msg).to_string();
 
@@ -147,7 +147,7 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn add_error(&self, msg: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add_error(&self, msg: &str) -> Result<(), Box<dyn Error>> {
         let mut file = OpenOptions::new()
             .write(true)
             .append(true)
@@ -164,12 +164,21 @@ impl Pipeline {
         Ok(())
     }
 
-    pub async fn patch_pipeline(&self, data: Value) -> Result<(), Box<dyn std::error::Error>> {
-        let _ = reqwest::Client
+    pub async fn patch_pipeline(&self, data: Value) -> Result<(), Box<dyn Error>> {
+        let req = reqwest::Client
             ::new()
             .patch(&self.api_url)
             .json(&serde_json::json!({"_id": self.data.id, "patch": data}))
-            .send().await?;
+            .header("x-api-key", &self.api_key)
+            .send().await;
+
+        match req {
+            Ok(_) => (),
+            Err(e) => {
+                let _ = self.add_error(&format!("Error patching pipeline - {:?}", e));
+                // return Err(anyhow::anyhow!("Error patching pipeline."));
+            }
+        }
 
         Ok(())
     }
@@ -179,7 +188,7 @@ impl Pipeline {
         subject: &str,
         body: &str,
         include_admin: bool
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn Error>> {
         if self.is_dev {
             return Ok(());
         }
@@ -207,11 +216,7 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn init_sbatch(
-        &self,
-        mut cmd: String,
-        program: &str
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn init_sbatch(&self, mut cmd: String, program: &str) -> Result<(), Box<dyn Error>> {
         let forward_program = if self.is_dev { "tsp" } else { "sbatch" };
 
         if self.is_dev {
@@ -229,5 +234,43 @@ impl Pipeline {
         let _ = self.run_command(&cmd, "", &forward_program)?;
 
         Ok(())
+    }
+}
+
+pub async fn get_api<State: for<'de> serde::Deserialize<'de>>(
+    url: &str
+) -> Result<State, Box<dyn std::error::Error>> {
+    let json = reqwest::get(url).await.unwrap().json::<Vec<Value>>().await?;
+
+    let data: State = serde_json::from_value(serde_json::Value::Array(json)).unwrap();
+    Ok(data)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::load_locations;
+
+    use super::*;
+
+    #[test]
+    fn it_implements_ogv() {
+        let id = "123".to_string();
+        let locations: Locations = load_locations::read("locations.test.json", true).unwrap();
+
+        let data: OgvAPI = OgvAPI {
+            id: id.clone(),
+            created_at: "2021-01-01".to_string(),
+            job_id: "results-named".to_string(),
+            results_format: "zip".to_string(),
+            uploads: vec![],
+            conversion: HashMap::new(),
+            email: "".to_string(),
+            submit: true,
+            pending: false,
+            processing_error: false,
+        };
+        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+
+        assert_eq!(&pipeline.id, &id);
     }
 }

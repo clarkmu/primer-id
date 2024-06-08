@@ -1,58 +1,107 @@
+use chrono::{ DateTime, Duration, NaiveDate, NaiveDateTime, TimeZone, Utc };
 use serde_json::Value;
 use std::{ collections::HashMap, f32::consts::E, ptr::null };
-use crate::{ load_locations::{ self, Locations }, pipeline::{ Pipeline, OgvAPI } };
+use crate::{
+    load_locations::{ self, Locations, PipelineType },
+    pipeline::{ self, OgvAPI, Pipeline },
+};
 use glob::glob;
 
 mod initialize_ogv;
 
 mod post_processing_ogv;
 
-pub async fn init(locations: &Locations) -> Result<(), Box<dyn std::error::Error>> {
-    let pipeline_type: &str = "ogv";
+pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error>> {
+    let is_first_run =
+        pipeline.data.submit && !pipeline.data.pending && !pipeline.data.processing_error;
 
-    let json = reqwest
-        ::get(&locations.api_url[pipeline_type]).await
-        .unwrap()
-        .json::<Vec<Value>>().await?;
+    if is_first_run {
+        pipeline.add_log("Initializing OGV pipeline.")?;
+        let initialized: Result<(), Box<dyn std::error::Error>> = initialize_ogv::initialize_run(
+            pipeline
+        ).await;
 
-    let ogvs: Vec<OgvAPI> = serde_json::from_value(serde_json::Value::Array(json)).unwrap();
-
-    for ogv in ogvs {
-        let pipeline: Pipeline = Pipeline::new(ogv, &locations, pipeline_type);
-
-        let is_first_run =
-            pipeline.data.submit && !pipeline.data.pending && !pipeline.data.processing_error;
-
-        if is_first_run {
-            pipeline.add_log("Initializing OGV pipeline.")?;
-            let _ = initialize_ogv::initialize_run(pipeline).await;
-        } else {
-            println!("Begin OGV post processing.");
-            return Ok(());
-
-            let finished_files_pattern: &str = &format!(
-                "{}/results/dating/*/*.csv",
-                &pipeline.scratch_dir
-            );
-            let processing_finished =
-                glob::glob(finished_files_pattern).into_iter().count() ==
-                pipeline.data.uploads.len();
-
-            if pipeline.data.pending && processing_finished {
-                pipeline.add_log("Pipeline has processed. Wrapping it up.")?;
-                let _ = post_processing_ogv::init_post_processing(pipeline).await;
-            } else {
-                pipeline.add_log("Checking for failure.")?;
-                check_for_fail()?;
+        match initialized {
+            Ok(_) => {
+                pipeline.add_log("OGV pipeline initialized.")?;
             }
+            Err(e) => {
+                pipeline.add_error(&format!("Error initializing OGV pipeline: {:?}", e))?;
+                let _ = pipeline.send_email(
+                    "OGV-Dating Error",
+                    &format!("Error initializing OGV pipeline:\n\n {:?}", e),
+                    true
+                ).await;
+            }
+        }
+
+        return Ok("init");
+    } else {
+        let finished_files_pattern: &str = &format!(
+            "{}/results/dating/*/*.csv",
+            &pipeline.scratch_dir
+        );
+        let processing_finished =
+            glob::glob(finished_files_pattern).into_iter().count() == pipeline.data.uploads.len();
+
+        if pipeline.data.pending && processing_finished {
+            println!("TODO: Begin OGV post processing.");
+            return Ok("post_processing");
+            pipeline.add_log("Pipeline has processed. Wrapping it up.")?;
+            let _ = post_processing_ogv::init_post_processing(pipeline).await;
+            return Ok("post_processing");
+        } else {
+            pipeline.add_log("Checking for failure.")?;
+
+            let n = NaiveDateTime::parse_from_str(
+                &pipeline.data.created_at,
+                "%Y-%m-%dT%H:%M:%S%.fZ"
+            ).unwrap();
+
+            let hours = Utc::now().signed_duration_since(Utc.from_utc_datetime(&n)).num_hours();
+
+            if hours > 12 {
+                pipeline.add_error("Pipeline has been pending for over 12 hours.")?;
+                let _ = pipeline.send_email(
+                    "OGV-Dating Error",
+                    "Pipeline has been pending for over 12 hours.",
+                    true
+                ).await;
+                return Ok("stale");
+            }
+
+            return Ok("pending");
         }
     }
 
-    Ok(())
+    Ok("no action")
 }
 
-fn check_for_fail() -> Result<(), Box<dyn std::error::Error>> {
-    //
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    Ok(())
+    #[tokio::test]
+    async fn ogv_can_be_stale() {
+        let locations = load_locations::read("locations.test.json", true).unwrap();
+
+        let data: OgvAPI = OgvAPI {
+            id: "123".to_string(),
+            created_at: "2024-06-01T15:24:15.766Z".to_string(),
+            job_id: "results-named".to_string(),
+            results_format: "zip".to_string(),
+            uploads: vec![],
+            conversion: HashMap::new(),
+            email: "".to_string(),
+            submit: false,
+            pending: true,
+            processing_error: false,
+        };
+
+        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+
+        let result = init(&pipeline).await.unwrap();
+
+        assert_eq!(result, "stale");
+    }
 }

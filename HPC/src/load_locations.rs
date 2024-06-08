@@ -11,14 +11,20 @@ pub struct PipelineKeys {
     pub intact: String,
 }
 
-impl Index<&str> for PipelineKeys {
+#[derive(Clone, Copy)]
+pub enum PipelineType {
+    Ogv,
+    Tcs,
+    Intact,
+}
+
+impl Index<PipelineType> for PipelineKeys {
     type Output = String;
-    fn index(&self, index: &str) -> &Self::Output {
+    fn index(&self, index: PipelineType) -> &Self::Output {
         match index {
-            "ogv" => &self.ogv,
-            "tcs" => &self.tcs,
-            "intact" => &self.intact,
-            _ => panic!("Invalid PipelineKeys key."),
+            PipelineType::Ogv => &self.ogv,
+            PipelineType::Tcs => &self.tcs,
+            PipelineType::Intact => &self.intact,
         }
     }
 }
@@ -37,6 +43,7 @@ pub struct Locations {
     pub is_dev: Option<bool>,
     pub ogv_base_path: String,
     pub intactness_base_path: String,
+    pub api_key: String,
 }
 
 pub fn read(file_path: &str, is_dev: bool) -> Result<Locations, Box<dyn std::error::Error>> {
@@ -46,4 +53,20 @@ pub fn read(file_path: &str, is_dev: bool) -> Result<Locations, Box<dyn std::err
     json.is_dev = Some(is_dev);
 
     Ok(json)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_read() {
+        let file_path = "locations.dev.json";
+        let is_dev = true;
+        let locations = read(file_path, is_dev).unwrap();
+
+        assert!(locations.api_url[PipelineType::Ogv].contains("api"));
+        assert!(locations.api_url[PipelineType::Tcs].contains("api"));
+        assert!(locations.api_url[PipelineType::Intact].contains("api"));
+    }
 }
