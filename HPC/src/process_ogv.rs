@@ -26,12 +26,10 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error
                 pipeline.add_log("OGV pipeline initialized.")?;
             }
             Err(e) => {
-                pipeline.add_error(&format!("Error initializing OGV pipeline: {:?}", e))?;
-                let _ = pipeline.send_email(
+                let _ = pipeline.add_error(
                     "OGV-Dating Error",
-                    &format!("Error initializing OGV pipeline:\n\n {:?}", e),
-                    true
-                ).await;
+                    &format!("Error initializing OGV pipeline: {:?}", e)
+                ).await?;
             }
         }
 
@@ -41,12 +39,20 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error
             "{}/results/dating/*/*.csv",
             &pipeline.scratch_dir
         );
+
+        let mut unique_lib_names: Vec<String> = pipeline.data.uploads
+            .iter()
+            .map(|u| u.lib_name.clone())
+            .collect();
+
+        // remove duplicates from unique_lib_names
+        unique_lib_names.sort();
+        unique_lib_names.dedup();
+
         let processing_finished =
-            glob::glob(finished_files_pattern).into_iter().count() == pipeline.data.uploads.len();
+            glob::glob(finished_files_pattern).into_iter().count() == unique_lib_names.len();
 
         if pipeline.data.pending && processing_finished {
-            println!("TODO: Begin OGV post processing.");
-            return Ok("post_processing");
             pipeline.add_log("Pipeline has processed. Wrapping it up.")?;
             let _ = post_processing_ogv::init_post_processing(pipeline).await;
             return Ok("post_processing");
@@ -60,13 +66,11 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error
 
             let hours = Utc::now().signed_duration_since(Utc.from_utc_datetime(&n)).num_hours();
 
-            if hours > 12 {
-                pipeline.add_error("Pipeline has been pending for over 12 hours.")?;
-                let _ = pipeline.send_email(
+            if hours > 24 {
+                let _ = pipeline.add_error(
                     "OGV-Dating Error",
-                    "Pipeline has been pending for over 12 hours.",
-                    true
-                ).await;
+                    "Pipeline has been pending for over 12 hours."
+                ).await?;
                 return Ok("stale");
             }
 

@@ -16,6 +16,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let is_dev = args.iter().any(|e| e.contains("is_dev"));
 
+    if is_dev {
+        env::var("PORT").unwrap_or_else(|_| {
+            println!("Dev not running in the docker shell. Exiting.");
+            exit(1);
+        });
+    }
+
     let locations_file = if is_dev { "./locations.dev.json" } else { "./locations.json" };
     let locations = load_locations::read(locations_file, is_dev).unwrap_or_else(|e| {
         eprintln!("Error loading locations: {:?}", e);

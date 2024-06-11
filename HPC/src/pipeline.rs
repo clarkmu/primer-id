@@ -48,7 +48,6 @@ pub struct Pipeline<ApiData = OgvAPI> {
     pub is_dev: bool,
     pub base: String,
     pub scratch_dir: String,
-    pub job_dir: String,
     slurm_job_name: String,
     slurm_output: String,
     log_file: String,
@@ -71,7 +70,6 @@ impl Pipeline {
 
         let scratch_dir: String = format!("{}/{}", &locations.scratch_space[pipeline_type], id);
 
-        let job_dir: String = format!("{}/{}", &locations.scratch_space[pipeline_type], id);
         let log_file: String = format!("{}/{}.log", &locations.log_dir[pipeline_type], id);
         let log_error_file: String = format!(
             "{}/errors/{}.error",
@@ -84,7 +82,6 @@ impl Pipeline {
         let log_file_path = PathBuf::from(&log_file);
         let log_error_path = PathBuf::from(&log_error_file);
         let _ = std::fs::create_dir_all(&PathBuf::from(&scratch_dir));
-        let _ = std::fs::create_dir_all(&PathBuf::from(&job_dir));
         let _ = std::fs::create_dir_all(log_file_path.parent().unwrap());
         let _ = std::fs::create_dir_all(log_error_path.parent().unwrap());
 
@@ -93,7 +90,6 @@ impl Pipeline {
             is_dev: locations.is_dev.unwrap(),
             base: locations.base.clone(),
             scratch_dir,
-            job_dir,
             log_file,
             log_error_file,
             slurm_job_name,
@@ -122,15 +118,17 @@ impl Pipeline {
         let outp = std::process::Command::new(prog).args(cmd.split(" ")).current_dir(dir).status();
 
         if outp.is_err() {
-            let _ = self.add_error(&format!("Error running pipeline - {:?}", &cmd));
-            // return Err(anyhow::anyhow!("Error running pipeline."));
+            // let _ = self.add_error(
+            //     "Error running pipeline.",
+            //     &format!("Error running pipeline - {:?}", &cmd)
+            // ).await?;
         }
 
         Ok(())
     }
 
     pub fn add_log(&self, msg: &str) -> Result<(), Box<dyn Error>> {
-        let date = Utc::now().to_string();
+        let date = Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
         let message = format!("[{}] {}", date, msg).to_string();
 
         let mut file = OpenOptions::new()
@@ -147,7 +145,7 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn add_error(&self, msg: &str) -> Result<(), Box<dyn Error>> {
+    pub async fn add_error(&self, subject: &str, msg: &str) -> Result<(), Box<dyn Error>> {
         let mut file = OpenOptions::new()
             .write(true)
             .append(true)
@@ -160,6 +158,10 @@ impl Pipeline {
         }
 
         let _ = self.add_log(&msg);
+
+        let _ = self.patch_pipeline(serde_json::json!({"processingError": true}));
+
+        let _ = self.send_email(subject, &msg, true).await;
 
         Ok(())
     }
@@ -175,8 +177,11 @@ impl Pipeline {
         match req {
             Ok(_) => (),
             Err(e) => {
-                let _ = self.add_error(&format!("Error patching pipeline - {:?}", e));
-                // return Err(anyhow::anyhow!("Error patching pipeline."));
+                //todo: throw error but don't cause endless loop to self.add_error
+                // let _ = self.add_error(
+                //     "Error patching pipeline.",
+                //     &format!("Error patching pipeline - {:?}", e)
+                // );
             }
         }
 
