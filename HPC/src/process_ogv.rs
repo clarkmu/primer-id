@@ -5,31 +5,18 @@ use crate::{
     load_locations::{ self, Locations, PipelineType },
     pipeline::{ self, OgvAPI, Pipeline },
 };
+use anyhow::{ Context, Result, Error };
 
 mod initialize_ogv;
 mod post_processing_ogv;
 
-pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error>> {
+pub async fn init(pipeline: &Pipeline) -> Result<&str> {
     let is_first_run =
         pipeline.data.submit && !pipeline.data.pending && !pipeline.data.processing_error;
 
     if is_first_run {
         pipeline.add_log("Initializing OGV pipeline.")?;
-        let initialized: Result<(), Box<dyn std::error::Error>> = initialize_ogv::initialize_run(
-            pipeline
-        ).await;
-
-        match initialized {
-            Ok(_) => {
-                pipeline.add_log("OGV pipeline initialized.")?;
-            }
-            Err(e) => {
-                let _ = pipeline.add_error(
-                    "OGV-Dating Error",
-                    &format!("Error initializing OGV pipeline: {:?}", e)
-                ).await?;
-            }
-        }
+        initialize_ogv::initialize_run(pipeline).await.context("Failed to initialize pipeline.")?;
 
         return Ok("init");
     } else {
@@ -42,6 +29,7 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error
             .iter()
             .map(|u| u.lib_name.clone())
             .collect();
+
         // remove duplicates from unique_lib_names
         unique_lib_names.sort();
         unique_lib_names.dedup();
@@ -52,7 +40,10 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error
 
         if pipeline.data.pending && processing_finished {
             pipeline.add_log("Pipeline has processed. Wrapping it up.")?;
-            let _ = post_processing_ogv::init_post_processing(pipeline).await;
+            post_processing_ogv
+                ::init_post_processing(pipeline).await
+                .context("Failed at OGV post processing.")?;
+
             return Ok("post_processing");
         } else {
             pipeline.add_log("Checking for failure.")?;
@@ -60,15 +51,14 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error
             let n = NaiveDateTime::parse_from_str(
                 &pipeline.data.created_at,
                 "%Y-%m-%dT%H:%M:%S%.fZ"
-            ).unwrap();
+            )?;
 
             let hours = Utc::now().signed_duration_since(Utc.from_utc_datetime(&n)).num_hours();
 
             if hours > 24 {
-                let _ = pipeline.add_error(
-                    "OGV-Dating Error",
-                    "Pipeline has been pending for over 12 hours."
-                ).await?;
+                //todo send email
+                return Ok("stale");
+            } else if hours > 12 {
                 return Ok("stale");
             }
 

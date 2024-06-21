@@ -5,6 +5,7 @@
 use std::{ env, process::exit };
 use load_locations::PipelineType;
 use pipeline::{ OgvAPI, Pipeline };
+use anyhow::Result;
 
 mod pipeline;
 mod process_ogv;
@@ -12,7 +13,7 @@ mod load_locations;
 mod lock_file;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     let is_dev = args.iter().any(|e| e.contains("is_dev"));
 
@@ -32,8 +33,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let lock_file: lock_file::LockFile = lock_file::LockFile::new(
         format!("{}/lock_process", &locations.base)
     );
-    if lock_file.exists().unwrap() {
-        if lock_file.is_stale().unwrap() {
+    if lock_file.exists()? {
+        if lock_file.is_stale()? {
             //todo: send a notification email to locations.admin_email
             return Ok(());
         }
@@ -41,16 +42,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("\n\nProcess currently running.\nExiting.\n\n");
         exit(1);
     } else {
-        let _ = lock_file.create();
+        lock_file.create()?;
     }
 
     let ogvs: Vec<OgvAPI> = match pipeline::get_api(&locations.api_url[PipelineType::Ogv]).await {
         Ok(data) => data,
         Err(e) => {
             println!("{}", e);
-            let empty_vec: Vec<OgvAPI> = serde_json
-                ::from_value(serde_json::Value::Array(vec![]))
-                .unwrap();
+            let empty_vec: Vec<OgvAPI> = serde_json::from_value(serde_json::Value::Array(vec![]))?;
             empty_vec
         }
     };
@@ -60,8 +59,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         match process_ogv::init(&pipeline).await {
             Ok(_) => {}
             Err(e) => {
-                println!("Error processing OGV: {:?}", e);
-                pipeline.add_error("OGV Error", &e.to_string()).await?;
+                let subject = format!("OGV Error: {}", &pipeline.data.id);
+                let msg = &e.to_string();
+                pipeline.add_error(&subject, msg).await?;
+                println!("{}: {}", subject, msg);
             }
         }
     }

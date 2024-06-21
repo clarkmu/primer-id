@@ -3,19 +3,24 @@ use std::fs::OpenOptions;
 use std::collections::HashMap;
 use crate::pipeline::{ Pipeline, Upload };
 use serde_json::Value;
+use anyhow::{ Result, Context };
 
-pub async fn initialize_run(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn initialize_run(pipeline: &Pipeline) -> Result<()> {
     //email receipt
     pipeline.add_log("Emailing receipt.")?;
     let receipt = generate_receipt(&pipeline.data.conversion, &pipeline.data.uploads);
-    pipeline.send_email(&"OGV-Dating Submission", &receipt, true).await?;
+    pipeline
+        .send_email(&"OGV-Dating Submission", &receipt, true).await
+        .context("Failed to send email!")?;
 
     let download_to: &str = &format!("{}/data", &pipeline.scratch_dir);
-    pipeline.bucket_download("*", download_to, true)?;
+    pipeline.bucket_download("*", download_to, true).context("Failed to download bucket files")?;
 
     //generate samples file
     let samples_file_location = format!("{}/samples.json", &pipeline.scratch_dir);
-    generate_samples_file(&pipeline.data.uploads, &samples_file_location)?;
+    generate_samples_file(&pipeline.data.uploads, &samples_file_location).context(
+        "Failed to generate samples file."
+    )?;
 
     //run OGV
     let run_pipeline_command: String = format!(
@@ -28,7 +33,9 @@ pub async fn initialize_run(pipeline: &Pipeline) -> Result<(), Box<dyn std::erro
 
     pipeline.init_sbatch(run_pipeline_command)?;
 
-    pipeline.patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await?;
+    pipeline
+        .patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await
+        .context("Failed to patch pipeline.")?;
 
     Ok(())
 }
@@ -59,10 +66,7 @@ fn generate_receipt(conversion: &HashMap<String, String>, uploads: &Vec<Upload>)
     receipt
 }
 
-fn generate_samples_file(
-    uploads: &Vec<Upload>,
-    samples_file_location: &str
-) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_samples_file(uploads: &Vec<Upload>, samples_file_location: &str) -> Result<()> {
     #[derive(serde::Serialize)]
     struct Samples {
         samples: Vec<String>,
@@ -74,9 +78,15 @@ fn generate_samples_file(
         samples_json.samples.push(format!("{}/{}", &upload.lib_name, &upload.file_name));
     }
 
-    let mut file = OpenOptions::new().write(true).create(true).open(&samples_file_location)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(&samples_file_location)
+        .context("Failed to create/open samples file.")?;
 
-    writeln!(file, "{}", serde_json::to_string(&samples_json)?)?;
+    writeln!(file, "{}", serde_json::to_string(&samples_json)?).context(
+        "Failed to convert samples to string and write to file."
+    )?;
 
     Ok(())
 }

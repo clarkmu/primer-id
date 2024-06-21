@@ -1,13 +1,16 @@
 use std::{ collections::HashMap, fs::File, io::{ BufWriter, Write }, process::Command };
 use crate::pipeline::Pipeline;
+use anyhow::{ Result, Context };
 
-pub async fn init_post_processing(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn init_post_processing(pipeline: &Pipeline) -> Result<()> {
     let results_location = format!("{}/results", &pipeline.scratch_dir);
     let summary_location = format!("{}/summary.csv", &results_location);
     let conversion_location = format!("{}/conversion.json", &pipeline.scratch_dir);
 
     //create conversion
-    write_conversion_to_file(pipeline.data.conversion.clone(), &conversion_location)?;
+    write_conversion_to_file(pipeline.data.conversion.clone(), &conversion_location).context(
+        "Failed to create conversion file."
+    )?;
     //run conversion
     let command = format!(
         "conda run -n ogv python3 {}/scripts/result-summary.py -d {} -j {} -o {}",
@@ -16,17 +19,28 @@ pub async fn init_post_processing(pipeline: &Pipeline) -> Result<(), Box<dyn std
         &conversion_location,
         &summary_location
     );
-    pipeline.run_command(&command, &pipeline.scratch_dir)?;
+
+    pipeline
+        .run_command(&command, &pipeline.scratch_dir)
+        .context("Failed to run result-summary.py")?;
 
     // compress results
-    let (location, compressed_filename) = compress_results(&pipeline)?;
+    let (location, compressed_filename) = compress_results(&pipeline).context(
+        "Failed to compress files."
+    )?;
 
     // upload and get signed url to compressed results
-    pipeline.bucket_upload(&location, &compressed_filename)?;
-    let signed_url = pipeline.bucket_signed_url(&compressed_filename)?;
+    pipeline
+        .bucket_upload(&location, &compressed_filename)
+        .context("Failed to upload files to bucket.")?;
+    let signed_url = pipeline
+        .bucket_signed_url(&compressed_filename)
+        .context("Failed to generate a signed url.")?;
 
     // generate receipt
-    let body = generate_receipt(signed_url, &pipeline.scratch_dir)?;
+    let body = generate_receipt(signed_url, &pipeline.scratch_dir).context(
+        "Failed to generate an email receipt"
+    )?;
 
     //send email
     pipeline.send_email(&"OGV-Dating Results", &body, false).await?;
@@ -41,7 +55,7 @@ pub async fn init_post_processing(pipeline: &Pipeline) -> Result<(), Box<dyn std
 fn write_conversion_to_file(
     conversion: HashMap<String, String>,
     conversion_location: &str
-) -> Result<bool, Box<dyn std::error::Error>> {
+) -> Result<bool> {
     #[derive(serde::Serialize)]
     #[allow(non_snake_case)]
     struct Conversion {
@@ -68,7 +82,7 @@ fn write_conversion_to_file(
     Ok(true)
 }
 
-fn compress_results(pipeline: &Pipeline) -> Result<(String, String), Box<dyn std::error::Error>> {
+fn compress_results(pipeline: &Pipeline) -> Result<(String, String)> {
     let extension: &str = if &pipeline.data.results_format == "tar" { ".tar.gz" } else { ".zip" };
     let results_id = if pipeline.data.job_id.is_empty() {
         &pipeline.data.id
@@ -98,11 +112,11 @@ fn compress_results(pipeline: &Pipeline) -> Result<(String, String), Box<dyn std
     Ok((location, compressed_filename))
 }
 
-fn generate_receipt(
-    signed_url: String,
-    scratch_dir: &str
-) -> Result<String, Box<dyn std::error::Error>> {
-    let date = chrono::Utc::now().checked_add_signed(chrono::Duration::days(7)).unwrap();
+fn generate_receipt(signed_url: String, scratch_dir: &str) -> Result<String> {
+    let date = chrono::Utc
+        ::now()
+        .checked_add_signed(chrono::Duration::days(7))
+        .ok_or(anyhow::anyhow!("Failed to generate expiration date."))?;
 
     let download_link = format!(
         "<a href='{}' style='font-size: 16px;'>Download Results</a><br><small>This link expires {}</small>",
@@ -115,7 +129,9 @@ fn generate_receipt(
     let error_file_location = format!("{}/error", scratch_dir);
     //if error_file_location exists, get file contents
     if std::path::Path::new(&error_file_location).exists() {
-        let error_file = std::fs::read_to_string(&error_file_location)?;
+        let error_file = std::fs
+            ::read_to_string(&error_file_location)
+            .context("Failed to read error file")?;
         error = format!(
             "<div style='color: lightcoral; padding: 5px; font-weight: bold;'>{}</div>",
             &error_file

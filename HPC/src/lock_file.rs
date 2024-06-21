@@ -3,7 +3,7 @@ use std::error::Error;
 use std::io::Write;
 use chrono::Utc;
 use std::time::{ SystemTime, Duration };
-use anyhow::Result;
+use anyhow::{ Context, Result };
 
 pub struct LockFile {
     file_path: String,
@@ -16,14 +16,15 @@ impl LockFile {
         }
     }
     pub fn create(&self) -> Result<()> {
-        // File::create(&self.file_path)?;
         let date = Utc::now().to_string();
 
-        let mut file = OpenOptions::new().write(true).create(true).open(&self.file_path).unwrap();
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(&self.file_path)
+            .with_context(|| { format!("Could not create lock file: {}", &self.file_path) })?;
 
-        if let Err(e) = write!(file, "{:?}", &date) {
-            eprintln!("Couldn't write to file: {}", e);
-        }
+        write!(file, "{:?}", &date)?;
 
         Ok(())
     }
@@ -59,6 +60,8 @@ mod tests {
 
     #[test]
     fn test_lock_file() {
+        // create a lock file, check if it exists, delete it, check if it exists
+
         let lock_file = LockFile::new("test.lock".to_string());
 
         let exists_false = lock_file.exists().unwrap();

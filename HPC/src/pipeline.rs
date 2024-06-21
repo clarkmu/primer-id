@@ -10,6 +10,7 @@ use lettre::{
     SmtpTransport,
 };
 use std::error::Error;
+use anyhow::{ Result, Context };
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct Upload {
@@ -105,7 +106,7 @@ impl Pipeline {
         }
     }
 
-    pub fn run_command(&self, cmd: &str, current_dir: &str) -> Result<(), Box<dyn Error>> {
+    pub fn run_command(&self, cmd: &str, current_dir: &str) -> Result<()> {
         self.add_log(&format!("Exec: {:?}", &cmd))?;
 
         let dir = if current_dir.is_empty() { &self.base } else { current_dir };
@@ -114,19 +115,12 @@ impl Pipeline {
         let program: &str = commands[0];
         let args: Vec<&str> = commands[1..].to_vec();
 
-        let outp = std::process::Command::new(program).args(args).current_dir(dir).status();
-
-        if outp.is_err() {
-            // let _ = self.add_error(
-            //     "Error running pipeline.",
-            //     &format!("Error running pipeline - {:?}", &cmd)
-            // ).await?;
-        }
+        let outp = std::process::Command::new(program).args(args).current_dir(dir).status()?;
 
         Ok(())
     }
 
-    pub fn add_log(&self, msg: &str) -> Result<(), Box<dyn Error>> {
+    pub fn add_log(&self, msg: &str) -> Result<()> {
         let date = Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
         let message = format!("[{}] {}", date, msg).to_string();
 
@@ -143,7 +137,7 @@ impl Pipeline {
         Ok(())
     }
 
-    pub async fn add_error(&self, subject: &str, msg: &str) -> Result<(), Box<dyn Error>> {
+    pub async fn add_error(&self, subject: &str, msg: &str) -> Result<()> {
         let mut file = OpenOptions::new()
             .write(true)
             .append(true)
@@ -163,34 +157,18 @@ impl Pipeline {
         Ok(())
     }
 
-    pub async fn patch_pipeline(&self, data: Value) -> Result<(), Box<dyn Error>> {
+    pub async fn patch_pipeline(&self, data: Value) -> Result<()> {
         let req = reqwest::Client
             ::new()
             .patch(&self.api_url)
             .json(&serde_json::json!({"_id": self.data.id, "patch": data}))
             .header("x-api-key", &self.api_key)
-            .send().await;
-
-        match req {
-            Ok(_) => (),
-            Err(e) => {
-                //todo: throw error but don't cause endless loop to self.add_error
-                // let _ = self.add_error(
-                //     "Error patching pipeline.",
-                //     &format!("Error patching pipeline - {:?}", e)
-                // );
-            }
-        }
+            .send().await?;
 
         Ok(())
     }
 
-    pub async fn send_email(
-        &self,
-        subject: &str,
-        body: &str,
-        include_admin: bool
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn send_email(&self, subject: &str, body: &str, include_admin: bool) -> Result<()> {
         if self.is_dev {
             println!("Email: {} - {}", subject, body);
             return Ok(());
@@ -218,7 +196,7 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn init_sbatch(&self, mut cmd: String) -> Result<(), Box<dyn Error>> {
+    pub fn init_sbatch(&self, mut cmd: String) -> Result<()> {
         if self.is_dev {
             cmd = format!("tsp -L {} {}", self.slurm_job_name, &cmd);
         } else {
@@ -240,7 +218,7 @@ impl Pipeline {
         from: &str,
         to_local: &str,
         download_recursive: bool
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<()> {
         // if data_dir does not exist, create it
         if std::path::Path::new(from).exists() {
             return Ok(());
@@ -262,14 +240,14 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<(), Box<dyn Error>> {
+    pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<()> {
         let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.data.id, to);
         let gs_cp_cmd = format!("gsutil cp {} {}", &from_local, to_bucket);
         self.run_command(&gs_cp_cmd, "")?;
         Ok(())
     }
 
-    pub fn bucket_signed_url(&self, location: &str) -> Result<String, Box<dyn Error>> {
+    pub fn bucket_signed_url(&self, location: &str) -> Result<String> {
         let bucket_location = format!("{}/{}/{}", &self.bucket_url, &self.data.id, location);
 
         let args_str = format!("signurl -d 7d {} {}", self.private_key_location, bucket_location);
@@ -295,9 +273,7 @@ impl Pipeline {
     }
 }
 
-pub async fn get_api<State: for<'de> serde::Deserialize<'de>>(
-    url: &str
-) -> Result<State, Box<dyn std::error::Error>> {
+pub async fn get_api<State: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<State> {
     let response = reqwest::get(url).await;
     let json = response?.json::<serde_json::Value>().await;
     let data: State = serde_json::from_value(json?)?;
