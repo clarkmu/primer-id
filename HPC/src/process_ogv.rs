@@ -5,10 +5,8 @@ use crate::{
     load_locations::{ self, Locations, PipelineType },
     pipeline::{ self, OgvAPI, Pipeline },
 };
-use glob::glob;
 
 mod initialize_ogv;
-
 mod post_processing_ogv;
 
 pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error>> {
@@ -44,13 +42,13 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str, Box<dyn std::error::Error
             .iter()
             .map(|u| u.lib_name.clone())
             .collect();
-
         // remove duplicates from unique_lib_names
         unique_lib_names.sort();
         unique_lib_names.dedup();
 
-        let processing_finished =
-            glob::glob(finished_files_pattern).into_iter().count() == unique_lib_names.len();
+        let c = glob::glob(finished_files_pattern)?.into_iter().collect::<Vec<_>>().len();
+
+        let processing_finished = c > 0 && c == unique_lib_names.len();
 
         if pipeline.data.pending && processing_finished {
             pipeline.add_log("Pipeline has processed. Wrapping it up.")?;

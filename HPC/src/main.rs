@@ -44,11 +44,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = lock_file.create();
     }
 
-    let ogvs: Vec<OgvAPI> = pipeline::get_api(&locations.api_url[PipelineType::Ogv]).await.unwrap();
+    let ogvs: Vec<OgvAPI> = match pipeline::get_api(&locations.api_url[PipelineType::Ogv]).await {
+        Ok(data) => data,
+        Err(e) => {
+            println!("{}", e);
+            let empty_vec: Vec<OgvAPI> = serde_json
+                ::from_value(serde_json::Value::Array(vec![]))
+                .unwrap();
+            empty_vec
+        }
+    };
+
     for ogv in ogvs {
         let pipeline: Pipeline = Pipeline::new(ogv, &locations, PipelineType::Ogv);
-        let _ = process_ogv::init(&pipeline).await?;
+        match process_ogv::init(&pipeline).await {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Error processing OGV: {:?}", e);
+                pipeline.add_error("OGV Error", &e.to_string()).await?;
+            }
+        }
     }
+
+    println!("All processed.");
 
     //process_intactness.await
     //process_tcsdr.await

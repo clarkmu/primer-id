@@ -82,3 +82,9 @@ run pipeline by setting conda environment now that we have multiple
 conda run -n intactness --cwd /path/to/Intactness-Pipeline \
     python3 -m intactness -in /path/to/file -email email@example.com
 ```
+
+# Debugging
+
+Use VSCode's Remote Explorer tab to attach to Docker container `primer-id`. In the new VSCode window, the debugging tab is now usable.
+
+LLDB is also installed in this container for running test debugs.

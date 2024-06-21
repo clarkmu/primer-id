@@ -7,43 +7,29 @@ pub async fn init_post_processing(pipeline: &Pipeline) -> Result<(), Box<dyn std
     let conversion_location = format!("{}/conversion.json", &pipeline.scratch_dir);
 
     //create conversion
-    let wrote_conversion = write_conversion_to_file(
-        pipeline.data.conversion.clone(),
-        &conversion_location
-    );
-    match wrote_conversion {
-        Ok(_) => {
-            pipeline.add_log("Conversion file written.")?;
-        }
-        Err(e) => {
-            let _ = pipeline.add_error(
-                "OGV-Dating Error",
-                &format!("Error writing conversion file: {:?}", e)
-            ).await?;
-        }
-    }
-
+    write_conversion_to_file(pipeline.data.conversion.clone(), &conversion_location)?;
     //run conversion
     let command = format!(
-        "run -n ogv python3 {}/scripts/result-summary.py -d {} -j {} -o {}",
+        "conda run -n ogv python3 {}/scripts/result-summary.py -d {} -j {} -o {}",
         &pipeline.ogv_base_path,
         format!("{}/results/dating/", &pipeline.scratch_dir),
         &conversion_location,
         &summary_location
     );
-    let _ = pipeline.run_command(&command, &pipeline.scratch_dir, "conda")?;
+    pipeline.run_command(&command, &pipeline.scratch_dir)?;
 
     // compress results
     let (location, compressed_filename) = compress_results(&pipeline)?;
 
-    // upload and return signed url
-    let signed_url = upload_results(&pipeline, &compressed_filename, &location).await?;
+    // upload and get signed url to compressed results
+    pipeline.bucket_upload(&location, &compressed_filename)?;
+    let signed_url = pipeline.bucket_signed_url(&compressed_filename)?;
 
     // generate receipt
-    let body = generate_receipt(signed_url, &pipeline.scratch_dir).unwrap();
+    let body = generate_receipt(signed_url, &pipeline.scratch_dir)?;
 
     //send email
-    let _ = pipeline.send_email(&"OGV-Dating Results", &body, false).await;
+    pipeline.send_email(&"OGV-Dating Results", &body, false).await?;
 
     pipeline.patch_pipeline(serde_json::json!({
         "pending": false,
@@ -98,52 +84,18 @@ fn compress_results(pipeline: &Pipeline) -> Result<(String, String), Box<dyn std
     let _ = std::fs::remove_file(&location);
 
     if &pipeline.data.results_format == "tar" {
-        let output_location = format!("{}/{}", &pipeline.scratch_dir, "results");
-        let tar_command = format!("-zcvf {} -C {} .", &location, &output_location);
-        pipeline.run_command(&tar_command, &pipeline.scratch_dir, "tar")?;
+        let results_location = format!("{}/{}", &pipeline.scratch_dir, "results");
+        let tar_command = format!("tar -zcvf {} -C {} .", &location, &results_location);
+        pipeline.run_command(&tar_command, &pipeline.scratch_dir)?;
     } else {
-        let mv_cmd = format!("-r results {}", &filename);
-        pipeline.run_command(&mv_cmd, &pipeline.scratch_dir, "cp")?;
-
-        let zip_cmd = format!("-r {} {}", &compressed_filename, &filename);
-        pipeline.run_command(&zip_cmd, &pipeline.scratch_dir, "zip")?;
+        pipeline.run_command(&format!("cp -r results {}", &filename), &pipeline.scratch_dir)?;
+        pipeline.run_command(
+            &format!("zip -r {} {}", &compressed_filename, &filename),
+            &pipeline.scratch_dir
+        )?;
     }
 
     Ok((location, compressed_filename))
-}
-
-async fn upload_results(
-    pipeline: &Pipeline,
-    compressed_filename: &str,
-    location: &str
-) -> Result<String, Box<dyn std::error::Error>> {
-    let gs_location = format!(
-        "{}/{}/{}",
-        pipeline.bucket_url,
-        pipeline.data.id,
-        compressed_filename
-    );
-
-    let gs_cp_cmd = format!("cp {} {}", location, &gs_location);
-    pipeline.run_command(&gs_cp_cmd, &pipeline.scratch_dir, "gsutil")?;
-
-    //remove directory location
-    let _ = std::fs::remove_dir_all(location);
-
-    let url = Command::new("gsutil")
-        .arg(format!("signurl -d 7d {} {}", pipeline.private_key_location, &gs_location))
-        .output()?;
-
-    let command_output = format!("{:?}", &url.stdout);
-
-    let signed_url: String = command_output
-        .split("https://")
-        .collect::<Vec<&str>>()
-        .pop()
-        .unwrap()
-        .to_string();
-
-    Ok(signed_url)
 }
 
 fn generate_receipt(
@@ -181,7 +133,7 @@ fn generate_receipt(
 
 #[cfg(test)]
 mod tests {
-    use std::fs::OpenOptions;
+    use std::fs::{ OpenOptions, write };
 
     use crate::{ load_locations::{ self, PipelineType }, pipeline::OgvAPI };
 
@@ -200,7 +152,7 @@ mod tests {
     }
 
     #[test]
-    fn it_compresses_tar_unnamed() {
+    fn test_compresses_tar_unnamed() {
         let locations = load_locations::read("locations.test.json", true).unwrap();
 
         let data: OgvAPI = OgvAPI {
@@ -239,7 +191,7 @@ mod tests {
     }
 
     #[test]
-    fn it_compresses_zip_named() {
+    fn test_compresses_zip_named() {
         let locations = load_locations::read("locations.test.json", true).unwrap();
 
         let data: OgvAPI = OgvAPI {

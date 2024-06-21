@@ -6,19 +6,12 @@ use serde_json::Value;
 
 pub async fn initialize_run(pipeline: &Pipeline) -> Result<(), Box<dyn std::error::Error>> {
     //email receipt
-    let _ = pipeline.add_log("Emailing receipt.");
+    pipeline.add_log("Emailing receipt.")?;
     let receipt = generate_receipt(&pipeline.data.conversion, &pipeline.data.uploads);
-    let _ = pipeline.send_email(&"OGV-Dating Submission", &receipt, true).await;
+    pipeline.send_email(&"OGV-Dating Submission", &receipt, true).await?;
 
-    //transfer files
-    let download_cmd = download_files_command(
-        &pipeline.data.id,
-        &pipeline.scratch_dir,
-        &pipeline.bucket_url
-    );
-    if !download_cmd.is_empty() {
-        pipeline.run_command(&download_cmd, "", "")?;
-    }
+    let download_to: &str = &format!("{}/data", &pipeline.scratch_dir);
+    pipeline.bucket_download("*", download_to, true)?;
 
     //generate samples file
     let samples_file_location = format!("{}/samples.json", &pipeline.scratch_dir);
@@ -26,16 +19,16 @@ pub async fn initialize_run(pipeline: &Pipeline) -> Result<(), Box<dyn std::erro
 
     //run OGV
     let run_pipeline_command: String = format!(
-        "run -n ogv snakemake --cores 4 --config job_dir='{}/' --configfile {} --directory {}/ --keep-going --snakefile {}/Snakefile",
+        "conda run -n ogv snakemake --cores 4 --config job_dir='{}/' --configfile {} --directory {}/ --keep-going --snakefile {}/Snakefile",
         &pipeline.scratch_dir,
         samples_file_location,
         &pipeline.ogv_base_path,
         &pipeline.ogv_base_path
     );
 
-    let _ = pipeline.init_sbatch(run_pipeline_command, "conda");
+    pipeline.init_sbatch(run_pipeline_command)?;
 
-    let _ = pipeline.patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await;
+    pipeline.patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await?;
 
     Ok(())
 }
@@ -66,24 +59,6 @@ fn generate_receipt(conversion: &HashMap<String, String>, uploads: &Vec<Upload>)
     receipt
 }
 
-fn download_files_command(id: &String, scratch_dir: &String, bucket_url: &String) -> String {
-    let data_dir: &str = &format!("{}/data", scratch_dir);
-
-    // if data_dir does not exist, create it
-    if std::path::Path::new(&data_dir).exists() {
-        return String::from("");
-    }
-
-    let _ = std::fs::create_dir_all(&data_dir);
-
-    //todo count glob , below does not appear to be correct (c=1 when empty directory)
-    // let output_pattern: &str = &format!("{}/**/*.fasta", &pipeline.scratch_dir);
-    // let c = glob::glob(output_pattern).into_iter().count();
-
-    let cmd: String = format!("gsutil cp -r {}/{}/* {}", bucket_url, id, data_dir);
-    cmd
-}
-
 fn generate_samples_file(
     uploads: &Vec<Upload>,
     samples_file_location: &str
@@ -99,15 +74,9 @@ fn generate_samples_file(
         samples_json.samples.push(format!("{}/{}", &upload.lib_name, &upload.file_name));
     }
 
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(&samples_file_location)
-        .unwrap();
+    let mut file = OpenOptions::new().write(true).create(true).open(&samples_file_location)?;
 
-    if let Err(e) = writeln!(file, "{}", serde_json::to_string(&samples_json).unwrap()) {
-        eprintln!("Couldn't write to file: {}", e);
-    }
+    writeln!(file, "{}", serde_json::to_string(&samples_json)?)?;
 
     Ok(())
 }

@@ -11,7 +11,7 @@ WORKDIR /app
 RUN cargo install cargo-watch
 
 RUN apt update && apt upgrade -y
-RUN apt install software-properties-common wget curl libcurl4 git vim task-spooler zip -y
+RUN apt install software-properties-common wget curl libcurl4 git vim task-spooler zip lldb -y
 
 #Install GCP CLI for file transfers
 RUN curl -sSL https://sdk.cloud.google.com | bash

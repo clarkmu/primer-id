@@ -54,9 +54,9 @@ pub struct Pipeline<ApiData = OgvAPI> {
     log_error_file: String,
     pub data: ApiData,
     pub ogv_base_path: String,
-    pub private_key_location: String,
+    private_key_location: String,
     api_url: String,
-    pub bucket_url: String,
+    bucket_url: String,
     admin_email: String,
     api_key: String,
 }
@@ -81,6 +81,7 @@ impl Pipeline {
 
         let log_file_path = PathBuf::from(&log_file);
         let log_error_path = PathBuf::from(&log_error_file);
+
         let _ = std::fs::create_dir_all(&PathBuf::from(&scratch_dir));
         let _ = std::fs::create_dir_all(log_file_path.parent().unwrap());
         let _ = std::fs::create_dir_all(log_error_path.parent().unwrap());
@@ -104,18 +105,16 @@ impl Pipeline {
         }
     }
 
-    pub fn run_command(
-        &self,
-        cmd: &str,
-        current_dir: &str,
-        program: &str
-    ) -> Result<(), Box<dyn Error>> {
-        self.add_log(&format!("Exec: {:?} {:?}", &program, &cmd))?;
+    pub fn run_command(&self, cmd: &str, current_dir: &str) -> Result<(), Box<dyn Error>> {
+        self.add_log(&format!("Exec: {:?}", &cmd))?;
 
         let dir = if current_dir.is_empty() { &self.base } else { current_dir };
-        let prog = if program.is_empty() { "bash" } else { program };
 
-        let outp = std::process::Command::new(prog).args(cmd.split(" ")).current_dir(dir).status();
+        let commands: Vec<&str> = cmd.split(" ").collect::<Vec<&str>>();
+        let program: &str = commands[0];
+        let args: Vec<&str> = commands[1..].to_vec();
+
+        let outp = std::process::Command::new(program).args(args).current_dir(dir).status();
 
         if outp.is_err() {
             // let _ = self.add_error(
@@ -135,8 +134,7 @@ impl Pipeline {
             .write(true)
             .create(true)
             .append(true)
-            .open(&self.log_file)
-            .unwrap();
+            .open(&self.log_file)?;
 
         if let Err(e) = writeln!(file, "{:?}", &message) {
             eprintln!("Couldn't write to file: {}", e);
@@ -150,8 +148,7 @@ impl Pipeline {
             .write(true)
             .append(true)
             .create(true)
-            .open(&self.log_error_file)
-            .unwrap();
+            .open(&self.log_error_file)?;
 
         if let Err(e) = writeln!(file, "{}", &msg) {
             eprintln!("Couldn't write to file: {}", e);
@@ -195,6 +192,7 @@ impl Pipeline {
         include_admin: bool
     ) -> Result<(), Box<dyn Error>> {
         if self.is_dev {
+            println!("Email: {} - {}", subject, body);
             return Ok(());
         }
 
@@ -204,50 +202,105 @@ impl Pipeline {
             to.push_str(&format!(", {}", &self.admin_email));
         }
 
-        let mailboxes: Mailboxes = to.parse().unwrap();
+        let mailboxes: Mailboxes = to.parse()?;
         let to_header: header::To = mailboxes.into();
 
         //todo from and SmtpTransport::relay
         let email = Message::builder()
-            .from("".parse().unwrap())
+            .from("".parse()?)
             .mailbox(to_header)
             .subject(subject)
             .header(ContentType::TEXT_HTML)
-            .body(String::from(body))
-            .unwrap();
+            .body(String::from(body))?;
 
-        let mailer = SmtpTransport::relay("").unwrap().build();
+        let mailer = SmtpTransport::relay("")?.build();
 
         Ok(())
     }
 
-    pub fn init_sbatch(&self, mut cmd: String, program: &str) -> Result<(), Box<dyn Error>> {
-        let forward_program = if self.is_dev { "tsp" } else { "sbatch" };
-
+    pub fn init_sbatch(&self, mut cmd: String) -> Result<(), Box<dyn Error>> {
         if self.is_dev {
-            cmd = format!("-L {} {} {}", self.slurm_job_name, &program, &cmd);
+            cmd = format!("tsp -L {} {}", self.slurm_job_name, &cmd);
         } else {
             cmd = format!(
-                "-o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{} {}'",
+                "sbatch -o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{}'",
                 &self.slurm_output,
-                &program,
                 &self.slurm_job_name,
                 &cmd
             );
         }
 
-        let _ = self.run_command(&cmd, "", &forward_program)?;
+        let _ = self.run_command(&cmd, "")?;
 
         Ok(())
+    }
+
+    pub fn bucket_download(
+        &self,
+        from: &str,
+        to_local: &str,
+        download_recursive: bool
+    ) -> Result<(), Box<dyn Error>> {
+        // if data_dir does not exist, create it
+        if std::path::Path::new(from).exists() {
+            return Ok(());
+        }
+
+        //todo count glob , below does not appear to be correct (c=1 when empty directory)
+        // else create_dir_all
+        // let output_pattern: &str = &format!("{}/**/*.fasta", &pipeline.scratch_dir);
+        // let c = glob::glob(output_pattern).into_iter().count();
+
+        let _ = std::fs::create_dir_all(to_local);
+
+        let from_bucket = format!("{}/{}/{}", &self.bucket_url, &self.data.id, from);
+
+        let recursive = if download_recursive { "-r" } else { "" };
+
+        let cmd: String = format!("gsutil cp {} {} {}", recursive, from_bucket, to_local);
+        self.run_command(&cmd, "")?;
+        Ok(())
+    }
+
+    pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<(), Box<dyn Error>> {
+        let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.data.id, to);
+        let gs_cp_cmd = format!("gsutil cp {} {}", &from_local, to_bucket);
+        self.run_command(&gs_cp_cmd, "")?;
+        Ok(())
+    }
+
+    pub fn bucket_signed_url(&self, location: &str) -> Result<String, Box<dyn Error>> {
+        let bucket_location = format!("{}/{}/{}", &self.bucket_url, &self.data.id, location);
+
+        let args_str = format!("signurl -d 7d {} {}", self.private_key_location, bucket_location);
+        let args: Vec<&str> = args_str.split(" ").collect::<Vec<&str>>();
+
+        let url = std::process::Command
+            ::new("gsutil")
+            .args(args)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .output()?;
+
+        let command_output = String::from_utf8(url.stdout)?;
+
+        let signed_url: String = command_output
+            .split("https://")
+            .collect::<Vec<&str>>()
+            .pop()
+            .unwrap()
+            .to_string();
+
+        Ok(signed_url)
     }
 }
 
 pub async fn get_api<State: for<'de> serde::Deserialize<'de>>(
     url: &str
 ) -> Result<State, Box<dyn std::error::Error>> {
-    let json = reqwest::get(url).await.unwrap().json::<Vec<Value>>().await?;
-
-    let data: State = serde_json::from_value(serde_json::Value::Array(json)).unwrap();
+    let response = reqwest::get(url).await;
+    let json = response?.json::<serde_json::Value>().await;
+    let data: State = serde_json::from_value(json?)?;
     Ok(data)
 }
 
@@ -267,7 +320,11 @@ mod tests {
             created_at: "2021-01-01".to_string(),
             job_id: "results-named".to_string(),
             results_format: "zip".to_string(),
-            uploads: vec![],
+            uploads: vec![Upload {
+                id: "123".to_string(),
+                file_name: "file".to_string(),
+                lib_name: "lib".to_string(),
+            }],
             conversion: HashMap::new(),
             email: "".to_string(),
             submit: true,
@@ -277,5 +334,33 @@ mod tests {
         let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
 
         assert_eq!(&pipeline.id, &id);
+        assert_eq!(pipeline.data.uploads.len(), 1);
+    }
+
+    #[test]
+    fn test_it_creates_a_signed_url() {
+        let locations: Locations = load_locations::read("locations.dev.json", true).unwrap();
+        let data: OgvAPI = OgvAPI {
+            id: "630259b6b906884861e0a59d".to_string(),
+            created_at: "2021-01-01".to_string(),
+            job_id: "jobid".to_string(),
+            results_format: "zip".to_string(),
+            uploads: vec![Upload {
+                id: "123".to_string(),
+                file_name: "file".to_string(),
+                lib_name: "lib".to_string(),
+            }],
+            conversion: HashMap::new(),
+            email: "".to_string(),
+            submit: true,
+            pending: false,
+            processing_error: false,
+        };
+
+        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+
+        let signed_url = pipeline.bucket_signed_url("ogv-results_jobid.zip").unwrap();
+        dbg!(&signed_url);
+        assert_eq!(signed_url.contains("https://"), true);
     }
 }
