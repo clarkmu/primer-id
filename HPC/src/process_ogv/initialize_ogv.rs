@@ -92,6 +92,8 @@ fn generate_samples_file(uploads: &Vec<Upload>, samples_file_location: &str) -> 
 
 #[cfg(test)]
 mod tests {
+    use serde_json::Value;
+
     use super::*;
 
     #[test]

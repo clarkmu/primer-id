@@ -149,7 +149,7 @@ fn generate_receipt(signed_url: String, scratch_dir: &str) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::{ OpenOptions, write };
+    use std::fs::OpenOptions;
 
     use crate::{ load_locations::{ self, PipelineType }, pipeline::OgvAPI };
 

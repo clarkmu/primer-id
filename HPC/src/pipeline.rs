@@ -6,7 +6,7 @@ use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
 use lettre::{ message::{ header::{ self, ContentType }, Mailboxes, Message }, SmtpTransport };
-use anyhow::Result;
+use anyhow::{ Context, Result };
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct Upload {
@@ -115,7 +115,7 @@ impl Pipeline {
         let program: &str = commands[0];
         let args: Vec<&str> = commands[1..].to_vec();
 
-        let outp = std::process::Command::new(program).args(args).current_dir(dir).status()?;
+        std::process::Command::new(program).args(args).current_dir(dir).status()?;
 
         Ok(())
     }
@@ -158,12 +158,13 @@ impl Pipeline {
     }
 
     pub async fn patch_pipeline(&self, data: Value) -> Result<()> {
-        let req = reqwest::Client
+        reqwest::Client
             ::new()
             .patch(&self.api_url)
             .json(&serde_json::json!({"_id": self.data.id, "patch": data}))
             .header("x-api-key", &self.api_key)
-            .send().await?;
+            .send().await
+            .context("Failed to patch pipeline.")?;
 
         Ok(())
     }
@@ -184,14 +185,14 @@ impl Pipeline {
         let to_header: header::To = mailboxes.into();
 
         //todo from and SmtpTransport::relay
-        let email = Message::builder()
+        let _email = Message::builder()
             .from("".parse()?)
             .mailbox(to_header)
             .subject(subject)
             .header(ContentType::TEXT_HTML)
             .body(String::from(body))?;
 
-        let mailer = SmtpTransport::relay("")?.build();
+        let _mailer = SmtpTransport::relay("")?.build();
 
         Ok(())
     }
@@ -258,7 +259,8 @@ impl Pipeline {
             .args(args)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
-            .output()?;
+            .output()
+            .context("Command failed at generate signed url.")?;
 
         let command_output = String::from_utf8(url.stdout)?;
 
@@ -266,10 +268,11 @@ impl Pipeline {
             .split("https://")
             .collect::<Vec<&str>>()
             .pop()
-            .unwrap()
+            .context("Failed to generate signed url. API may have changed.")?
+            .trim()
             .to_string();
 
-        Ok(signed_url)
+        Ok(format!("https://{}", signed_url))
     }
 }
 
@@ -336,7 +339,6 @@ mod tests {
         let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
 
         let signed_url = pipeline.bucket_signed_url("ogv-results_jobid.zip").unwrap();
-        dbg!(&signed_url);
-        assert_eq!(signed_url.contains("https://"), true);
+        assert_eq!(signed_url.contains("https://storage.googleapis.com"), true);
     }
 }

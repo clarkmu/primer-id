@@ -39,7 +39,6 @@ impl LockFile {
             return Ok(false);
         }
 
-        let contents = fs::read_to_string(&self.file_path)?;
         let file_time = fs::metadata(&self.file_path)?.modified()?;
         let current_time = SystemTime::now();
         let duration = current_time.duration_since(file_time)?;
@@ -66,7 +65,7 @@ mod tests {
         let exists_false = lock_file.exists().unwrap();
         assert_eq!(exists_false, false);
 
-        let created = lock_file.create().unwrap();
+        lock_file.create().unwrap();
         let exists_true = lock_file.exists().unwrap();
         assert_eq!(exists_true, true);
 

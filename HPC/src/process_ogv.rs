@@ -60,12 +60,14 @@ pub async fn init(pipeline: &Pipeline) -> Result<&str> {
             return Ok("pending");
         }
     }
-
-    Ok("no action")
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
+    use crate::{ load_locations::{ self, PipelineType }, pipeline::OgvAPI };
+
     use super::*;
 
     #[tokio::test]

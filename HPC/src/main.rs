@@ -1,5 +1,3 @@
-#![allow(unused_variables, unreachable_code)]
-
 // RUST_BACKTRACE=1 cargo watch -c -w src -x 'run -- --is_dev' --poll
 
 use std::{ env, process::exit };
@@ -67,7 +65,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    let intacts: Vec<IntactAPI> = match
+    let _intacts: Vec<IntactAPI> = match
         pipeline::get_api(&locations.api_url[PipelineType::Intact]).await
     {
         Ok(data) => data,
@@ -80,7 +78,7 @@ async fn main() -> Result<()> {
         }
     };
 
-    let tcss: Vec<TcsAPI> = match pipeline::get_api(&locations.api_url[PipelineType::Tcs]).await {
+    let _tcss: Vec<TcsAPI> = match pipeline::get_api(&locations.api_url[PipelineType::Tcs]).await {
         Ok(data) => data,
         Err(e) => {
             println!("{}", e);
