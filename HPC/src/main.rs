@@ -1,10 +1,10 @@
-#![allow(dead_code, unused_variables, unreachable_code)]
+#![allow(unused_variables, unreachable_code)]
 
 // RUST_BACKTRACE=1 cargo watch -c -w src -x 'run -- --is_dev' --poll
 
 use std::{ env, process::exit };
 use load_locations::PipelineType;
-use pipeline::{ OgvAPI, Pipeline };
+use pipeline::{ Pipeline, OgvAPI, IntactAPI, TcsAPI };
 use anyhow::Result;
 
 mod pipeline;
@@ -66,6 +66,28 @@ async fn main() -> Result<()> {
             }
         }
     }
+
+    let intacts: Vec<IntactAPI> = match
+        pipeline::get_api(&locations.api_url[PipelineType::Intact]).await
+    {
+        Ok(data) => data,
+        Err(e) => {
+            println!("{}", e);
+            let empty_vec: Vec<IntactAPI> = serde_json::from_value(
+                serde_json::Value::Array(vec![])
+            )?;
+            empty_vec
+        }
+    };
+
+    let tcss: Vec<TcsAPI> = match pipeline::get_api(&locations.api_url[PipelineType::Tcs]).await {
+        Ok(data) => data,
+        Err(e) => {
+            println!("{}", e);
+            let empty_vec: Vec<TcsAPI> = serde_json::from_value(serde_json::Value::Array(vec![]))?;
+            empty_vec
+        }
+    };
 
     println!("All processed.");
 

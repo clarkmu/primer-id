@@ -36,8 +36,12 @@ pub struct OgvAPI {
     #[serde(rename = "processingError")]
     pub processing_error: bool,
 }
-struct TcsAPI;
-struct IntactAPI;
+
+#[derive(serde::Deserialize, Debug, Clone)]
+pub struct TcsAPI {}
+
+#[derive(serde::Deserialize, Debug, Clone)]
+pub struct IntactAPI {}
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Pipeline<ApiData = OgvAPI> {
