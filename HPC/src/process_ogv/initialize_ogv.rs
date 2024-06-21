@@ -2,7 +2,6 @@ use std::io::Write;
 use std::fs::OpenOptions;
 use std::collections::HashMap;
 use crate::pipeline::{ Pipeline, Upload };
-use serde_json::Value;
 use anyhow::{ Result, Context };
 
 pub async fn initialize_run(pipeline: &Pipeline) -> Result<()> {

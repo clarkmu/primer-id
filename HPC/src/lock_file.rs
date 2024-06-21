@@ -1,5 +1,4 @@
-use std::fs::{ self, File, OpenOptions };
-use std::error::Error;
+use std::fs::{ self, OpenOptions };
 use std::io::Write;
 use chrono::Utc;
 use std::time::{ SystemTime, Duration };

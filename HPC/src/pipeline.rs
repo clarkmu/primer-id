@@ -1,16 +1,12 @@
 use std::{ collections::HashMap, fs::OpenOptions };
-use crate::load_locations::{ Locations, PipelineKeys, PipelineType };
+use crate::load_locations::{ Locations, PipelineType };
 use serde::Deserialize;
 use serde_json::Value;
 use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
-use lettre::{
-    message::{ header::{ self, ContentType }, Mailbox, Mailboxes, Message, MessageBuilder },
-    SmtpTransport,
-};
-use std::error::Error;
-use anyhow::{ Result, Context };
+use lettre::{ message::{ header::{ self, ContentType }, Mailboxes, Message }, SmtpTransport };
+use anyhow::Result;
 
 #[derive(serde::Deserialize, Debug, Clone)]
 pub struct Upload {

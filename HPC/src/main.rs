@@ -1,4 +1,4 @@
-#![allow(unused_imports, dead_code, unused_variables, unreachable_code)]
+#![allow(dead_code, unused_variables, unreachable_code)]
 
 // RUST_BACKTRACE=1 cargo watch -c -w src -x 'run -- --is_dev' --poll
 
