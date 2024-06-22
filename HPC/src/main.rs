@@ -31,8 +31,8 @@ async fn main() -> Result<()> {
     let lock_file: lock_file::LockFile = lock_file::LockFile::new(
         format!("{}/lock_process", &locations.base)
     );
-    if lock_file.exists()? {
-        if lock_file.is_stale()? {
+    if lock_file.exists().unwrap_or(true) {
+        if lock_file.is_stale().unwrap_or(true) {
             //todo: send a notification email to locations.admin_email
             return Ok(());
         }
@@ -43,14 +43,9 @@ async fn main() -> Result<()> {
         lock_file.create()?;
     }
 
-    let ogvs: Vec<OgvAPI> = match pipeline::get_api(&locations.api_url[PipelineType::Ogv]).await {
-        Ok(data) => data,
-        Err(e) => {
-            println!("{}", e);
-            let empty_vec: Vec<OgvAPI> = serde_json::from_value(serde_json::Value::Array(vec![]))?;
-            empty_vec
-        }
-    };
+    let ogvs: Vec<OgvAPI> = pipeline
+        ::get_api(&locations.api_url[PipelineType::Ogv]).await
+        .unwrap_or(vec![]);
 
     for ogv in ogvs {
         let pipeline: Pipeline = Pipeline::new(ogv, &locations, PipelineType::Ogv);
@@ -65,34 +60,17 @@ async fn main() -> Result<()> {
         }
     }
 
-    let _intacts: Vec<IntactAPI> = match
-        pipeline::get_api(&locations.api_url[PipelineType::Intact]).await
-    {
-        Ok(data) => data,
-        Err(e) => {
-            println!("{}", e);
-            let empty_vec: Vec<IntactAPI> = serde_json::from_value(
-                serde_json::Value::Array(vec![])
-            )?;
-            empty_vec
-        }
-    };
+    let _intacts: Vec<IntactAPI> = pipeline
+        ::get_api(&locations.api_url[PipelineType::Intact]).await
+        .unwrap_or(vec![]);
 
-    let _tcss: Vec<TcsAPI> = match pipeline::get_api(&locations.api_url[PipelineType::Tcs]).await {
-        Ok(data) => data,
-        Err(e) => {
-            println!("{}", e);
-            let empty_vec: Vec<TcsAPI> = serde_json::from_value(serde_json::Value::Array(vec![]))?;
-            empty_vec
-        }
-    };
+    let _tcss: Vec<TcsAPI> = pipeline
+        ::get_api(&locations.api_url[PipelineType::Tcs]).await
+        .unwrap_or(vec![]);
 
     println!("All processed.");
 
-    //process_intactness.await
-    //process_tcsdr.await
-
-    lock_file.delete()?;
+    lock_file.delete().expect("Failed to delete lock file !?");
 
     Ok(())
 }

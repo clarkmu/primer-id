@@ -277,9 +277,9 @@ impl Pipeline {
 }
 
 pub async fn get_api<State: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<State> {
-    let response = reqwest::get(url).await;
-    let json = response?.json::<serde_json::Value>().await;
-    let data: State = serde_json::from_value(json?)?;
+    let response = reqwest::get(url).await?;
+    let json = response.json::<serde_json::Value>().await?;
+    let data: State = serde_json::from_value(json)?;
     Ok(data)
 }
 
