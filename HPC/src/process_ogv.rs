@@ -87,7 +87,13 @@ mod tests {
             processing_error: false,
         };
 
-        let pipeline: Pipeline<OgvAPI> = Pipeline::new(data, &locations, PipelineType::Ogv);
+        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
+            data.id.clone(),
+            data.email.clone(),
+            data,
+            &locations,
+            PipelineType::Ogv
+        );
 
         let result = init(&pipeline).await.unwrap();
 

@@ -331,7 +331,13 @@ mod tests {
             pending: false,
             processing_error: false,
         };
-        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
+            data.id.clone(),
+            data.email.clone(),
+            data,
+            &locations,
+            PipelineType::Ogv
+        );
 
         assert_eq!(&pipeline.id, &id);
         assert_eq!(pipeline.data.uploads.len(), 1);
@@ -357,7 +363,13 @@ mod tests {
             processing_error: false,
         };
 
-        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
+            data.id.clone(),
+            data.email.clone(),
+            data,
+            &locations,
+            PipelineType::Ogv
+        );
 
         let signed_url = pipeline.bucket_signed_url("ogv-results_jobid.zip").unwrap();
         assert_eq!(signed_url.contains("https://storage.googleapis.com"), true);

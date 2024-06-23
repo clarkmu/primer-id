@@ -184,7 +184,13 @@ mod tests {
             processing_error: false,
         };
 
-        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
+            data.id.clone(),
+            data.email.clone(),
+            data,
+            &locations,
+            PipelineType::Ogv
+        );
         let results_dir = format!("{}/results", &pipeline.scratch_dir);
         let _ = std::fs::create_dir_all(&results_dir);
         let new_file = format!("{}/test.txt", &results_dir);
@@ -223,7 +229,13 @@ mod tests {
             processing_error: false,
         };
 
-        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
+            data.id.clone(),
+            data.email.clone(),
+            data,
+            &locations,
+            PipelineType::Ogv
+        );
         let results_dir = format!("{}/results", &pipeline.scratch_dir);
         let _ = std::fs::create_dir_all(&results_dir);
         let new_file = format!("{}/test.txt", &results_dir);
