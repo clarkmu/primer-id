@@ -41,11 +41,27 @@ pub struct OgvAPI {
 pub struct TcsAPI {}
 
 #[derive(serde::Deserialize, Debug, Clone)]
-pub struct IntactAPI {}
+pub struct IntactAPI {
+    #[serde(rename = "_id")]
+    pub id: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "jobID")]
+    pub job_id: String,
+    #[serde(rename = "resultsFormat")]
+    pub results_format: String,
+    pub email: String,
+    pub submit: bool,
+    pub pending: bool,
+    #[serde(rename = "processingError")]
+    pub processing_error: bool,
+    pub sequence: String,
+}
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Pipeline<ApiData = OgvAPI> {
+pub struct Pipeline<ApiData> {
     pub id: String,
+    email: String,
     pub is_dev: bool,
     pub base: String,
     pub scratch_dir: String,
@@ -62,10 +78,14 @@ pub struct Pipeline<ApiData = OgvAPI> {
     api_key: String,
 }
 
-impl Pipeline {
-    pub fn new(data: OgvAPI, locations: &Locations, pipeline_type: PipelineType) -> Pipeline {
-        let id: String = data.id.clone();
-
+impl<ApiData> Pipeline<ApiData> {
+    pub fn new(
+        id: String,
+        email: String,
+        data: ApiData,
+        locations: &Locations,
+        pipeline_type: PipelineType
+    ) -> Pipeline<ApiData> {
         let api_url: String = String::from(&locations.api_url[pipeline_type]);
         let bucket_url: String = String::from(&locations.bucket_url[pipeline_type]);
 
@@ -89,6 +109,7 @@ impl Pipeline {
 
         Pipeline {
             id,
+            email,
             is_dev: locations.is_dev.unwrap(),
             base: locations.base.clone(),
             scratch_dir,
@@ -161,7 +182,7 @@ impl Pipeline {
         reqwest::Client
             ::new()
             .patch(&self.api_url)
-            .json(&serde_json::json!({"_id": self.data.id, "patch": data}))
+            .json(&serde_json::json!({"_id": self.id, "patch": data}))
             .header("x-api-key", &self.api_key)
             .send().await
             .context("Failed to patch pipeline.")?;
@@ -175,7 +196,7 @@ impl Pipeline {
             return Ok(());
         }
 
-        let mut to = String::from(self.data.email.clone());
+        let mut to = String::from(self.email.clone());
 
         if include_admin {
             to.push_str(&format!(", {}", &self.admin_email));
@@ -232,7 +253,7 @@ impl Pipeline {
 
         let _ = std::fs::create_dir_all(to_local);
 
-        let from_bucket = format!("{}/{}/{}", &self.bucket_url, &self.data.id, from);
+        let from_bucket = format!("{}/{}/{}", &self.bucket_url, &self.id, from);
 
         let recursive = if download_recursive { "-r" } else { "" };
 
@@ -242,14 +263,14 @@ impl Pipeline {
     }
 
     pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<()> {
-        let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.data.id, to);
+        let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.id, to);
         let gs_cp_cmd = format!("gsutil cp {} {}", &from_local, to_bucket);
         self.run_command(&gs_cp_cmd, "")?;
         Ok(())
     }
 
     pub fn bucket_signed_url(&self, location: &str) -> Result<String> {
-        let bucket_location = format!("{}/{}/{}", &self.bucket_url, &self.data.id, location);
+        let bucket_location = format!("{}/{}/{}", &self.bucket_url, &self.id, location);
 
         let args_str = format!("signurl -d 7d {} {}", self.private_key_location, bucket_location);
         let args: Vec<&str> = args_str.split(" ").collect::<Vec<&str>>();

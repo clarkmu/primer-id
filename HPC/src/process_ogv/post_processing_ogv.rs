@@ -1,8 +1,8 @@
 use std::{ collections::HashMap, fs::File, io::{ BufWriter, Write } };
-use crate::pipeline::Pipeline;
+use crate::pipeline::{ OgvAPI, Pipeline };
 use anyhow::{ Result, Context };
 
-pub async fn init_post_processing(pipeline: &Pipeline) -> Result<()> {
+pub async fn init_post_processing(pipeline: &Pipeline<OgvAPI>) -> Result<()> {
     let results_location = format!("{}/results", &pipeline.scratch_dir);
     let summary_location = format!("{}/summary.csv", &results_location);
     let conversion_location = format!("{}/conversion.json", &pipeline.scratch_dir);
@@ -82,7 +82,7 @@ fn write_conversion_to_file(
     Ok(true)
 }
 
-fn compress_results(pipeline: &Pipeline) -> Result<(String, String)> {
+fn compress_results(pipeline: &Pipeline<OgvAPI>) -> Result<(String, String)> {
     let extension: &str = if &pipeline.data.results_format == "tar" { ".tar.gz" } else { ".zip" };
     let results_id = if pipeline.data.job_id.is_empty() {
         &pipeline.data.id

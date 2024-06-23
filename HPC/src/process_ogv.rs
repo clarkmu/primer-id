@@ -1,11 +1,11 @@
 use chrono::{ NaiveDateTime, TimeZone, Utc };
-use crate::pipeline::Pipeline;
+use crate::pipeline::{ OgvAPI, Pipeline };
 use anyhow::{ Context, Result };
 
 mod initialize_ogv;
 mod post_processing_ogv;
 
-pub async fn init(pipeline: &Pipeline) -> Result<&str> {
+pub async fn init(pipeline: &Pipeline<OgvAPI>) -> Result<&str> {
     let is_first_run =
         pipeline.data.submit && !pipeline.data.pending && !pipeline.data.processing_error;
 
@@ -87,7 +87,7 @@ mod tests {
             processing_error: false,
         };
 
-        let pipeline: Pipeline = Pipeline::new(data, &locations, PipelineType::Ogv);
+        let pipeline: Pipeline<OgvAPI> = Pipeline::new(data, &locations, PipelineType::Ogv);
 
         let result = init(&pipeline).await.unwrap();
 

@@ -1,10 +1,10 @@
 use std::io::Write;
 use std::fs::OpenOptions;
 use std::collections::HashMap;
-use crate::pipeline::{ Pipeline, Upload };
+use crate::pipeline::{ OgvAPI, Pipeline, Upload };
 use anyhow::{ Result, Context };
 
-pub async fn initialize_run(pipeline: &Pipeline) -> Result<()> {
+pub async fn initialize_run(pipeline: &Pipeline<OgvAPI>) -> Result<()> {
     //email receipt
     pipeline.add_log("Emailing receipt.")?;
     let receipt = generate_receipt(&pipeline.data.conversion, &pipeline.data.uploads);

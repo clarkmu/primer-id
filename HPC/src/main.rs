@@ -6,9 +6,10 @@ use pipeline::{ Pipeline, OgvAPI, IntactAPI, TcsAPI };
 use anyhow::Result;
 
 mod pipeline;
-mod process_ogv;
 mod load_locations;
 mod lock_file;
+mod process_ogv;
+mod process_intact;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -48,7 +49,13 @@ async fn main() -> Result<()> {
         .unwrap_or(vec![]);
 
     for ogv in ogvs {
-        let pipeline: Pipeline = Pipeline::new(ogv, &locations, PipelineType::Ogv);
+        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
+            ogv.id.clone(),
+            ogv.email.clone(),
+            ogv,
+            &locations,
+            PipelineType::Ogv
+        );
         match process_ogv::init(&pipeline).await {
             Ok(_) => {}
             Err(e) => {
@@ -60,9 +67,28 @@ async fn main() -> Result<()> {
         }
     }
 
-    let _intacts: Vec<IntactAPI> = pipeline
+    let intacts: Vec<IntactAPI> = pipeline
         ::get_api(&locations.api_url[PipelineType::Intact]).await
         .unwrap_or(vec![]);
+
+    for intact in intacts {
+        let pipeline: Pipeline<IntactAPI> = Pipeline::new(
+            intact.id.clone(),
+            intact.email.clone(),
+            intact,
+            &locations,
+            PipelineType::Intact
+        );
+        match process_intact::init(&pipeline).await {
+            Ok(_) => {}
+            Err(e) => {
+                let subject = format!("Intact Error: {}", &pipeline.data.id);
+                let msg = &e.to_string();
+                pipeline.add_error(&subject, msg).await?;
+                println!("{}: {}", subject, msg);
+            }
+        }
+    }
 
     let _tcss: Vec<TcsAPI> = pipeline
         ::get_api(&locations.api_url[PipelineType::Tcs]).await
