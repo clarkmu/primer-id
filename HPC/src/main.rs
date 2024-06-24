@@ -8,6 +8,7 @@ use anyhow::Result;
 mod pipeline;
 mod load_locations;
 mod lock_file;
+mod compress;
 mod process_ogv;
 mod process_intact;
 

@@ -16,3 +16,6 @@ reqwest = { version = "0.12", features = ["json"] }
 glob = "0.3.1"
 chrono = "0.4.38"
 anyhow = "1.0.86"
+zip-extensions = "0.8.0"
+flate2 = "1.0.30"
+tar = "0.4.41"
