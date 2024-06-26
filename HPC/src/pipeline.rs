@@ -130,6 +130,10 @@ impl<ApiData> Pipeline<ApiData> {
     pub fn run_command(&self, cmd: &str, current_dir: &str) -> Result<()> {
         self.add_log(&format!("Exec: {:?}", &cmd))?;
 
+        if self.is_dev {
+            println!("Exec: {:?}\n", &cmd);
+        }
+
         let dir = if current_dir.is_empty() { &self.base } else { current_dir };
 
         let commands: Vec<&str> = cmd.split(" ").collect::<Vec<&str>>();

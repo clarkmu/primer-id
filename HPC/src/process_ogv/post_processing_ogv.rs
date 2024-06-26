@@ -1,5 +1,5 @@
 use std::{ collections::HashMap, fs::File, io::{ BufWriter, Write } };
-use crate::pipeline::{ OgvAPI, Pipeline };
+use crate::{ compress::compress_dir, pipeline::{ OgvAPI, Pipeline } };
 use anyhow::{ Result, Context };
 
 pub async fn init_post_processing(pipeline: &Pipeline<OgvAPI>) -> Result<()> {
@@ -25,13 +25,21 @@ pub async fn init_post_processing(pipeline: &Pipeline<OgvAPI>) -> Result<()> {
         .context("Failed to run result-summary.py")?;
 
     // compress results
-    let (location, compressed_filename) = compress_results(&pipeline).context(
-        "Failed to compress files."
-    )?;
+    let job_id = if pipeline.data.job_id.is_empty() {
+        format!("ogv-results_{}", &pipeline.data.id)
+    } else {
+        pipeline.data.job_id.clone()
+    };
+    let (location, compressed_filename) = compress_dir(
+        &pipeline.data.results_format,
+        &job_id,
+        &results_location,
+        &pipeline.scratch_dir
+    ).context("Failed to compress files.")?;
 
     // upload and get signed url to compressed results
     pipeline
-        .bucket_upload(&location, &compressed_filename)
+        .bucket_upload(&location.display().to_string(), &compressed_filename)
         .context("Failed to upload files to bucket.")?;
     let signed_url = pipeline
         .bucket_signed_url(&compressed_filename)
@@ -82,36 +90,6 @@ fn write_conversion_to_file(
     Ok(true)
 }
 
-fn compress_results(pipeline: &Pipeline<OgvAPI>) -> Result<(String, String)> {
-    let extension: &str = if &pipeline.data.results_format == "tar" { ".tar.gz" } else { ".zip" };
-    let results_id = if pipeline.data.job_id.is_empty() {
-        &pipeline.data.id
-    } else {
-        &pipeline.data.job_id
-    };
-    let filename: String = format!("ogv-results_{}", results_id);
-    let compressed_filename = format!("{}{}", filename, extension);
-
-    let location = format!("{}/{}", &pipeline.scratch_dir, &compressed_filename);
-
-    // if location file exists, delete it
-    let _ = std::fs::remove_file(&location);
-
-    if &pipeline.data.results_format == "tar" {
-        let results_location = format!("{}/{}", &pipeline.scratch_dir, "results");
-        let tar_command = format!("tar -zcvf {} -C {} .", &location, &results_location);
-        pipeline.run_command(&tar_command, &pipeline.scratch_dir)?;
-    } else {
-        pipeline.run_command(&format!("cp -r results {}", &filename), &pipeline.scratch_dir)?;
-        pipeline.run_command(
-            &format!("zip -r {} {}", &compressed_filename, &filename),
-            &pipeline.scratch_dir
-        )?;
-    }
-
-    Ok((location, compressed_filename))
-}
-
 fn generate_receipt(signed_url: String, scratch_dir: &str) -> Result<String> {
     let date = chrono::Utc
         ::now()
@@ -149,10 +127,6 @@ fn generate_receipt(signed_url: String, scratch_dir: &str) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::OpenOptions;
-
-    use crate::{ load_locations::{ self, PipelineType }, pipeline::OgvAPI };
-
     use super::*;
 
     #[test]
@@ -165,95 +139,5 @@ mod tests {
 
         //delete file at conversion_location
         let _ = std::fs::remove_file(conversion_location);
-    }
-
-    #[test]
-    fn test_compresses_tar_unnamed() {
-        let locations = load_locations::read("locations.test.json", true).unwrap();
-
-        let data: OgvAPI = OgvAPI {
-            id: "123".to_string(),
-            created_at: "2024-06-01T15:24:15.766Z".to_string(),
-            job_id: "".to_string(),
-            results_format: "tar".to_string(),
-            uploads: vec![],
-            conversion: HashMap::new(),
-            email: "".to_string(),
-            submit: false,
-            pending: true,
-            processing_error: false,
-        };
-
-        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
-            data.id.clone(),
-            data.email.clone(),
-            data,
-            &locations,
-            PipelineType::Ogv
-        );
-        let results_dir = format!("{}/results", &pipeline.scratch_dir);
-        let _ = std::fs::create_dir_all(&results_dir);
-        let new_file = format!("{}/test.txt", &results_dir);
-
-        //create a test file
-        let mut file = OpenOptions::new().write(true).create(true).open(&new_file).unwrap();
-        writeln!(file, "{:?}", "test").unwrap();
-
-        // run
-        let result = compress_results(&pipeline).unwrap();
-
-        // ensure new compressed file exists
-        let new_compressed_file = result.0;
-        assert!(new_compressed_file.contains("ogv-results_123.tar.gz"));
-        assert_eq!(std::path::Path::new(&new_compressed_file).exists(), true);
-
-        // remove newly created files
-        let _ = std::fs::remove_file(&new_file);
-        let _ = std::fs::remove_file(&new_compressed_file);
-    }
-
-    #[test]
-    fn test_compresses_zip_named() {
-        let locations = load_locations::read("locations.test.json", true).unwrap();
-
-        let data: OgvAPI = OgvAPI {
-            id: "123".to_string(),
-            created_at: "2024-06-01T15:24:15.766Z".to_string(),
-            job_id: "results-named".to_string(),
-            results_format: "zip".to_string(),
-            uploads: vec![],
-            conversion: HashMap::new(),
-            email: "".to_string(),
-            submit: false,
-            pending: true,
-            processing_error: false,
-        };
-
-        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
-            data.id.clone(),
-            data.email.clone(),
-            data,
-            &locations,
-            PipelineType::Ogv
-        );
-        let results_dir = format!("{}/results", &pipeline.scratch_dir);
-        let _ = std::fs::create_dir_all(&results_dir);
-        let new_file = format!("{}/test.txt", &results_dir);
-
-        //create a test file
-        let mut file = OpenOptions::new().write(true).create(true).open(&new_file).unwrap();
-        writeln!(file, "{:?}", "test").unwrap();
-
-        // run
-        let result = compress_results(&pipeline).unwrap();
-
-        // ensure new compressed file exists
-        let new_compressed_file = result.0;
-        assert_eq!(std::path::Path::new(&new_compressed_file).exists(), true);
-        assert!(new_compressed_file.contains("ogv-results_results-named.zip"));
-
-        // remove newly created files
-        let _ = std::fs::remove_file(&new_file);
-        let _ = std::fs::remove_file(&new_compressed_file);
     }
 }
