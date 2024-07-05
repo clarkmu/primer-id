@@ -1,4 +1,6 @@
-// RUST_BACKTRACE=1 cargo watch -c -w src -x 'run -- --is_dev' --poll
+// --poll for Linux
+// 2>/dev/null  silence MADV_DONTNEED in Docker container
+// RUST_BACKTRACE=1 cargo watch -c -w src -x 'run -- --is_dev' --poll 2>/dev/null
 
 use std::{ env, process::exit };
 use load_locations::PipelineType;
@@ -58,10 +60,12 @@ async fn main() -> Result<()> {
             PipelineType::Ogv
         );
         match process_ogv::init(&pipeline).await {
-            Ok(_) => {}
+            Ok(outp) => {
+                println!("OGV {}: {}", pipeline.id, outp);
+            }
             Err(e) => {
                 let subject = format!("OGV Error: {}", &pipeline.data.id);
-                let msg = &e.to_string();
+                let msg = &format!("{:?}", e);
                 pipeline.add_error(&subject, msg).await?;
                 println!("{}: {}", subject, msg);
             }
@@ -84,7 +88,7 @@ async fn main() -> Result<()> {
             Ok(_) => {}
             Err(e) => {
                 let subject = format!("Intact Error: {}", &pipeline.data.id);
-                let msg = &e.to_string();
+                let msg = &format!("{:?}", e);
                 pipeline.add_error(&subject, msg).await?;
                 println!("{}: {}", subject, msg);
             }
