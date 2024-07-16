@@ -2,6 +2,9 @@ use std::ops::Index;
 use std::fs::File;
 use std::io::BufReader;
 use serde::{ Serialize, Deserialize };
+use anyhow::Result;
+
+use crate::load_env_vars::{ load_env_vars, EnvVars };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PipelineKeys {
@@ -40,19 +43,21 @@ pub struct Locations {
     pub scratch_space: PipelineKeys,
     pub api_url: PipelineKeys,
     pub bucket_url: PipelineKeys,
-    pub is_dev: Option<bool>,
     pub ogv_base_path: String,
     pub intactness_base_path: String,
     pub api_key: String,
 }
 
-pub fn read(file_path: &str, is_dev: bool) -> Result<Locations, Box<dyn std::error::Error>> {
-    let file = File::open(file_path)?;
-    let reader = BufReader::new(file);
-    let mut json: Locations = serde_json::from_reader(reader)?;
-    json.is_dev = Some(is_dev);
+pub fn load_locations() -> Result<Locations> {
+    let EnvVars { is_dev, .. } = load_env_vars();
 
-    Ok(json)
+    let locations_file: &str = if is_dev { "./locations.dev.json" } else { "./locations.json" };
+
+    let file = File::open(locations_file)?;
+    let reader = BufReader::new(file);
+    let locations: Locations = serde_json::from_reader(reader)?;
+
+    Ok(locations)
 }
 
 #[cfg(test)]
@@ -61,9 +66,7 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let file_path = "locations.dev.json";
-        let is_dev = true;
-        let locations = read(file_path, is_dev).unwrap();
+        let locations: Locations = load_locations().unwrap();
 
         assert!(locations.api_url[PipelineType::Ogv].contains("api"));
         assert!(locations.api_url[PipelineType::Tcs].contains("api"));

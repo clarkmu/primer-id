@@ -1,11 +1,15 @@
 use std::{ collections::HashMap, fs::OpenOptions };
-use crate::load_locations::{ Locations, PipelineType };
+use crate::{
+    load_locations::{ Locations, PipelineType },
+    run_command::run_command,
+    send_email::send_email,
+};
 use serde::Deserialize;
 use serde_json::Value;
 use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
-use lettre::{ message::{ header::{ self, ContentType }, Mailboxes, Message }, SmtpTransport };
+
 use anyhow::{ Context, Result };
 
 #[derive(serde::Deserialize, Debug, Clone)]
@@ -61,27 +65,20 @@ pub struct IntactAPI {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Pipeline<ApiData> {
     pub id: String,
-    email: String,
-    pub is_dev: bool,
     pub base: String,
     pub scratch_dir: String,
-    slurm_job_name: String,
-    slurm_output: String,
     log_file: String,
     log_error_file: String,
     pub data: ApiData,
-    pub ogv_base_path: String,
     private_key_location: String,
     api_url: String,
     bucket_url: String,
-    admin_email: String,
     api_key: String,
 }
 
 impl<ApiData> Pipeline<ApiData> {
     pub fn new(
         id: String,
-        email: String,
         data: ApiData,
         locations: &Locations,
         pipeline_type: PipelineType
@@ -97,8 +94,6 @@ impl<ApiData> Pipeline<ApiData> {
             &locations.log_dir[pipeline_type],
             id
         );
-        let slurm_job_name: String = format!("job_{}", id);
-        let slurm_output: String = format!("{}/{}.output", &locations.log_dir[pipeline_type], id);
 
         let log_file_path = PathBuf::from(&log_file);
         let log_error_path = PathBuf::from(&log_error_file);
@@ -109,45 +104,23 @@ impl<ApiData> Pipeline<ApiData> {
 
         Pipeline {
             id,
-            email,
-            is_dev: locations.is_dev.unwrap(),
             base: locations.base.clone(),
             scratch_dir,
             log_file,
             log_error_file,
-            slurm_job_name,
-            slurm_output,
-            ogv_base_path: locations.ogv_base_path.clone(),
             api_url,
             bucket_url,
             private_key_location: locations.private_key_location.clone(),
-            admin_email: locations.admin_email.clone(),
             api_key: locations.api_key.clone(),
             data,
         }
     }
 
-    pub fn run_command(&self, cmd: &str, current_dir: &str) -> Result<()> {
-        self.add_log(&format!("Exec: {:?}", &cmd))?;
-
-        if self.is_dev {
-            println!("Exec: {:?}\n", &cmd);
-        }
-
-        let dir = if current_dir.is_empty() { &self.base } else { current_dir };
-
-        let commands: Vec<&str> = cmd.split(" ").collect::<Vec<&str>>();
-        let program: &str = commands[0];
-        let args: Vec<&str> = commands[1..].to_vec();
-
-        std::process::Command::new(program).args(args).current_dir(dir).status()?;
-
-        Ok(())
-    }
-
     pub fn add_log(&self, msg: &str) -> Result<()> {
         let date = Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
         let message = format!("[{}] {}", date, msg).to_string();
+
+        println!("{}", &message);
 
         let mut file = OpenOptions::new()
             .write(true)
@@ -162,7 +135,7 @@ impl<ApiData> Pipeline<ApiData> {
         Ok(())
     }
 
-    pub async fn add_error(&self, subject: &str, msg: &str) -> Result<()> {
+    pub async fn add_error(&self, subject: &str, msg: &str, to_email: &str) -> Result<()> {
         let mut file = OpenOptions::new()
             .write(true)
             .append(true)
@@ -175,9 +148,11 @@ impl<ApiData> Pipeline<ApiData> {
 
         let _ = self.add_log(&msg);
 
-        let _ = self.patch_pipeline(serde_json::json!({"processingError": true}));
+        let _ = self
+            .patch_pipeline(serde_json::json!({"pending": false, "processing_error": true})).await
+            .context("Failed to patch pipeline.")?;
 
-        let _ = self.send_email(subject, &msg, true).await;
+        let _ = send_email(subject, msg, to_email, true).await?;
 
         Ok(())
     }
@@ -190,51 +165,6 @@ impl<ApiData> Pipeline<ApiData> {
             .header("x-api-key", &self.api_key)
             .send().await
             .context("Failed to patch pipeline.")?;
-
-        Ok(())
-    }
-
-    pub async fn send_email(&self, subject: &str, body: &str, include_admin: bool) -> Result<()> {
-        if self.is_dev {
-            println!("Email: {} - {}", subject, body);
-            return Ok(());
-        }
-
-        let mut to = String::from(self.email.clone());
-
-        if include_admin {
-            to.push_str(&format!(", {}", &self.admin_email));
-        }
-
-        let mailboxes: Mailboxes = to.parse()?;
-        let to_header: header::To = mailboxes.into();
-
-        //todo from and SmtpTransport::relay
-        let _email = Message::builder()
-            .from("".parse()?)
-            .mailbox(to_header)
-            .subject(subject)
-            .header(ContentType::TEXT_HTML)
-            .body(String::from(body))?;
-
-        let _mailer = SmtpTransport::relay("")?.build();
-
-        Ok(())
-    }
-
-    pub fn init_sbatch(&self, mut cmd: String) -> Result<()> {
-        if self.is_dev {
-            cmd = format!("tsp -L {} {}", self.slurm_job_name, &cmd);
-        } else {
-            cmd = format!(
-                "sbatch -o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{}'",
-                &self.slurm_output,
-                &self.slurm_job_name,
-                &cmd
-            );
-        }
-
-        let _ = self.run_command(&cmd, "")?;
 
         Ok(())
     }
@@ -262,14 +192,14 @@ impl<ApiData> Pipeline<ApiData> {
         let recursive = if download_recursive { "-r" } else { "" };
 
         let cmd: String = format!("gsutil cp {} {} {}", recursive, from_bucket, to_local);
-        self.run_command(&cmd, "")?;
+        run_command(&cmd, "")?;
         Ok(())
     }
 
     pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<()> {
         let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.id, to);
         let gs_cp_cmd = format!("gsutil cp {} {}", &from_local, to_bucket);
-        self.run_command(&gs_cp_cmd, "")?;
+        run_command(&gs_cp_cmd, "")?;
         Ok(())
     }
 
@@ -301,23 +231,26 @@ impl<ApiData> Pipeline<ApiData> {
     }
 }
 
-pub async fn get_api<State: for<'de> serde::Deserialize<'de>>(url: &str) -> Result<State> {
-    let response = reqwest::get(url).await?;
-    let json = response.json::<serde_json::Value>().await?;
-    let data: State = serde_json::from_value(json)?;
-    Ok(data)
+pub fn pipeline_is_stale(date: &str) -> Result<bool> {
+    // parse date as saved in MongoDB
+    let created_at = NaiveDateTime::parse_from_str(date, "%Y-%m-%dT%H:%M:%S%.fZ").context(
+        "Failed to parse created_at."
+    )?;
+    let now = Utc::now().naive_utc();
+    let diff = now - created_at;
+    Ok(diff.num_hours() > 24)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::load_locations;
+    use crate::load_locations::load_locations;
 
     use super::*;
 
     #[test]
     fn it_implements_ogv() {
         let id = "123".to_string();
-        let locations: Locations = load_locations::read("locations.test.json", true).unwrap();
+        let locations: Locations = load_locations().unwrap();
 
         let data: OgvAPI = OgvAPI {
             id: id.clone(),
@@ -337,7 +270,6 @@ mod tests {
         };
         let pipeline: Pipeline<OgvAPI> = Pipeline::new(
             data.id.clone(),
-            data.email.clone(),
             data,
             &locations,
             PipelineType::Ogv
@@ -349,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_it_creates_a_signed_url() {
-        let locations: Locations = load_locations::read("locations.dev.json", true).unwrap();
+        let locations: Locations = load_locations().unwrap();
         let data: OgvAPI = OgvAPI {
             id: "630259b6b906884861e0a59d".to_string(),
             created_at: "2021-01-01".to_string(),
@@ -369,7 +301,6 @@ mod tests {
 
         let pipeline: Pipeline<OgvAPI> = Pipeline::new(
             data.id.clone(),
-            data.email.clone(),
             data,
             &locations,
             PipelineType::Ogv

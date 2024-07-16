@@ -5,6 +5,27 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name="utils"
+path="src/utils.rs"
+
+# cargo run --bin process_queue
+[[bin]]
+name = "process_queue"
+path = "src/main.rs"
+
+# cargo run --bin ogv -- --id {id} --is_dev --is_stale
+[[bin]]
+name = "ogv"
+path = "src/bin/ogv/main.rs"
+
+# [[bin]]
+# name = "tcs"
+# path = "src/bin/tcs/main.rs"
+
+# [[bin]]
+# name = "intactness"
+# path = "src/bin/intactness/main.rs"
 
 [dependencies]
 exitfailure = "0.5.1"

@@ -1,36 +1,42 @@
 // --poll for Linux
 // 2>/dev/null  silence MADV_DONTNEED in Docker container
-// RUST_BACKTRACE=1 cargo watch -c -w src -x 'run -- --is_dev' --poll 2>/dev/null
+// RUST_BACKTRACE=1 cargo watch -c -w src -x 'run --bin main -- --is_dev' --poll 2>/dev/null
 
-use std::{ env, process::exit };
-use load_locations::PipelineType;
-use pipeline::{ Pipeline, OgvAPI, IntactAPI, TcsAPI };
+use std::process::exit;
 use anyhow::Result;
+use serde::Deserialize;
+use utils::{
+    get_api::get_api,
+    load_env_vars::{ load_env_vars, EnvVars },
+    load_locations::PipelineType,
+    lock_file,
+    pipeline::pipeline_is_stale,
+    run_command::run_command,
+};
 
-mod pipeline;
-mod load_locations;
-mod lock_file;
-mod compress;
-mod process_ogv;
-mod process_intact;
+#[derive(Debug, Deserialize)]
+pub struct SharedAPIData {
+    pub id: String,
+    pub created_at: String,
+    pub submit: bool,
+    pub pending: bool,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let is_dev = args.iter().any(|e| e.contains("is_dev"));
+    let EnvVars { is_dev, .. } = load_env_vars();
+
+    let locations = utils::load_locations::load_locations().unwrap_or_else(|e| {
+        println!("Error loading environment: {:?}", e);
+        exit(1);
+    });
 
     if is_dev {
-        env::var("PORT").unwrap_or_else(|_| {
+        std::env::var("PORT").unwrap_or_else(|_| {
             println!("Dev not running in the docker shell. Exiting.");
             exit(1);
         });
     }
-
-    let locations_file = if is_dev { "./locations.dev.json" } else { "./locations.json" };
-    let locations = load_locations::read(locations_file, is_dev).unwrap_or_else(|e| {
-        eprintln!("Error loading locations: {:?}", e);
-        exit(1);
-    });
 
     let lock_file: lock_file::LockFile = lock_file::LockFile::new(
         format!("{}/lock_process", &locations.base)
@@ -47,57 +53,71 @@ async fn main() -> Result<()> {
         lock_file.create()?;
     }
 
-    let ogvs: Vec<OgvAPI> = pipeline
-        ::get_api(&locations.api_url[PipelineType::Ogv]).await
-        .unwrap_or(vec![]);
+    let ogvs: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Ogv]).await.unwrap_or(
+        vec![]
+    );
 
     for ogv in ogvs {
-        let pipeline: Pipeline<OgvAPI> = Pipeline::new(
-            ogv.id.clone(),
-            ogv.email.clone(),
-            ogv,
-            &locations,
-            PipelineType::Ogv
-        );
-        match process_ogv::init(&pipeline).await {
-            Ok(outp) => {
-                println!("OGV {}: {}", pipeline.id, outp);
+        let is_stale = if ogv.pending && pipeline_is_stale(&ogv.created_at).unwrap_or(true) {
+            "--is_stale"
+        } else {
+            ""
+        };
+
+        let run_is_stale = !is_stale.is_empty();
+
+        if ogv.submit || run_is_stale {
+            let is_dev_cmd = if is_dev { "--is_dev" } else { "" };
+            let mut cmd = format!(
+                "cargo run --bin ogv -- --id={} {} {}",
+                &ogv.id,
+                is_dev_cmd,
+                is_stale
+            );
+
+            // no need to sbatch for is_stale , no heavy processing
+            if !is_dev && !run_is_stale {
+                cmd = format!(
+                    "sbatch -o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    format!("{}/{}.out", &locations.log_dir[PipelineType::Ogv], &ogv.id),
+                    format!("ogv-{}", &ogv.id),
+                    &cmd
+                );
             }
-            Err(e) => {
-                let subject = format!("OGV Error: {}", &pipeline.data.id);
-                let msg = &format!("{:?}", e);
-                pipeline.add_error(&subject, msg).await?;
-                println!("{}: {}", subject, msg);
-            }
+
+            let _ = run_command(&cmd, &locations.base);
         }
     }
 
-    let intacts: Vec<IntactAPI> = pipeline
-        ::get_api(&locations.api_url[PipelineType::Intact]).await
-        .unwrap_or(vec![]);
+    // let intacts: Vec<IntactAPI> = get_api(&locations.api_url[PipelineType::Intact]).await.unwrap_or(
+    //     vec![]
+    // );
 
-    for intact in intacts {
-        let pipeline: Pipeline<IntactAPI> = Pipeline::new(
-            intact.id.clone(),
-            intact.email.clone(),
-            intact,
-            &locations,
-            PipelineType::Intact
-        );
-        match process_intact::init(&pipeline).await {
-            Ok(_) => {}
-            Err(e) => {
-                let subject = format!("Intact Error: {}", &pipeline.data.id);
-                let msg = &format!("{:?}", e);
-                pipeline.add_error(&subject, msg).await?;
-                println!("{}: {}", subject, msg);
-            }
-        }
-    }
+    // for intact in intacts {
+    //     let pipeline: Pipeline<IntactAPI> = Pipeline::new(
+    //         intact.id.clone(),
+    //         intact,
+    //         &locations,
+    //         PipelineType::Intact
+    //     );
+    //     match process_intact::init(&pipeline).await {
+    //         Ok(_) => {}
+    //         Err(e) => {
+    //             let subject = &format!("Intact Error: {}", &pipeline.data.id);
+    //             let msg = &format!("{:?}", e);
+    //             pipeline.add_error(msg).await?;
+    //             println!("{}: {}", subject, msg);
+    //             if let Err(_e) = send_email(subject, msg, &pipeline.data.email, true).await {
+    //                 // todo
+    //             }
+    //             let _ = pipeline.patch_pipeline(
+    //                 serde_json::json!({"processingError": true})
+    //             ).await?;
+    //         }
+    //     }
+    // }
 
-    let _tcss: Vec<TcsAPI> = pipeline
-        ::get_api(&locations.api_url[PipelineType::Tcs]).await
-        .unwrap_or(vec![]);
+    // let _tcss: Vec<TcsAPI> = get_api(&locations.api_url[PipelineType::Tcs]).await.unwrap_or(vec![]);
 
     println!("All processed.");
 

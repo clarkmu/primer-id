@@ -25,7 +25,14 @@ async function get(req, res) {
         { processingError: { $ne: true } },
       ],
     });
-    return res.status(200).json(all);
+
+    const allFiltered = all.map(({ id, pending, submit }) => ({
+      id,
+      pending,
+      submit,
+    }));
+
+    return res.status(200).json(allFiltered);
   } catch (e) {
     console.log({ e });
     return res.status(400).json({ error: "Database error. Please try again." });
@@ -90,27 +97,6 @@ async function post(req, res) {
   }
 }
 
-async function patch(req, res) {
-  let body;
-
-  try {
-    body = JSON.parse(req.body);
-  } catch (e) {
-    body = req.body;
-  }
-
-  // const body = JSON.parse(req.body);
-  const { _id, patch } = body;
-
-  try {
-    await OGV.findByIdAndUpdate(_id, patch);
-    return res.status(200).json({ success: true });
-  } catch (e) {
-    console.log({ e });
-    return res.status(400).json({ error: "Database error. Please try again." });
-  }
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
@@ -128,8 +114,6 @@ export default async function handler(
       return get(req, res);
     case "POST":
       return post(req, res);
-    case "PATCH":
-      return patch(req, res);
     default:
       return res.status(404).end();
   }
