@@ -1,5 +1,5 @@
 [package]
-name = "app"
+name = "primer_id"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,12 +7,12 @@ edition = "2021"
 
 [lib]
 name="utils"
-path="src/utils.rs"
+path="src/lib/mod.rs"
 
-# cargo run --bin process_queue
+# cargo run --bin process_queue -- --is_dev
 [[bin]]
 name = "process_queue"
-path = "src/main.rs"
+path = "src/bin/process_queue/main.rs"
 
 # cargo run --bin ogv -- --id {id} --is_dev --is_stale
 [[bin]]
