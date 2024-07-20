@@ -19,17 +19,18 @@ type Data = OGVInterface | { error: string };
 async function get(req, res) {
   // show jobs ready to submit or are pending that have not had a processing error
   try {
-    const all = await OGV.find({
+    const all: OGVInterface[] = await OGV.find({
       $and: [
         { $or: [{ submit: true }, { pending: true }] },
         { processingError: { $ne: true } },
       ],
     });
 
-    const allFiltered = all.map(({ id, pending, submit }) => ({
+    const allFiltered = all.map(({ id, pending, submit, createdAt }) => ({
       id,
       pending,
       submit,
+      createdAt,
     }));
 
     return res.status(200).json(allFiltered);

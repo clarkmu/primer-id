@@ -6,3 +6,4 @@ pub mod lock_file;
 pub mod send_email;
 pub mod compress;
 pub mod run_command;
+pub mod email_templates;

@@ -3,6 +3,7 @@ use std::fs::{ File, OpenOptions };
 use std::io::{ BufWriter, Write };
 use anyhow::{ Result, Context };
 use utils::compress::compress_dir;
+use utils::email_templates::{ receipt_email_template, results_email_template };
 use utils::pipeline::Upload;
 use utils::run_command::run_command;
 use utils::{ pipeline::{ OgvAPI, Pipeline }, send_email::send_email, load_locations::Locations };
@@ -18,7 +19,10 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
         .context("Failed to patch pipeline as pending.")?;
 
     // set up variables
-    let receipt: String = generate_receipt_email(&pipeline.data.conversion, &pipeline.data.uploads);
+    let receipt_body: String = generate_receipt_email(
+        &pipeline.data.conversion,
+        &pipeline.data.uploads
+    );
     let download_to: &str = &format!("{}/data", &pipeline.scratch_dir);
     let samples_file_location: String = format!("{}/samples.json", &pipeline.scratch_dir);
     let results_location: String = format!("{}/results", &pipeline.scratch_dir);
@@ -46,9 +50,12 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
 
     // email receipt
     pipeline.add_log("Emailing receipt.")?;
-    send_email(&"OGV-Dating Submission", &receipt, &pipeline.data.email, true).await.context(
-        "Failed to send email!"
-    )?;
+    send_email(
+        &format!("OGV Dating Submission #{}", &job_id),
+        &receipt_body,
+        &pipeline.data.email,
+        true
+    ).await.context("Failed to send receipt email.")?;
 
     // download from bucket
     pipeline.add_log(&format!("Downloading from bucket to {}", &download_to))?;
@@ -88,6 +95,15 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
         "Failed to run result-summary.py"
     )?;
 
+    // check for runtime errors
+    let error_file_location = format!("{}/error", &pipeline.scratch_dir);
+    if std::path::Path::new(&error_file_location).exists() {
+        let error_file = std::fs
+            ::read_to_string(&error_file_location)
+            .context("Failed to read error file")?;
+        return Err(anyhow::anyhow!(error_file));
+    }
+
     // compress results
     pipeline.add_log(
         &format!(
@@ -120,10 +136,13 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
 
     // generate and send receipt
     pipeline.add_log("Emailing results.")?;
-    let body = generate_results_email(signed_url, &pipeline.scratch_dir).context(
-        "Failed to generate an email receipt"
-    )?;
-    send_email(&"OGV-Dating Results", &body, &pipeline.data.email, false).await?;
+    let results_body = results_email_template(signed_url);
+    send_email(
+        &format!("OGV Dating Results #{}", &job_id),
+        &results_body,
+        &pipeline.data.email,
+        false
+    ).await?;
 
     // patch as completed
     pipeline
@@ -155,11 +174,7 @@ fn generate_receipt_email(conversion: &HashMap<String, String>, uploads: &Vec<Up
             .collect::<Vec<String>>()
             .join("<br>");
 
-    let receipt = format!(
-        "<html><body>Your OGV submission details are below:<br><br>{}<br><br>{}<br><br>You will receive an email when your results are ready for download.<br><br></body></html>",
-        uploads_html,
-        conversion_html
-    );
+    let receipt = receipt_email_template(&format!("{}</br></br>{}", conversion_html, uploads_html));
 
     receipt
 }
@@ -217,41 +232,6 @@ fn write_conversion_to_file(
     writer.flush()?;
 
     Ok(true)
-}
-
-fn generate_results_email(signed_url: String, scratch_dir: &str) -> Result<String> {
-    let date = chrono::Utc
-        ::now()
-        .checked_add_signed(chrono::Duration::days(7))
-        .ok_or(anyhow::anyhow!("Failed to generate expiration date."))?;
-
-    let download_link = format!(
-        "<a href='{}' style='font-size: 16px;'>Download Results</a><br><small>This link expires {}</small>",
-        signed_url,
-        date.format("%m/%d/%Y").to_string()
-    );
-
-    let mut error: String = String::from("");
-
-    let error_file_location = format!("{}/error", scratch_dir);
-    //if error_file_location exists, get file contents
-    if std::path::Path::new(&error_file_location).exists() {
-        let error_file = std::fs
-            ::read_to_string(&error_file_location)
-            .context("Failed to read error file")?;
-        error = format!(
-            "<div style='color: lightcoral; padding: 5px; font-weight: bold;'>{}</div>",
-            &error_file
-        );
-    }
-
-    let body = format!(
-        "<html><body>Your OGV results are ready for download.<br><br>{}<br><br>{}<br><br></body></html>",
-        download_link,
-        error
-    );
-
-    Ok(body)
 }
 
 #[cfg(test)]

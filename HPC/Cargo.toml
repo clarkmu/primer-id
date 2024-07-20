@@ -23,9 +23,9 @@ path = "src/bin/ogv/main.rs"
 # name = "tcs"
 # path = "src/bin/tcs/main.rs"
 
-# [[bin]]
-# name = "intactness"
-# path = "src/bin/intactness/main.rs"
+[[bin]]
+name = "intactness"
+path = "src/bin/intactness/main.rs"
 
 [dependencies]
 exitfailure = "0.5.1"

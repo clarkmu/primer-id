@@ -89,9 +89,41 @@ async fn main() -> Result<()> {
         }
     }
 
-    // let intacts: Vec<IntactAPI> = get_api(&locations.api_url[PipelineType::Intact]).await.unwrap_or(
-    //     vec![]
-    // );
+    let intacts: Vec<SharedAPIData> = get_api(
+        &locations.api_url[PipelineType::Intact]
+    ).await.unwrap_or(vec![]);
+
+    for intact in intacts {
+        let is_stale = if intact.pending && pipeline_is_stale(&intact.created_at).unwrap_or(true) {
+            "--is_stale"
+        } else {
+            ""
+        };
+
+        let run_is_stale = !is_stale.is_empty();
+
+        if intact.submit || run_is_stale {
+            let is_dev_cmd = if is_dev { "--is_dev" } else { "" };
+            let mut cmd = format!(
+                "cargo run --bin intactness -- --id={} {} {}",
+                &intact.id,
+                is_dev_cmd,
+                is_stale
+            );
+
+            // no need to sbatch for is_stale , no heavy processing
+            if !is_dev && !run_is_stale {
+                cmd = format!(
+                    "sbatch -o {} -n 1 --job_name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
+                    format!("intactness-{}", &intact.id),
+                    &cmd
+                );
+            }
+
+            let _ = run_command(&cmd, &locations.base);
+        }
+    }
 
     // for intact in intacts {
     //     let pipeline: Pipeline<IntactAPI> = Pipeline::new(

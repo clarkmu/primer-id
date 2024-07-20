@@ -59,7 +59,7 @@ pub struct IntactAPI {
     pub pending: bool,
     #[serde(rename = "processingError")]
     pub processing_error: bool,
-    pub sequence: String,
+    pub sequences: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -160,8 +160,8 @@ impl<ApiData> Pipeline<ApiData> {
     pub async fn patch_pipeline(&self, data: Value) -> Result<()> {
         reqwest::Client
             ::new()
-            .patch(&self.api_url)
-            .json(&serde_json::json!({"_id": self.id, "patch": data}))
+            .patch(format!("{}/{}", &self.api_url, &self.id))
+            .json(&data)
             .header("x-api-key", &self.api_key)
             .send().await
             .context("Failed to patch pipeline.")?;
@@ -226,6 +226,10 @@ impl<ApiData> Pipeline<ApiData> {
             .context("Failed to generate signed url. API may have changed.")?
             .trim()
             .to_string();
+
+        if !signed_url.contains("https://storage.googleapis.com") {
+            return Err(anyhow::anyhow!("Failed to generate signed url. API may have changed."));
+        }
 
         Ok(format!("https://{}", signed_url))
     }

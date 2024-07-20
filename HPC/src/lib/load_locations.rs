@@ -16,6 +16,7 @@ pub struct PipelineKeys {
 
 #[derive(Clone, Copy)]
 pub enum PipelineType {
+    Base,
     Ogv,
     Tcs,
     Intact,
@@ -25,6 +26,7 @@ impl Index<PipelineType> for PipelineKeys {
     type Output = String;
     fn index(&self, index: PipelineType) -> &Self::Output {
         match index {
+            PipelineType::Base => &self.base,
             PipelineType::Ogv => &self.ogv,
             PipelineType::Tcs => &self.tcs,
             PipelineType::Intact => &self.intact,

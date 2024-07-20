@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import OGV, { OGVInterface } from "@/models/OGV";
+import Intact, { IntactInterface } from "@/models/Intact";
 import dbConnect from "@/utils/dbConnect";
 
-type Data = OGVInterface | { error: string };
+type Data = IntactInterface | { error: string };
 
 const { API_KEY } = process.env;
 
@@ -12,8 +12,8 @@ async function get(
   id: string
 ) {
   try {
-    const ogv = await OGV.findById(id);
-    return res.status(200).json(ogv);
+    const intact = await Intact.findById(id);
+    return res.status(200).json(intact);
   } catch (e) {
     console.log({ e });
     return res.status(400).json({ error: "Database error: " + e });
@@ -30,7 +30,7 @@ async function patch(req, res, id) {
   }
 
   try {
-    await OGV.findByIdAndUpdate(id, body);
+    await Intact.findByIdAndUpdate(id, body);
     return res.status(200).json({ success: true });
   } catch (e) {
     console.log({ e });
@@ -52,7 +52,7 @@ export default async function handler(
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { id } = req.query;
+  const id = req.query.id || "";
 
   if (!id || Array.isArray(id)) {
     return res.status(400).json({ error: "Missing id" });
