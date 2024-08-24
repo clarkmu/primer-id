@@ -60,7 +60,7 @@ async fn main() -> () {
         pipeline
             .add_error(
                 &format!("TCS/DR Error {}", &pipeline.data.id),
-                &format!("Failed to initialize TCS/DR pipeline.\n\n{:?}", e),
+                &format!("Failed to process TCS/DR pipeline #{}.\n\n{:?}", &pipeline.id, e),
                 &pipeline.data.email
             ).await
             .unwrap_or_else(|e| {

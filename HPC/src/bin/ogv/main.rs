@@ -46,7 +46,7 @@ async fn main() -> () {
         pipeline
             .add_error(
                 &format!("OGV Error {}", &pipeline.data.id),
-                &format!("Failed to initialize OGV pipeline.\n\n{:?}", e),
+                &format!("Failed to process OGV pipeline #{}.\n\n{:?}", &pipeline.id, e),
                 &pipeline.data.email
             ).await
             .unwrap_or_else(|e| {

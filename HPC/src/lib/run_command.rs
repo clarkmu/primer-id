@@ -31,3 +31,31 @@ pub fn run_command(cmd: &str, current_dir: &str) -> Result<()> {
 
     Ok(())
 }
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_run_command() {
+        let cmd: &str = "ls";
+        let current_dir: &str = "/usr";
+        let result = run_command(cmd, current_dir);
+        assert!(!result.is_err());
+    }
+
+    #[test]
+    fn test_returns_error() {
+        let cmd: &str = "ls -l";
+        let current_dir: &str = "/fake/path";
+        let result = run_command(cmd, current_dir);
+        assert!(result.is_err());
+
+        // how I usually check for error in (main|process)es
+        let mut check: bool = false;
+        if let Err(e) = result {
+            assert_eq!(e.to_string(), "Failed running command:\nls -l");
+            check = true;
+        }
+        assert_eq!(check, true);
+    }
+}

@@ -108,9 +108,16 @@ async fn main() -> Result<()> {
 
         if intact.submit || run_is_stale {
             let is_dev_cmd = if is_dev { "--is_dev" } else { "" };
+
+            let mut cores = intact.upload_count.unwrap_or(0) / 2;
+            cores = std::cmp::min(cores, 9);
+
+            let memory: u32 = 20000 * (cores as u32);
+
             let mut cmd = format!(
-                "cargo run --bin intactness -- --id={} {} {}",
+                "cargo run --bin intactness -- --id={} --cores={} {} {}",
                 &intact.id,
+                cores,
                 is_dev_cmd,
                 is_stale
             );
@@ -118,9 +125,11 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = format!(
-                    "sbatch -o {} -n 1 --job-name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    "sbatch -o {} -n {} --job-name='{}' --mem={} -t 1440 --wrap='{}'",
                     format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
+                    cores + 1,
                     format!("intactness-{}", &intact.id),
+                    memory,
                     &cmd
                 );
             }

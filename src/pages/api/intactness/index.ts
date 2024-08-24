@@ -10,12 +10,15 @@ async function get(req, res) {
         { processingError: { $ne: true } },
       ],
     });
-    const filtered_results = all.map(({ id, submit, pending, createdAt }) => ({
-      id,
-      submit,
-      pending,
-      createdAt,
-    }));
+    const filtered_results = all.map(
+      ({ id, submit, pending, createdAt, sequences }) => ({
+        id,
+        submit,
+        pending,
+        createdAt,
+        uploadCount: (sequences.match(/>/g) || []).length,
+      })
+    );
     return res.status(200).json(filtered_results);
   } catch (e) {
     console.log({ e });
