@@ -1,6 +1,5 @@
 FROM rust:1.78
 
-
 ENV CARGO_TARGET_DIR=/app/target
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
@@ -11,7 +10,8 @@ WORKDIR /app
 RUN cargo install cargo-watch
 
 RUN apt update && apt upgrade -y
-RUN apt install software-properties-common wget curl libcurl4 git vim task-spooler zip lldb -y
+RUN apt install software-properties-common wget curl libcurl4 git vim task-spooler lldb -y
+# zip
 
 #Install GCP CLI for file transfers
 RUN curl -sSL https://sdk.cloud.google.com | bash
@@ -37,7 +37,7 @@ RUN conda config --add channels conda-forge
 RUN conda config --set channel_priority strict
 
 # TCS-DR dependencies
-RUN conda create -n tcsdr python=3.9 ruby=2.7.2 r-base
+RUN conda create -n tcsdr python=3.9 ruby=2.7.2 r-base r-essentials r-igraph r-phangorn
 RUN conda run -n tcsdr gem install viral_seq
 
 # OGV dependencies
@@ -55,8 +55,9 @@ RUN conda run -n intactness pip3 install requests biopython==1.79 reportlab==4.1
 RUN mkdir /app/intactness
 RUN git clone https://github.com/clarkmu/intactness-pipeline /app/intactness
 
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# COPY entrypoint.sh /app/entrypoint.sh
+# RUN chmod +x /app/entrypoint.sh
 COPY storage-admin.json /app/storage-admin.json
+RUN gcloud auth activate-service-account --key-file /app/storage-admin.json
 
-ENTRYPOINT [ "sh", "/app/entrypoint.sh" ]
+ENTRYPOINT [ "sleep", "infinity" ]

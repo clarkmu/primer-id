@@ -2,6 +2,7 @@ pub struct EnvVars {
     pub is_dev: bool,
     pub id: String,
     pub is_stale: String,
+    pub cores: usize,
 }
 
 pub fn load_env_vars() -> EnvVars {
@@ -16,11 +17,20 @@ pub fn load_env_vars() -> EnvVars {
         .to_string()
         .replace("--id=", "");
 
+    let cores: usize = args
+        .iter()
+        .find(|e| e.contains("cores"))
+        .unwrap_or(&String::from(""))
+        .to_string()
+        .replace("--cores=", "")
+        .parse()
+        .unwrap_or(1);
+
     let is_stale: String = args
         .iter()
         .find(|e| e.contains("is_stale"))
         .map(|e| e.to_string())
         .unwrap_or(String::from(""));
 
-    EnvVars { is_dev, id, is_stale }
+    EnvVars { is_dev, id, is_stale, cores }
 }

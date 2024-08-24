@@ -9,9 +9,7 @@ use utils::run_command::run_command;
 use utils::{ pipeline::{ OgvAPI, Pipeline }, send_email::send_email, load_locations::Locations };
 
 pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Result<()> {
-    pipeline.add_log(
-        &format!("Initializing OGV pipeline with the following data:\n{:?}", &pipeline.data)
-    )?;
+    pipeline.add_log(&format!("Initializing OGV pipeline #{}", &pipeline.id))?;
 
     // patch as pending
     pipeline

@@ -14,15 +14,17 @@ path="src/lib/mod.rs"
 name = "process_queue"
 path = "src/bin/process_queue/main.rs"
 
-# cargo run --bin ogv -- --id {id} --is_dev --is_stale
+# cargo run --bin ogv -- --id={id} --is_dev --is_stale
 [[bin]]
 name = "ogv"
 path = "src/bin/ogv/main.rs"
 
-# [[bin]]
-# name = "tcs"
-# path = "src/bin/tcs/main.rs"
+# cargo run --bin tcsdr -- --id={id} --is_dev --is_stale
+[[bin]]
+name = "tcsdr"
+path = "src/bin/tcsdr/main.rs"
 
+# cargo run --bin intactness -- --id={id} --is_dev --is_stale
 [[bin]]
 name = "intactness"
 path = "src/bin/intactness/main.rs"
@@ -40,3 +42,4 @@ anyhow = "1.0.86"
 zip-extensions = "0.8.0"
 flate2 = "1.0.30"
 tar = "0.4.41"
+rayon = "1.10.0"

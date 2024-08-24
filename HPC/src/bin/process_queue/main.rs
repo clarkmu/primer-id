@@ -20,7 +20,11 @@ pub struct SharedAPIData {
     pub created_at: String,
     pub submit: bool,
     pub pending: bool,
+    #[serde(rename = "uploadCount")]
+    pub upload_count: Option<u8>,
 }
+
+// todo: need to patch pipeline {submit: false, pending: true} directly after sbatch
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -78,7 +82,7 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = format!(
-                    "sbatch -o {} -n 4 --job_name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    "sbatch -o {} -n 4 --job-name='{}' --mem=20000 -t 1440 --wrap='{}'",
                     format!("{}/{}.out", &locations.log_dir[PipelineType::Ogv], &ogv.id),
                     format!("ogv-{}", &ogv.id),
                     &cmd
@@ -114,7 +118,7 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = format!(
-                    "sbatch -o {} -n 1 --job_name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    "sbatch -o {} -n 1 --job-name='{}' --mem=20000 -t 1440 --wrap='{}'",
                     format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
                     format!("intactness-{}", &intact.id),
                     &cmd
@@ -125,31 +129,59 @@ async fn main() -> Result<()> {
         }
     }
 
-    // for intact in intacts {
-    //     let pipeline: Pipeline<IntactAPI> = Pipeline::new(
-    //         intact.id.clone(),
-    //         intact,
-    //         &locations,
-    //         PipelineType::Intact
-    //     );
-    //     match process_intact::init(&pipeline).await {
-    //         Ok(_) => {}
-    //         Err(e) => {
-    //             let subject = &format!("Intact Error: {}", &pipeline.data.id);
-    //             let msg = &format!("{:?}", e);
-    //             pipeline.add_error(msg).await?;
-    //             println!("{}: {}", subject, msg);
-    //             if let Err(_e) = send_email(subject, msg, &pipeline.data.email, true).await {
-    //                 // todo
-    //             }
-    //             let _ = pipeline.patch_pipeline(
-    //                 serde_json::json!({"processingError": true})
-    //             ).await?;
-    //         }
-    //     }
-    // }
+    let tcss: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Tcs]).await.unwrap_or(
+        vec![]
+    );
 
-    // let _tcss: Vec<TcsAPI> = get_api(&locations.api_url[PipelineType::Tcs]).await.unwrap_or(vec![]);
+    for tcs in tcss {
+        let is_stale = if tcs.pending && pipeline_is_stale(&tcs.created_at).unwrap_or(true) {
+            "--is_stale"
+        } else {
+            ""
+        };
+
+        let run_is_stale = !is_stale.is_empty();
+
+        if tcs.submit || run_is_stale {
+            let is_dev_cmd = if is_dev { "--is_dev" } else { "" };
+
+            let mut cores = tcs.upload_count.unwrap_or(0) / 2;
+            cores = std::cmp::min(cores, 9);
+
+            let memory: u32 = 20000 * (cores as u32);
+
+            let mut cmd = format!(
+                "cargo run --bin tcsdr -- --id={} --cores={} {} {}",
+                &tcs.id,
+                cores,
+                is_dev_cmd,
+                is_stale
+            );
+
+            // no need to sbatch for is_stale , no heavy processing
+            if !is_dev && !run_is_stale {
+                let output_file = format!(
+                    "{}/{}.out",
+                    &locations.log_dir[PipelineType::Tcs],
+                    &tcs.id
+                );
+                let job_name = format!("tcs-{}", &tcs.id);
+
+                cmd = format!(
+                    "sbatch -o {} -n {} --job-name='{}' --mem={} -t 1440 --wrap='{}'",
+                    output_file,
+                    cores + 1,
+                    job_name,
+                    memory,
+                    &cmd
+                );
+            }
+
+            if !cmd.is_empty() {
+                let _ = run_command(&cmd, &locations.base);
+            }
+        }
+    }
 
     println!("All processed.");
 

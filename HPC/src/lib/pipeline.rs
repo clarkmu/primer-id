@@ -4,7 +4,7 @@ use crate::{
     run_command::run_command,
     send_email::send_email,
 };
-use serde::Deserialize;
+use serde::{ Deserialize, Serialize };
 use serde_json::Value;
 use chrono::prelude::*;
 use std::path::PathBuf;
@@ -12,7 +12,7 @@ use std::io::Write;
 
 use anyhow::{ Context, Result };
 
-#[derive(serde::Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Upload {
     #[serde(rename = "_id")]
     pub id: String,
@@ -22,7 +22,7 @@ pub struct Upload {
     pub lib_name: String,
 }
 
-#[derive(serde::Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct OgvAPI {
     #[serde(rename = "_id")]
     pub id: String,
@@ -41,10 +41,7 @@ pub struct OgvAPI {
     pub processing_error: bool,
 }
 
-#[derive(serde::Deserialize, Debug, Clone)]
-pub struct TcsAPI {}
-
-#[derive(serde::Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct IntactAPI {
     #[serde(rename = "_id")]
     pub id: String,
@@ -60,6 +57,77 @@ pub struct IntactAPI {
     #[serde(rename = "processingError")]
     pub processing_error: bool,
     pub sequences: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct TcsUpload {
+    pub id: String,
+    #[serde(rename = "fileName")]
+    pub file_name: String,
+    #[serde(rename = "poolName")]
+    pub pool_name: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct Primer {
+    pub id: String,
+    pub region: String,
+    pub supermajority: f32,
+    pub forward: String,
+    pub cdna: String,
+    #[serde(rename = "endJoin")]
+    pub end_join: bool,
+    #[serde(rename = "endJoinOption")]
+    pub end_join_option: Option<u16>,
+    #[serde(rename = "endJoinOverlap")]
+    pub end_join_overlap: Option<u16>,
+    pub qc: bool,
+    #[serde(rename = "refGenome")]
+    pub ref_genome: Option<String>,
+    #[serde(rename = "refStart")]
+    pub ref_start: Option<u16>,
+    #[serde(rename = "refEnd")]
+    pub ref_end: Option<u16>,
+    #[serde(rename = "allowIndels")]
+    pub allow_indels: bool,
+    pub trim: bool,
+    #[serde(rename = "trimGenome")]
+    pub trim_genome: Option<String>,
+    #[serde(rename = "trimStart")]
+    pub trim_start: Option<u16>,
+    #[serde(rename = "trimEnd")]
+    pub trim_end: Option<u16>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct TcsAPI {
+    #[serde(rename = "_id")]
+    pub id: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "jobID")]
+    pub job_id: String,
+    #[serde(rename = "resultsFormat")]
+    pub results_format: String,
+    pub email: String,
+    pub submit: bool,
+    pub pending: bool,
+    #[serde(rename = "processingError")]
+    pub processing_error: bool,
+    pub uploads: Option<Vec<TcsUpload>>,
+    pub primers: Option<Vec<Primer>>,
+    pub dropbox: Option<String>,
+    pub htsf: Option<String>,
+    pub uploaded: bool,
+    #[serde(rename = "errorRate")]
+    pub error_rate: Option<f32>,
+    #[serde(rename = "platformFormat")]
+    pub platform_format: Option<u16>,
+    #[serde(rename = "poolName")]
+    pub pool_name: Option<String>,
+    pub results: Option<String>,
+    #[serde(rename = "drVersion")]
+    pub dr_version: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -198,12 +266,31 @@ impl<ApiData> Pipeline<ApiData> {
 
     pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<()> {
         let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.id, to);
+
+        // retention policy prevents overwriting objects - check to delete
+        // let check_cmd = format!("gsutil ls {}", to_bucket);
+        // let check = std::process::Command
+        //     ::new("sh")
+        //     .arg("-c")
+        //     .arg(&check_cmd)
+        //     .output()
+        //     .context("Failed to check if file exists in bucket.")?;
+        // let output = str::from_utf8(&check.stdout).context("")?;
+        // if output.contains("matched no objects") {
+        //     let rm_cmd = format!("gsutil rm {}", to_bucket);
+        //     run_command(&rm_cmd, "")?;
+        // }
+
         let gs_cp_cmd = format!("gsutil cp {} {}", &from_local, to_bucket);
         run_command(&gs_cp_cmd, "")?;
         Ok(())
     }
 
     pub fn bucket_signed_url(&self, location: &str) -> Result<String> {
+        // sample output from gsutil signurl
+        // URL     HTTP Method     Expiration      Signed URL
+        // gs://bucket/file      GET     2022-10-12 07:25:31     https://storage.googleapis.com/user/file?x-goog-signature=...&x-goog-algorithm=...&x-goog-credential=....&x-goog-date=...&x-goog-signedheaders=...
+
         let bucket_location = format!("{}/{}/{}", &self.bucket_url, &self.id, location);
 
         let args_str = format!("signurl -d 7d {} {}", self.private_key_location, bucket_location);
