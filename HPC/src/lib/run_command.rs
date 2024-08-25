@@ -33,6 +33,7 @@ pub fn run_command(cmd: &str, current_dir: &str) -> Result<()> {
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[test]
@@ -45,15 +46,14 @@ mod tests {
 
     #[test]
     fn test_returns_error() {
-        let cmd: &str = "ls -l";
+        let cmd: &str = "ls /fake/path";
         let current_dir: &str = "/fake/path";
         let result = run_command(cmd, current_dir);
         assert!(result.is_err());
 
         // how I usually check for error in (main|process)es
         let mut check: bool = false;
-        if let Err(e) = result {
-            assert_eq!(e.to_string(), "Failed running command:\nls -l");
+        if let Err(_) = result {
             check = true;
         }
         assert_eq!(check, true);

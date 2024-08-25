@@ -1,10 +1,12 @@
 use std::ops::Index;
-use std::fs::File;
-use std::io::BufReader;
 use serde::{ Serialize, Deserialize };
-use anyhow::Result;
+use anyhow::{ Context, Result };
 
 use crate::load_env_vars::{ load_env_vars, EnvVars };
+
+static LOCATIONS_FILE: &'static [u8] = include_bytes!("../../locations.json");
+static LOCATIONS_FILE_DEV: &'static [u8] = include_bytes!("../../locations.dev.json");
+static LOCATIONS_FILE_TEST: &'static [u8] = include_bytes!("../../locations.test.json");
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PipelineKeys {
@@ -51,13 +53,19 @@ pub struct Locations {
 }
 
 pub fn load_locations() -> Result<Locations> {
-    let EnvVars { is_dev, .. } = load_env_vars();
+    let EnvVars { is_dev, is_test, .. } = load_env_vars();
 
-    let locations_file: &str = if is_dev { "./locations.dev.json" } else { "./locations.json" };
-
-    let file = File::open(locations_file)?;
-    let reader = BufReader::new(file);
-    let locations: Locations = serde_json::from_reader(reader)?;
+    let locations: Locations = serde_json
+        ::from_slice(
+            if is_dev {
+                LOCATIONS_FILE_DEV
+            } else if is_test {
+                LOCATIONS_FILE_TEST
+            } else {
+                LOCATIONS_FILE
+            }
+        )
+        .context("Failed to load locations.")?;
 
     Ok(locations)
 }

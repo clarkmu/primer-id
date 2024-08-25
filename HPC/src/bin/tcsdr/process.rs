@@ -271,6 +271,7 @@ async fn sort_files(dir: &str, destination: &str) -> Result<()> {
 }
 
 mod tests {
+    #[allow(unused_imports)]
     use super::*;
 
     #[tokio::test]

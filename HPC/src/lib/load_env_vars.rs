@@ -1,5 +1,6 @@
 pub struct EnvVars {
     pub is_dev: bool,
+    pub is_test: bool,
     pub id: String,
     pub is_stale: String,
     pub cores: usize,
@@ -8,6 +9,7 @@ pub struct EnvVars {
 pub fn load_env_vars() -> EnvVars {
     let args: Vec<String> = std::env::args().collect();
     let is_dev = args.iter().any(|e| e.contains("is_dev"));
+    let is_test = args.iter().any(|e| e.contains("is_test"));
 
     // todo probably a better way to retrieve this
     let id: String = args
@@ -32,5 +34,5 @@ pub fn load_env_vars() -> EnvVars {
         .map(|e| e.to_string())
         .unwrap_or(String::from(""));
 
-    EnvVars { is_dev, id, is_stale, cores }
+    EnvVars { is_dev, is_test, id, is_stale, cores }
 }
