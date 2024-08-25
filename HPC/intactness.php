@@ -66,6 +66,7 @@ class Pipeline {
 
         $this->isInitFile = ".init_intact";
         $this->isDoneFile = "intactness/execution_time.txt";
+        // $this->isDoneFile = ".complete";
         $this->isErrorFile = "error.log";
 
         $this->isFirstRun = $data['submit'];

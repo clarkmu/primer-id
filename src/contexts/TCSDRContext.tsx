@@ -80,9 +80,9 @@ export default function TCSDRContextProvider({
   const editPipeline = (edit: object) =>
     setState((s) => ({ ...s, pipeline: { ...s.pipeline, ...edit } }));
 
-  const patchPipeline = (_id: string, patch: object) => {
-    axios.patch("/api/tcsdr", { _id, patch });
-  };
+  // const patchPipeline = (_id: string, patch: object) => {
+  //   axios.patch("/api/tcsdr", { _id, patch });
+  // };
 
   useEffect(() => {
     const p = JSON.parse(pipeline);
@@ -288,7 +288,8 @@ export default function TCSDRContextProvider({
 
       editState({ submitting: false });
 
-      patchPipeline(res.data._id, { submit: true });
+      // patchPipeline(res.data._id, { submit: true });
+      axios.delete(`/api/tcsdr/submit/${res.data._id}`);
     }
 
     editState({ submitted: true, submitting: false });

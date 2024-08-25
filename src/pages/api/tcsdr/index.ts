@@ -2,7 +2,7 @@
 import dbConnect from "@/utils/dbConnect";
 import type { NextApiRequest, NextApiResponse } from "next";
 import GCP_CREDENTIALS from "@/utils/gcp/GCP_CREDENTIALS";
-import TCSDR from "@/models/TCSDR";
+import TCSDR, { TCSDRInterface } from "@/models/TCSDR";
 import { Storage } from "@google-cloud/storage";
 
 const storage = new Storage({
@@ -16,13 +16,22 @@ const devPrefix = process.env.NODE_ENV === "production" ? "" : "dev/";
 
 async function get(req, res) {
   try {
-    const all = await TCSDR.find({
+    const all: TCSDRInterface[] = await TCSDR.find({
       $and: [
         { $or: [{ submit: true }, { pending: true }] },
         { processingError: { $ne: true } },
       ],
     });
-    return res.status(200).json(all);
+    const all_tcsdr = all.map(
+      ({ id, createdAt, submit, pending, uploads }) => ({
+        id,
+        createdAt,
+        submit,
+        pending,
+        uploadCount: uploads?.length || 0,
+      })
+    );
+    return res.status(200).json(all_tcsdr);
   } catch (e) {
     console.log({ e });
     return res.status(400).json({ error: "Database error. Please try again." });
@@ -104,27 +113,6 @@ async function post(req, res) {
   }
 }
 
-async function patch(req, res) {
-  let body;
-
-  try {
-    body = JSON.parse(req.body);
-  } catch (e) {
-    body = req.body;
-  }
-
-  // const body = JSON.parse(req.body);
-  const { _id, patch } = body;
-
-  try {
-    await TCSDR.findByIdAndUpdate(_id, patch);
-    return res.status(200).json({ success: true });
-  } catch (e) {
-    console.log({ e });
-    return res.status(400).json({ error: "Database error. Please try again." });
-  }
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -142,8 +130,6 @@ export default async function handler(
       return get(req, res);
     case "POST":
       return post(req, res);
-    case "PATCH":
-      return patch(req, res);
     default:
       return res.status(404).end();
   }

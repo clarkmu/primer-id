@@ -1,0 +1,38 @@
+{
+  "comments": {
+    "SETUP": ""
+  },
+  "admin_email": "admin@uni.edu",
+  "tilda": ".",
+  "base": "/app",
+  "private_key_location": "/app/storage-admin.json",
+  "ruby_server": "",
+  "bucket_url": {
+    "base": "gs://bucket/",
+    "tcs": "gs://bucket/tcs-dr",
+    "ogv": "gs://bucket/ogv-dating",
+    "intact": "gs://bucket/intactness"
+  },
+  "log_dir": {
+    "base": "/app/work/log",
+    "tcs": "/app/work/log/tcsdr",
+    "ogv": "/app/work/log/ogv",
+    "intact": "/app/work/log/intact"
+  },
+  "scratch_space": {
+    "base": "/app/work/scratch",
+    "tcs": "/app/work/scratch/tcsdr",
+    "ogv": "/app/work/scratch/ogv",
+    "intact": "/app/work/scratch/intact"
+  },
+  "api_url": {
+    "base": "http://host.docker.internal:3000/api",
+    "tcs": "http://host.docker.internal:3000/api/tcsdr",
+    "ogv": "http://host.docker.internal:3000/api/ogv",
+    "intact": "http://host.docker.internal:3000/api/intactness"
+  },
+  "conda_location": "/root/miniconda3/condabin/conda",
+  "ogv_base_path": "/app/ogv-dating",
+  "intactness_base_path": "/app/intactness",
+  "api_key": "replace this key with something more secure than 'secret-phrase'"
+}

@@ -1,10 +1,33 @@
 [package]
-name = "app"
+name = "primer_id"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name="utils"
+path="src/lib/mod.rs"
+
+# cargo run --bin process_queue -- --is_dev
+[[bin]]
+name = "process_queue"
+path = "src/bin/process_queue/main.rs"
+
+# cargo run --bin ogv -- --id={id} --is_dev --is_stale
+[[bin]]
+name = "ogv"
+path = "src/bin/ogv/main.rs"
+
+# cargo run --bin tcsdr -- --id={id} --is_dev --is_stale
+[[bin]]
+name = "tcsdr"
+path = "src/bin/tcsdr/main.rs"
+
+# cargo run --bin intactness -- --id={id} --is_dev --is_stale
+[[bin]]
+name = "intactness"
+path = "src/bin/intactness/main.rs"
 
 [dependencies]
 exitfailure = "0.5.1"
@@ -19,3 +42,6 @@ anyhow = "1.0.86"
 zip-extensions = "0.8.0"
 flate2 = "1.0.30"
 tar = "0.4.41"
+rayon = "1.10.0"
+bio = "2.0.1"
+cargo-zigbuild = "0.19.1"
