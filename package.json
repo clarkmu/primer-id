@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "concurrently 'yarn dev' 'npx cypress open'",
-    "deploy": "rm -rf .next && yarn build && gcloud app deploy --no-cache --project phylodynamics-213415"
+    "deploy": "rm -rf .next && yarn build && gcloud app deploy --no-cache --project phylodynamics-213415",
+    "deploy-staging": "rm -rf .next && yarn build && gcloud app deploy --version=test --no-promote --no-cache --project phylodynamics-213415"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.8.0",

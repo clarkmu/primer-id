@@ -14,17 +14,17 @@ path="src/lib/mod.rs"
 name = "process_queue"
 path = "src/bin/process_queue/main.rs"
 
-# cargo run --bin ogv -- --id={id} --is_dev --is_stale
+# cargo run --bin ogv -- --id={id} --is_dev --is_stale --cores=3
 [[bin]]
 name = "ogv"
 path = "src/bin/ogv/main.rs"
 
-# cargo run --bin tcsdr -- --id={id} --is_dev --is_stale
+# cargo run --bin tcsdr -- --id={id} --is_dev --is_stale --cores=3
 [[bin]]
 name = "tcsdr"
 path = "src/bin/tcsdr/main.rs"
 
-# cargo run --bin intactness -- --id={id} --is_dev --is_stale
+# cargo run --bin intactness -- --id={id} --is_dev --is_stale --cores=3
 [[bin]]
 name = "intactness"
 path = "src/bin/intactness/main.rs"

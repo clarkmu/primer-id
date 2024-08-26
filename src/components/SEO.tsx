@@ -1,5 +1,7 @@
 import Head from "next/head";
 
+// TODO: this component breaking GAE deployments (at least in staging - unchecked in production)
+
 const url = "https://primer-id.org";
 const favicon = `${url}/favicon.ico`;
 const logo = `${url}/logo.png`;
