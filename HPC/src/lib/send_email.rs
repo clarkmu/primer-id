@@ -1,5 +1,5 @@
-use anyhow::Result;
-use lettre::{ message::{ header::{ self, ContentType }, Mailboxes, Message }, SmtpTransport };
+use anyhow::{ Result, Context };
+use mail_send::{ mail_builder::MessageBuilder, SmtpClientBuilder };
 use crate::{
     load_env_vars::{ load_env_vars, EnvVars },
     load_locations::{ load_locations, Locations },
@@ -13,31 +13,36 @@ pub async fn send_email(
 ) -> Result<()> {
     let EnvVars { is_dev, .. } = load_env_vars();
 
-    let Locations { admin_email, .. } = load_locations().expect("Error loading locations.");
+    let Locations { admin_email, smtp_address, smtp_port, .. } = load_locations().expect(
+        "Error loading locations."
+    );
 
     if is_dev {
         println!("Email: {} - {}", subject, body);
         return Ok(());
     }
 
-    let mut to = String::from(to_email);
+    // let mut to = String::from(to_email);
+    let mut to = vec![to_email];
 
     if include_admin {
-        to.push_str(&format!(", {}", &admin_email));
+        // to.push_str(&format!(", {}", &admin_email));
+        to.push(&admin_email);
     }
 
-    let mailboxes: Mailboxes = to.parse()?;
-    let to_header: header::To = mailboxes.into();
-
-    //todo from and SmtpTransport::relay
-    let _email = Message::builder()
-        .from("".parse()?)
-        .mailbox(to_header)
+    let message = MessageBuilder::new()
+        .from(admin_email.clone())
+        .to(to)
         .subject(subject)
-        .header(ContentType::TEXT_HTML)
-        .body(String::from(body))?;
+        .html_body(body);
+    // .text_body("Hello world!");
 
-    let _mailer = SmtpTransport::relay("")?.build();
+    SmtpClientBuilder::new(smtp_address, smtp_port)
+        .implicit_tls(false)
+        .connect().await
+        .context("Failed to connect to SMTP server.")?
+        .send(message).await
+        .context("Failed to send email.")?;
 
     Ok(())
 }

@@ -14,7 +14,6 @@ path="src/lib/mod.rs"
 name = "process_queue"
 path = "src/bin/process_queue/main.rs"
 
-# cargo run --bin ogv -- --id={id} --is_dev --is_stale --cores=3
 [[bin]]
 name = "ogv"
 path = "src/bin/ogv/main.rs"
@@ -30,10 +29,11 @@ name = "intactness"
 path = "src/bin/intactness/main.rs"
 
 [dependencies]
+# neeed for production
+openssl = { version = "0.10.59", features = ["vendored"] }
 exitfailure = "0.5.1"
 serde_json = "1.0.85"
 serde = {version = "1.0.194", features = ["derive"]}
-lettre = "0.11"
 tokio = { version = "1.37.0", features = ["full"] }
 reqwest = { version = "0.12", features = ["json"] }
 glob = "0.3.1"
@@ -45,3 +45,4 @@ tar = "0.4.41"
 rayon = "1.10.0"
 bio = "2.0.1"
 cargo-zigbuild = "0.19.1"
+mail-send = "0.4.9"

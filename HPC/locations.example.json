@@ -7,6 +7,8 @@
   "base": "/app",
   "private_key_location": "/app/storage-admin.json",
   "ruby_server": "",
+  "smtp_address": "",
+  "smtp_port": 587,
   "bucket_url": {
     "base": "gs://bucket/",
     "tcs": "gs://bucket/tcs-dr",
