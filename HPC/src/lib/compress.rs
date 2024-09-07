@@ -34,6 +34,10 @@ pub fn compress_dir(
         &format!("{}/{}", output_location, compressed_filename)
     );
 
+    if archive_file.exists() {
+        fs::remove_file(&archive_file).context("Failed to remove archive file.")?;
+    }
+
     if !std::path::Path::new(output_location).exists() {
         fs::create_dir_all(output_location).context("Failed to create input location.")?;
     }

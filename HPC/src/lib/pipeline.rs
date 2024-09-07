@@ -9,6 +9,7 @@ use serde_json::Value;
 use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
+use std::process::Stdio::piped;
 
 use anyhow::{ Context, Result };
 
@@ -267,19 +268,9 @@ impl<ApiData> Pipeline<ApiData> {
     pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<()> {
         let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.id, to);
 
-        // retention policy prevents overwriting objects - check to delete
-        // let check_cmd = format!("gsutil ls {}", to_bucket);
-        // let check = std::process::Command
-        //     ::new("sh")
-        //     .arg("-c")
-        //     .arg(&check_cmd)
-        //     .output()
-        //     .context("Failed to check if file exists in bucket.")?;
-        // let output = str::from_utf8(&check.stdout).context("")?;
-        // if output.contains("matched no objects") {
-        //     let rm_cmd = format!("gsutil rm {}", to_bucket);
-        //     run_command(&rm_cmd, "")?;
-        // }
+        self.add_log(
+            &format!("Uploading from local: {}\nUploading to bucket: {}", &from_local, &to_bucket)
+        )?;
 
         let gs_cp_cmd = format!("gsutil cp {} {}", &from_local, to_bucket);
         run_command(&gs_cp_cmd, "")?;
@@ -293,18 +284,22 @@ impl<ApiData> Pipeline<ApiData> {
 
         let bucket_location = format!("{}/{}/{}", &self.bucket_url, &self.id, location);
 
+        println!("Bucket location for signed url: {}", &bucket_location);
+
         let args_str = format!("signurl -d 7d {} {}", self.private_key_location, bucket_location);
         let args: Vec<&str> = args_str.split(" ").collect::<Vec<&str>>();
 
         let url = std::process::Command
             ::new("gsutil")
             .args(args)
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
+            .stdout(piped())
+            .stderr(piped())
             .output()
             .context("Command failed at generate signed url.")?;
 
         let command_output = String::from_utf8(url.stdout)?;
+
+        println!("Signed URL command output: {}", &command_output);
 
         let signed_url: String = command_output
             .split("https://")
@@ -314,7 +309,8 @@ impl<ApiData> Pipeline<ApiData> {
             .trim()
             .to_string();
 
-        if !signed_url.contains("https://storage.googleapis.com") {
+        if !signed_url.contains("storage.googleapis.com") {
+            println!("Signed URL failure: {}", &signed_url);
             return Err(anyhow::anyhow!("Failed to generate signed url. API may have changed."));
         }
 
@@ -399,5 +395,24 @@ mod tests {
 
         let signed_url = pipeline.bucket_signed_url("ogv-results_jobid.zip").unwrap();
         assert_eq!(signed_url.contains("https://storage.googleapis.com"), true);
+    }
+
+    #[test]
+    fn test_it_parses_signed_url() {
+        let sample =
+            "URL     HTTP Method     Expiration      Signed URL\ngs://bucket/file      GET     2022-10-12 07:25:31     https://storage.googleapis.com/user/file?x-goog-signature=...&x-goog-algorithm=...&x-goog-credential=....&x-goog-date=...&x-goog-signedheaders=...";
+
+        let signed_url: String = sample
+            .split("https://")
+            .collect::<Vec<&str>>()
+            .pop()
+            .expect("")
+            .trim()
+            .to_string();
+
+        assert_eq!(
+            format!("https://{}", signed_url),
+            "https://storage.googleapis.com/user/file?x-goog-signature=...&x-goog-algorithm=...&x-goog-credential=....&x-goog-date=...&x-goog-signedheaders=..."
+        );
     }
 }

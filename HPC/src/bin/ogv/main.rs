@@ -45,7 +45,7 @@ async fn main() -> () {
     if let Err(e) = process::process(&pipeline, locations).await {
         pipeline
             .add_error(
-                &format!("OGV Error {}", &pipeline.data.id),
+                &format!("OGV Processing Error"),
                 &format!("Failed to process OGV pipeline #{}.\n\n{:?}", &pipeline.id, e),
                 &pipeline.data.email
             ).await

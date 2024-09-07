@@ -48,7 +48,7 @@ async fn main() -> () {
     if let Err(e) = process::process(&pipeline, locations).await {
         pipeline
             .add_error(
-                &format!("Intactness Error {}", &pipeline.data.id),
+                &format!("Intactness Processing Error"),
                 &format!("Failed to process Intactness pipeline #{}.\n\n{:?}", &pipeline.id, e),
                 &pipeline.data.email
             ).await

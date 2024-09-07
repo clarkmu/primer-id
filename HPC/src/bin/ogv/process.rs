@@ -93,6 +93,11 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
         "Failed to run result-summary.py"
     )?;
 
+    // ensure processing results were created
+    if !std::path::Path::new(&summary_location).exists() {
+        return Err(anyhow::anyhow!("Failed to create summary file."));
+    }
+
     // check for runtime errors
     let error_file_location = format!("{}/error", &pipeline.scratch_dir);
     if std::path::Path::new(&error_file_location).exists() {
@@ -118,13 +123,6 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
     ).context("Failed to compress files.")?;
 
     // upload compressed results and get signed url to compressed results
-    pipeline.add_log(
-        &format!(
-            "Uploading compressed results to bucket.\nFrom: {}\nTo: {}",
-            &location.display(),
-            &compressed_filename
-        )
-    )?;
     pipeline
         .bucket_upload(&location.display().to_string(), &compressed_filename)
         .context("Failed to upload files to bucket.")?;

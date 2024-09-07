@@ -186,13 +186,6 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     ).context("Failed to compress files.")?;
 
     // upload compressed results and get signed url to compressed results
-    pipeline.add_log(
-        &format!(
-            "Uploading compressed results to bucket.\nFrom: {}\nTo: {}",
-            &location.display(),
-            &compressed_filename
-        )
-    )?;
     pipeline
         .bucket_upload(&location.display().to_string(), &compressed_filename)
         .context("Failed to upload files to bucket.")?;

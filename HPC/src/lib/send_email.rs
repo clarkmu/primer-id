@@ -22,19 +22,19 @@ pub async fn send_email(
         return Ok(());
     }
 
-    // let mut to = String::from(to_email);
     let mut to = vec![to_email];
 
     if include_admin {
-        // to.push_str(&format!(", {}", &admin_email));
         to.push(&admin_email);
     }
+
+    let body_html: &str = &body.replace("\n", "<br>");
 
     let message = MessageBuilder::new()
         .from(admin_email.clone())
         .to(to)
         .subject(subject)
-        .html_body(body);
+        .html_body(body_html);
     // .text_body("Hello world!");
 
     SmtpClientBuilder::new(smtp_address, smtp_port)
