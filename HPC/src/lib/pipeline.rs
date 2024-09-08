@@ -9,7 +9,7 @@ use serde_json::Value;
 use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
-use std::process::Stdio::piped;
+use std::process::Command;
 
 use anyhow::{ Context, Result };
 
@@ -286,20 +286,19 @@ impl<ApiData> Pipeline<ApiData> {
 
         println!("Bucket location for signed url: {}", &bucket_location);
 
-        let args_str = format!("signurl -d 7d {} {}", self.private_key_location, bucket_location);
+        let args_str = format!(
+            "signurl -d 7d -r us-east1 {} {}",
+            self.private_key_location,
+            bucket_location
+        );
         let args: Vec<&str> = args_str.split(" ").collect::<Vec<&str>>();
 
-        let url = std::process::Command
-            ::new("gsutil")
+        let url = Command::new("gsutil")
             .args(args)
-            .stdout(piped())
-            .stderr(piped())
             .output()
             .context("Command failed at generate signed url.")?;
 
         let command_output = String::from_utf8(url.stdout)?;
-
-        println!("Signed URL command output: {}", &command_output);
 
         let signed_url: String = command_output
             .split("https://")
