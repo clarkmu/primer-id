@@ -28,7 +28,9 @@ path = "src/bin/ogv/main.rs"
 name = "tcsdr"
 path = "src/bin/tcsdr/main.rs"
 
-# sbatch -o ./intactness.output -n 4 --mem=80000 --wrap="cargo run --bin intactness -- --id=66450f6a746b8512ac7da813 --cores=3"
+# sbatch -o ./intactness.output -n 2 --mem=20000 --wrap="cd ~/primer-id/HPC && cargo run --bin intactness -- --id=66e18b6b339c1b418f169528 --cores=1"
+
+# sbatch -o ./intactness.output -n 4 --mem=80000 --wrap="~/primer-id/HPC/target/release/intactness -- --id=66e18b6b339c1b418f169528 --cores=3"
 # cargo run --bin intactness -- --id={id} --is_dev --is_stale --cores=3
 [[bin]]
 name = "intactness"
@@ -37,6 +39,7 @@ path = "src/bin/intactness/main.rs"
 [dependencies]
 # neeed for production
 openssl = { version = "0.10.59", features = ["vendored"]}
+openssl-sys = { version = "0.9.103", features = ["vendored"] }
 exitfailure = "0.5.1"
 serde_json = "1.0.85"
 serde = {version = "1.0.194", features = ["derive"]}

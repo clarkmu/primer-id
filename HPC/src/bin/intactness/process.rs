@@ -19,9 +19,9 @@ pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Re
     pipeline.add_log(&format!("Initializing Intactness pipeline #{}", &pipeline.id))?;
 
     // patch as pending
-    pipeline
-        .patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await
-        .context("Failed to patch pipeline as pending.")?;
+    // pipeline
+    //     .patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await
+    //     .context("Failed to patch pipeline as pending.")?;
 
     // create variables
     // let input_sequence_file = format!("{}/seqs.fasta", &pipeline.scratch_dir);
@@ -106,9 +106,19 @@ pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Re
                 format!("No summary file found for {}. No results were generated.", lib_name)
             );
         } else {
-            let summary_file = BufReader::new(File::open(&summary_location).unwrap());
+            let summary_file = BufReader::new(
+                File::open(&summary_location).context(
+                    format!("Lib created empty summary: {}", lib_name)
+                )?
+            );
             // get the second line of summary_file
-            let results = summary_file.lines().nth(1).unwrap().unwrap();
+
+            let results = summary_file
+                .lines()
+                .nth(1)
+                .context("No summary lines found.")?
+                .context("Failed to convert line to string.")?;
+
             summary_results.push(results);
         }
     }

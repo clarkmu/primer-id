@@ -10,6 +10,8 @@ use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
 use std::process::Command;
+use reqwest::Client;
+use serde_json::json;
 
 use anyhow::{ Context, Result };
 
@@ -218,7 +220,7 @@ impl<ApiData> Pipeline<ApiData> {
         let _ = self.add_log(&msg);
 
         let _ = self
-            .patch_pipeline(serde_json::json!({"pending": false, "processing_error": true})).await
+            .patch_pipeline(json!({"pending": false, "processing_error": true})).await
             .context("Failed to patch pipeline.")?;
 
         let _ = send_email(subject, msg, to_email, true).await?;
@@ -227,8 +229,7 @@ impl<ApiData> Pipeline<ApiData> {
     }
 
     pub async fn patch_pipeline(&self, data: Value) -> Result<()> {
-        reqwest::Client
-            ::new()
+        Client::new()
             .patch(format!("{}/{}", &self.api_url, &self.id))
             .json(&data)
             .header("x-api-key", &self.api_key)

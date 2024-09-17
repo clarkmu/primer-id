@@ -1,20 +1,31 @@
-FROM rust:1.78
+# FROM rust:1.78
+FROM redhat/ubi8
 
 ENV CARGO_TARGET_DIR=/app/target
+
+# add MiniConda to PATH
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
+
 ENV PORT=8180
+
+# Rust Reqwest OpenSSL
+ENV OPENSSL_LIB_DIR=/bin
 
 WORKDIR /app
 
-RUN cargo install cargo-watch
-
-RUN apt update && apt upgrade -y
-RUN apt install software-properties-common wget curl libcurl4 git vim task-spooler lldb -y
-# zip
+RUN yum update -y
+RUN yum install -y wget curl git vim lldb rust cargo
+# Rust Reqwest OpenSSL
+RUN yum install -y openssl openssl-devel perl
 
 #Install GCP CLI for file transfers
-RUN curl -sSL https://sdk.cloud.google.com | bash
+RUN wget \
+    https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz \
+    && mkdir /root/google-cloud-sdk \
+    && tar -xvf google-cloud-cli-linux-x86_64.tar.gz -C /root \
+    && rm -f google-cloud-cli-linux-x86_64.tar.gz
+RUN export PATH="$PATH:/root/google-cloud-sdk/bin"
 ENV PATH="$PATH:/root/google-cloud-sdk/bin"
 
 # Anaconda (MiniConda) https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html
@@ -55,8 +66,6 @@ RUN conda run -n intactness pip3 install requests biopython==1.79 reportlab==4.1
 RUN mkdir /app/intactness
 RUN git clone https://github.com/clarkmu/intactness-pipeline /app/intactness
 
-# COPY entrypoint.sh /app/entrypoint.sh
-# RUN chmod +x /app/entrypoint.sh
 COPY storage-admin.json /app/storage-admin.json
 RUN gcloud auth activate-service-account --key-file /app/storage-admin.json
 
