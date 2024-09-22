@@ -215,7 +215,7 @@ fn write_conversion_to_file(
         conversion
             .into_iter()
             .map(|(k, v)| {
-                let value: i32 = v.parse().unwrap();
+                let value: i32 = v.parse().unwrap_or(0);
                 (k, Conversion { Start2ART: value, colors: Vec::new() })
             })
             .collect::<HashMap<String, Conversion>>()

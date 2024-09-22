@@ -80,47 +80,60 @@ async fn main() -> Result<()> {
         lock_file.create()?;
     }
 
-    // let ogvs: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Ogv]).await.unwrap_or(
-    //     vec![]
-    // );
+    let ogvs: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Ogv]).await.unwrap_or(
+        vec![]
+    );
 
-    // for ogv in ogvs {
-    //     let is_stale = if ogv.pending && pipeline_is_stale(&ogv.created_at).unwrap_or(true) {
-    //         "--is_stale"
-    //     } else {
-    //         ""
-    //     };
+    dbg!(&ogvs);
 
-    //     let run_is_stale = !is_stale.is_empty();
+    for ogv in ogvs {
+        let is_stale = if ogv.pending && pipeline_is_stale(&ogv.created_at).unwrap_or(true) {
+            " --is_stale"
+        } else {
+            ""
+        };
 
-    //     if ogv.submit || run_is_stale {
-    //         let is_dev_cmd = if is_dev { "--is_dev" } else { "" };
-    //         let mut cmd = format!(
-    //             "cargo run --bin ogv -- --id={} {} {}",
-    //             &ogv.id,
-    //             is_dev_cmd,
-    //             is_stale
-    //         );
+        let run_is_stale = !is_stale.is_empty();
 
-    //         // no need to sbatch for is_stale , no heavy processing
-    //         if !is_dev && !run_is_stale {
-    //             cmd = format!(
-    //                 "sbatch -o {} -n 4 --job-name='{}' --mem=20000 -t 1440 --wrap='{}'",
-    //                 format!("{}/{}.out", &locations.log_dir[PipelineType::Ogv], &ogv.id),
-    //                 format!("ogv-{}", &ogv.id),
-    //                 &cmd
-    //             );
-    //         }
+        if ogv.submit || run_is_stale {
+            let is_dev_cmd = if is_dev { " --is_dev" } else { "" };
+            let mut cmd = format!(
+                "cargo run --release --bin ogv -- --id={}{}{}",
+                &ogv.id,
+                is_dev_cmd,
+                is_stale
+            );
 
-    //         let _ = run_command(&cmd, &locations.base);
-    //     }
-    // }
+            // no need to sbatch for is_stale , no heavy processing
+            if !is_dev && !run_is_stale {
+                cmd = format!(
+                    "sbatch -o {} -n 5 --job-name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    format!("{}/{}.out", &locations.log_dir[PipelineType::Ogv], &ogv.id),
+                    format!("ogv-{}", &ogv.id),
+                    &cmd
+                );
+            }
+
+            println!("{}", cmd);
+
+            let output = std::process::Command
+                ::new("bash")
+                .arg("-c")
+                .arg(&cmd)
+                .output()
+                .expect("Failed to execute command");
+
+            println!("{}", String::from_utf8_lossy(&output.stdout));
+
+            patch_pending(
+                format!("{}/{}", &locations.api_url[PipelineType::Ogv], &ogv.id).as_str()
+            ).await?;
+        }
+    }
 
     let intacts: Vec<SharedAPIData> = get_api(
         &locations.api_url[PipelineType::Intact]
     ).await.unwrap();
-
-    println!("{:?}", intacts);
 
     for intact in intacts {
         let is_stale = if intact.pending && pipeline_is_stale(&intact.created_at).unwrap_or(true) {
@@ -142,16 +155,8 @@ async fn main() -> Result<()> {
 
             let memory: u32 = 20000 * (cores as u32);
 
-            let intactness_base = if is_dev {
-                String::from("cargo run --bin intactness")
-            } else {
-                // format!("{}/primer-id/HPC/target/release/intactness", &locations.base)
-                String::from("cargo run --release --bin intactness")
-            };
-
             let mut cmd = format!(
-                "{} -- --id={} --cores={}{}{}",
-                &intactness_base,
+                "cargo run --release --bin intactness -- --id={} --cores={}{}{}",
                 &intact.id,
                 cores,
                 is_dev_cmd,
@@ -164,7 +169,6 @@ async fn main() -> Result<()> {
 
                 cmd = format!(
                     "sbatch -o {} -n {} --job-name='{}' --mem={} -t {} --wrap=\"{}\"",
-                    // r#"sbatch -o {} -n {} --job-name="{}" --mem={} -t {} --wrap="{}""#,
                     format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
                     cores + 1,
                     format!("intactness-{}", &intact.id),
