@@ -19,6 +19,8 @@ path = "src/bin/process_queue/main.rs"
 # cargo run --bin ogv -- --id=66cf0ec484ee4d6f8d6d5ada --cores=4
 
 # cargo run --bin ogv -- --id={id} --is_dev --is_stale --cores=3
+
+# cargo run --bin intactness -- --id=6697af3b7f59f1302b07fba7 --is_dev --cores=3
 [[bin]]
 name = "ogv"
 path = "src/bin/ogv/main.rs"
@@ -32,6 +34,8 @@ path = "src/bin/tcsdr/main.rs"
 
 # sbatch -o ./intactness.output -n 4 --mem=80000 --wrap="~/primer-id/HPC/target/release/intactness -- --id=66e18b6b339c1b418f169528 --cores=3"
 # cargo run --bin intactness -- --id={id} --is_dev --is_stale --cores=3
+#
+# cargo run --bin intactness -- --id=6697af3b7f59f1302b07fba7 --is_dev --cores=3
 [[bin]]
 name = "intactness"
 path = "src/bin/intactness/main.rs"

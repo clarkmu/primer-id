@@ -8,6 +8,7 @@ use utils::{
 // cargo run --bin intactness -- --id=667af1f0fe90441ac2375c50 --is_dev --is_stale
 
 mod process;
+mod split_sequences;
 
 #[tokio::main]
 async fn main() -> () {

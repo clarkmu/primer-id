@@ -15,7 +15,9 @@ ENV OPENSSL_LIB_DIR=/bin
 WORKDIR /app
 
 RUN yum update -y
-RUN yum install -y wget curl git vim lldb rust cargo
+RUN yum install -y wget curl git vim
+# Rust
+RUN yum install -y rust cargo lldb
 # Rust Reqwest OpenSSL
 RUN yum install -y openssl openssl-devel perl
 
