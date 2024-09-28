@@ -84,8 +84,6 @@ async fn main() -> Result<()> {
         vec![]
     );
 
-    dbg!(&ogvs);
-
     for ogv in ogvs {
         let is_stale = if ogv.pending && pipeline_is_stale(&ogv.created_at).unwrap_or(true) {
             " --is_stale"
@@ -114,16 +112,7 @@ async fn main() -> Result<()> {
                 );
             }
 
-            println!("{}", cmd);
-
-            let output = std::process::Command
-                ::new("bash")
-                .arg("-c")
-                .arg(&cmd)
-                .output()
-                .expect("Failed to execute command");
-
-            println!("{}", String::from_utf8_lossy(&output.stdout));
+            run_command(&cmd, &locations.base)?;
 
             patch_pending(
                 format!("{}/{}", &locations.api_url[PipelineType::Ogv], &ogv.id).as_str()
@@ -178,16 +167,7 @@ async fn main() -> Result<()> {
                 );
             }
 
-            println!("{}", cmd);
-
-            let output = std::process::Command
-                ::new("bash")
-                .arg("-c")
-                .arg(&cmd)
-                .output()
-                .expect("Failed to execute command");
-
-            println!("{}", String::from_utf8_lossy(&output.stdout));
+            run_command(&cmd, &locations.base)?;
 
             patch_pending(
                 format!("{}/{}", &locations.api_url[PipelineType::Intact], &intact.id).as_str()
@@ -195,63 +175,71 @@ async fn main() -> Result<()> {
         }
     }
 
-    // let tcss: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Tcs]).await.unwrap_or(
-    //     vec![]
-    // );
+    let tcss: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Tcs]).await.unwrap_or(
+        vec![]
+    );
 
-    // for tcs in tcss {
-    //     let is_stale = if tcs.pending && pipeline_is_stale(&tcs.created_at).unwrap_or(true) {
-    //         "--is_stale"
-    //     } else {
-    //         ""
-    //     };
+    for tcs in tcss {
+        let is_stale = if tcs.pending && pipeline_is_stale(&tcs.created_at).unwrap_or(true) {
+            " --is_stale"
+        } else {
+            ""
+        };
 
-    //     let run_is_stale = !is_stale.is_empty();
+        let run_is_stale = !is_stale.is_empty();
 
-    //     if tcs.submit || run_is_stale {
-    //         let is_dev_cmd = if is_dev { "--is_dev" } else { "" };
+        if tcs.submit || run_is_stale {
+            let is_dev_cmd = if is_dev { " --is_dev" } else { "" };
 
-    //         let mut cores = tcs.upload_count.unwrap_or(0) / 2;
-    //         cores = std::cmp::min(cores, 9);
+            let mut cores = tcs.upload_count.unwrap_or(0) / 2;
+            if cores < 1 {
+                cores = 1;
+            }
+            cores = std::cmp::min(cores, 9);
 
-    //         let memory: u32 = 20000 * (cores as u32);
+            let memory: u32 = 20000 * (cores as u32);
 
-    //         let mut cmd = format!(
-    //             "cargo run --bin tcsdr -- --id={} --cores={} {} {}",
-    //             &tcs.id,
-    //             cores,
-    //             is_dev_cmd,
-    //             is_stale
-    //         );
+            let mut cmd = format!(
+                "cargo run --bin tcsdr -- --id={} --cores={}{}{}",
+                &tcs.id,
+                cores,
+                is_dev_cmd,
+                is_stale
+            );
 
-    //         // no need to sbatch for is_stale , no heavy processing
-    //         if !is_dev && !run_is_stale {
-    //             let output_file = format!(
-    //                 "{}/{}.out",
-    //                 &locations.log_dir[PipelineType::Tcs],
-    //                 &tcs.id
-    //             );
-    //             let job_name = format!("tcs-{}", &tcs.id);
+            // no need to sbatch for is_stale , no heavy processing
+            if !is_dev && !run_is_stale {
+                let time = cores * 30;
 
-    //             cmd = format!(
-    //                 "sbatch -o {} -n {} --job-name='{}' --mem={} -t 1440 --wrap='{}'",
-    //                 output_file,
-    //                 cores + 1,
-    //                 job_name,
-    //                 memory,
-    //                 &cmd
-    //             );
-    //         }
+                let output_file = format!(
+                    "{}/{}.out",
+                    &locations.log_dir[PipelineType::Tcs],
+                    &tcs.id
+                );
+                let job_name = format!("tcs-{}", &tcs.id);
 
-    //         if !cmd.is_empty() {
-    //             let _ = run_command(&cmd, &locations.base);
-    //         }
-    //     }
-    // }
+                cmd = format!(
+                    "sbatch -o {} -n {} --job-name='{}' --mem={} -t {} --wrap='{}'",
+                    output_file,
+                    cores + 1,
+                    job_name,
+                    memory,
+                    time,
+                    &cmd
+                );
+            }
+
+            run_command(&cmd, &locations.base)?;
+
+            patch_pending(
+                format!("{}/{}", &locations.api_url[PipelineType::Intact], &tcs.id).as_str()
+            ).await?;
+        }
+    }
 
     println!("All processed.");
 
-    lock_file.delete().expect("Failed to delete lock file !?");
+    lock_file.delete()?;
 
     Ok(())
 }

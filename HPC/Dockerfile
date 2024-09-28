@@ -53,6 +53,9 @@ RUN conda config --set channel_priority strict
 RUN conda create -n tcsdr python=3.9 ruby=2.7.2 r-base r-essentials r-igraph r-phangorn
 RUN conda run -n tcsdr gem install viral_seq
 
+# add additional R dependencies if Ruby/R env can't figure it out
+# conda install -n tcsdr r-ggplot2 r-tweenr r-polyclip r-systemfonts r-ggforce r-cowplot
+
 # OGV dependencies
 RUN conda create -n ogv python=3.9 snakemake raxml-ng bioconda:hyphy==2.5.61 mafft nodejs==12.4.0
 RUN conda run -n ogv pip3 install requests biopython

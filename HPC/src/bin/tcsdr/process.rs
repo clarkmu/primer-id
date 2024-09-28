@@ -42,7 +42,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     // mail receipt
     pipeline.add_log("Emailing receipt.")?;
     send_email(
-        &format!("TCS/DR Dating Submission #{}", &job_id),
+        &format!("{} Submission #{}", if is_dr { "DR" } else { "TCS" }, &job_id),
         &receipt_body,
         &pipeline.data.email,
         true
@@ -181,7 +181,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     let (location, compressed_filename) = compress_dir(
         &pipeline.data.results_format,
         &job_id,
-        &results_location,
+        &pipeline.scratch_dir,
         &pipeline.scratch_dir
     ).context("Failed to compress files.")?;
 
@@ -197,7 +197,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     pipeline.add_log("Emailing results.")?;
     let results_body = results_email_template(signed_url);
     send_email(
-        &format!("OGV Dating Results #{}", &job_id),
+        &format!("{} Results #{}", if is_dr { "DR" } else { "TCS" }, &job_id),
         &results_body,
         &pipeline.data.email,
         false

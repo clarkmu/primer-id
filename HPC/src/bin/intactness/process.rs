@@ -122,13 +122,19 @@ pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Re
             );
             // get the second line of summary_file
 
-            let results = summary_file
-                .lines()
-                .nth(1)
-                .context("No summary lines found.")?
-                .context("Failed to convert line to string.")?;
-
-            summary_results.push(results);
+            match summary_file.lines().nth(1) {
+                Some(Ok(line)) => {
+                    summary_results.push(line);
+                }
+                Some(Err(e)) => {
+                    summary_errors.push(
+                        format!("Failed to read summary file for {}: {}", lib_name, e)
+                    );
+                }
+                None => {
+                    summary_errors.push(format!("No summary lines found for {}", lib_name));
+                }
+            }
         }
     }
 
