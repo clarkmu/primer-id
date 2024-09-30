@@ -169,7 +169,17 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     }
 
     // compress results
-    let results_location = &samples_dir;
+    let results_location = format!("{}/{}", &pipeline.scratch_dir, &job_id);
+
+    if !Path::new(&results_location).exists() {
+        std::fs::create_dir(&results_location).context("Failed to create results directory.")?;
+    }
+
+    // move files to results location
+    let move_files_command = format!("mv {}/* {}", &pipeline.scratch_dir, &results_location);
+    run_command(&move_files_command, &pipeline.scratch_dir).context(
+        "Failed to move files to results location."
+    )?;
 
     pipeline.add_log(
         &format!(
@@ -181,7 +191,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     let (location, compressed_filename) = compress_dir(
         &pipeline.data.results_format,
         &job_id,
-        &pipeline.scratch_dir,
+        &results_location,
         &pipeline.scratch_dir
     ).context("Failed to compress files.")?;
 
@@ -235,11 +245,11 @@ fn generate_receipt_email(data: &TcsAPI) -> String {
 }
 
 async fn sort_files(dir: &str, destination: &str) -> Result<()> {
-    // if !Path::new(destination).exists() {
-    //     std::fs
-    //         ::create_dir(destination)
-    //         .context("Failed to create destination directory at file sorting.")?;
-    // }
+    if !Path::new(destination).exists() {
+        std::fs
+            ::create_dir(destination)
+            .context("Failed to create destination directory at file sorting.")?;
+    }
 
     let location = Path::new(dir);
 
@@ -253,7 +263,16 @@ async fn sort_files(dir: &str, destination: &str) -> Result<()> {
 
     for file in results {
         // /path/to/destination/{lib_name}/{file_name}
-        let destination = Path::new(destination).join(file.lib_name).join(file.file_name);
+        let destination_dir = Path::new(destination).join(file.lib_name);
+        let destination = destination_dir.join(file.file_name);
+
+        if !destination_dir.exists() {
+            std::fs
+                ::create_dir(&destination_dir)
+                .context(
+                    "Failed to create destination directory while iterating viralseq.result.files."
+                )?;
+        }
 
         std::fs
             ::copy(file.file_path, destination)
@@ -269,16 +288,20 @@ mod tests {
 
     #[tokio::test]
     async fn test_sort_files() {
-        let dir = "./test_sort_fasta";
-        // let location = Path::new(dir);
+        // tests sort_files and ./validate_file_names
 
-        let destination = "./test_sort_fasta_destination";
+        let dir = "./tests/fixtures/tcsdr/dr_control";
+        let destination = "./tests/sort_fasta_output";
 
         let result = sort_files(dir, &destination).await;
 
-        dbg!(&result);
-
         assert!(result.is_ok());
-        // assert!(location.exists());
+
+        let files = glob(PathBuf::from(destination).join("**").join("*.fast*").to_str().unwrap())
+            .unwrap()
+            .map(|f| f.unwrap())
+            .collect::<Vec<PathBuf>>();
+
+        assert_eq!(files.len(), 2);
     }
 }

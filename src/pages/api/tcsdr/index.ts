@@ -23,12 +23,12 @@ async function get(req, res) {
       ],
     });
     const all_tcsdr = all.map(
-      ({ id, createdAt, submit, pending, uploads }) => ({
+      ({ id, createdAt, submit, pending, uploads, htsf }) => ({
         id,
         createdAt,
         submit,
         pending,
-        uploadCount: uploads?.length || 0,
+        uploadCount: !!htsf ? 10 : uploads?.length || 0,
       })
     );
     return res.status(200).json(all_tcsdr);

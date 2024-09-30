@@ -237,8 +237,6 @@ async fn main() -> Result<()> {
         }
     }
 
-    println!("All processed.");
-
     lock_file.delete()?;
 
     Ok(())

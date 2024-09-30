@@ -220,7 +220,7 @@ impl<ApiData> Pipeline<ApiData> {
         let _ = self.add_log(&msg);
 
         let _ = self
-            .patch_pipeline(json!({"pending": false, "processing_error": true})).await
+            .patch_pipeline(json!({"pending": false, "processingError": true})).await
             .context("Failed to patch pipeline.")?;
 
         let _ = send_email(subject, msg, to_email, true).await?;
