@@ -1,0 +1,61 @@
+[package]
+name = "primer_id"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name="utils"
+path="src/lib/mod.rs"
+
+# cargo run --bin process_queue -- --is_dev
+[[bin]]
+name = "process_queue"
+path = "src/bin/process_queue/main.rs"
+
+
+# sbatch -o ./ogv.output -n 4 --mem=80000 --wrap="cargo run --bin ogv -- --id=66d742c337587e759a00ef0f --cores=3"
+# cargo run --bin ogv -- --id=66cf0ec484ee4d6f8d6d5ada --cores=4
+
+# cargo run --bin ogv -- --id={id} --is_dev --is_stale --cores=3
+
+# cargo run --bin intactness -- --id=6697af3b7f59f1302b07fba7 --is_dev --cores=3
+[[bin]]
+name = "ogv"
+path = "src/bin/ogv/main.rs"
+
+# cargo run --bin tcsdr -- --id={id} --is_dev --is_stale --cores=3
+[[bin]]
+name = "tcsdr"
+path = "src/bin/tcsdr/main.rs"
+
+# sbatch -o ./intactness.output -n 2 --mem=20000 --wrap="cd ~/primer-id/HPC && cargo run --bin intactness -- --id=66e18b6b339c1b418f169528 --cores=1"
+
+# sbatch -o ./intactness.output -n 4 --mem=80000 --wrap="~/primer-id/HPC/target/release/intactness -- --id=66e18b6b339c1b418f169528 --cores=3"
+# cargo run --bin intactness -- --id={id} --is_dev --is_stale --cores=3
+#
+# cargo run --bin intactness -- --id=6697af3b7f59f1302b07fba7 --is_dev --cores=3
+[[bin]]
+name = "intactness"
+path = "src/bin/intactness/main.rs"
+
+[dependencies]
+# neeed for production
+openssl = { version = "0.10.59", features = ["vendored"]}
+openssl-sys = { version = "0.9.103", features = ["vendored"] }
+exitfailure = "0.5.1"
+serde_json = "1.0.85"
+serde = {version = "1.0.194", features = ["derive"]}
+tokio = { version = "1.37.0", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+glob = "0.3.1"
+chrono = "0.4.38"
+anyhow = "1.0.86"
+zip-extensions = "0.8.0"
+flate2 = "1.0.30"
+tar = "0.4.41"
+rayon = "1.10.0"
+bio = "2.0.1"
+cargo-zigbuild = "0.19.1"
+mail-send = "0.4.9"

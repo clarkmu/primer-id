@@ -1,0 +1,10 @@
+/target
+/work
+ogv-dating
+HPC/intactness/*
+
+locations.json
+locations.dev.json
+locations.test.json
+
+tests/

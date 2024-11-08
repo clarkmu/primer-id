@@ -23,11 +23,16 @@ http://github.com/veg/ogv-dating
 
 ## Development setup
 
-package.json for setting up web application
+At `/` , run `yarn` to set up web application
 
-HPC/docker.sh for docker container setup
+At `/HPC` , run `docker-compose up -d` to create backend
 
-Crons are not setup in docker container , run ogv.php and tcs-dr.php manually when there is a submission to process
+Rename `HPC/locations.example.json` to `locations.json` with location variables set
 
-HPC/locations.example.php
-Rename to locations.php and set location variables
+## Processing
+
+To process submisisons , run `cargo run process_queue` at `/HPC` manually (no cron is set up)
+
+## Backend Testing
+
+Open project using VSCode's Remote Explorer to run tests with dependencies

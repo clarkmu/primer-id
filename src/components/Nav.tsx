@@ -8,7 +8,7 @@ const pipelineLinks = [
   },
   {
     value: "/dr",
-    label: "Drug Resistance",
+    label: "HIV Drug Resistance & Quantitative Recency",
   },
   {
     value: "/ogv",
@@ -83,7 +83,7 @@ export default function Nav() {
           />
         </div>
         {open && (
-          <div className="absolute w-full bg-primary left-0 bottom-0 translate-y-full divide-y outline-none z-[99]">
+          <div className="absolute w-full bg-primary border-t-white border-t-2 left-0 bottom-0 translate-y-full divide-y outline-none z-[99]">
             {pipelineLinks.map(({ value, label }) => (
               <MyLink
                 key={value}
