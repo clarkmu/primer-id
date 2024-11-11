@@ -3,16 +3,18 @@ import usePrideMonthStyling from "@/hooks/usePrideMonthStyling";
 import Paper from "@/components/form/Paper";
 import { useRouter } from "next/router";
 import ImageWithOverlay from "./ImageWithOverlay";
+import { changeLogList, Log } from "../ChangeLog";
 
-const Card = ({ title, src, alt, Buttons, priority }) => {
+const Card = ({ title, src, alt, Buttons, priority, Body }) => {
   const [titleStyle, titleTextStyle] = usePrideMonthStyling();
 
   return (
     <Paper className={`flex flex-col gap-4 items-center ${titleStyle}`}>
       <div className={`text-3xl font-bold ${titleTextStyle}`}>{title}</div>
       <hr className="w-[80%]" />
-      <ImageWithOverlay src={src} alt={alt} priority={priority} />
-      <Buttons />
+      {src && <ImageWithOverlay src={src} alt={alt} priority={priority} />}
+      {Buttons && <Buttons />}
+      {Body && Body}
     </Paper>
   );
 };
@@ -22,6 +24,17 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <Card
+        title="Change Log"
+        Body={
+          <div className="flex flex-col gap-1 w-4/5">
+            <Log log={changeLogList[0]} />
+            <a className="underline text-sm" href="/changelog">
+              See Change Log
+            </a>
+          </div>
+        }
+      />
       <Card
         title="Primer ID Sequencing"
         src="/primeridbanner.webp"
