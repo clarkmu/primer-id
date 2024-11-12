@@ -159,15 +159,7 @@ export default function OGVContextProvider({
         await axios.put(signedURL.signedURL, file, config);
       }
 
-      await fetch("/api/ogv", {
-        method: "PATCH",
-        body: JSON.stringify({
-          _id: data._id,
-          patch: {
-            submit: true,
-          },
-        }),
-      });
+      await axios.delete(`/api/ogv/submit/${data._id}`);
     } catch (e) {
       console.log(e);
       return "File upload error. Please try again later.";

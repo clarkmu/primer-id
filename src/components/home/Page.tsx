@@ -4,6 +4,7 @@ import Paper from "@/components/form/Paper";
 import { useRouter } from "next/router";
 import ImageWithOverlay from "./ImageWithOverlay";
 import { changeLogList, Log } from "../ChangeLog";
+import Link from "next/link";
 
 const Card = ({ title, src, alt, Buttons, priority, Body }) => {
   const [titleStyle, titleTextStyle] = usePrideMonthStyling();
@@ -29,9 +30,9 @@ export default function HomePage() {
         Body={
           <div className="flex flex-col gap-1 w-4/5">
             <Log log={changeLogList[0]} />
-            <a className="underline text-sm" href="/changelog">
+            <Link className="underline text-sm" href="/changelog">
               See Change Log
-            </a>
+            </Link>
           </div>
         }
       />
