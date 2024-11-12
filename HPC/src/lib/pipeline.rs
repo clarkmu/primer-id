@@ -71,6 +71,8 @@ pub struct TcsUpload {
     pub pool_name: String,
 }
 
+// rename on deserialize only so that ViralSeq can pick up snake_case in params.json files
+// no researilization happens to database where camelCase names are needed
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Primer {
     pub id: String,
@@ -78,27 +80,27 @@ pub struct Primer {
     pub supermajority: f32,
     pub forward: String,
     pub cdna: String,
-    #[serde(rename = "endJoin")]
+    #[serde(rename(deserialize = "endJoin"))]
     pub end_join: bool,
-    #[serde(rename = "endJoinOption")]
+    #[serde(rename(deserialize = "endJoinOption"))]
     pub end_join_option: Option<u16>,
-    #[serde(rename = "endJoinOverlap")]
+    #[serde(rename(deserialize = "endJoinOverlap"))]
     pub end_join_overlap: Option<u16>,
     pub qc: bool,
-    #[serde(rename = "refGenome")]
+    #[serde(rename(deserialize = "refGenome"))]
     pub ref_genome: Option<String>,
-    #[serde(rename = "refStart")]
+    #[serde(rename(deserialize = "refStart"))]
     pub ref_start: Option<u16>,
-    #[serde(rename = "refEnd")]
+    #[serde(rename(deserialize = "refEnd"))]
     pub ref_end: Option<u16>,
-    #[serde(rename = "allowIndels")]
+    #[serde(rename(deserialize = "allowIndels"))]
     pub allow_indels: bool,
     pub trim: bool,
-    #[serde(rename = "trimGenome")]
+    #[serde(rename(deserialize = "trimGenome"))]
     pub trim_genome: Option<String>,
-    #[serde(rename = "trimStart")]
+    #[serde(rename(deserialize = "trimStart"))]
     pub trim_start: Option<u16>,
-    #[serde(rename = "trimEnd")]
+    #[serde(rename(deserialize = "trimEnd"))]
     pub trim_end: Option<u16>,
 }
 
