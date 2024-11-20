@@ -52,6 +52,7 @@ pub struct Locations {
     pub api_key: String,
     pub smtp_address: String,
     pub smtp_port: u16,
+    pub tcs_log_bucket_url: String,
 }
 
 pub fn load_locations() -> Result<Locations> {

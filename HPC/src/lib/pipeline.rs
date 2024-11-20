@@ -1,7 +1,7 @@
 use std::{ collections::HashMap, fs::OpenOptions };
 use crate::{
+    cloud_storage::{ download, get_signed_url, upload },
     load_locations::{ Locations, PipelineType },
-    run_command::run_command,
     send_email::send_email,
 };
 use serde::{ Deserialize, Serialize };
@@ -9,7 +9,6 @@ use serde_json::Value;
 use chrono::prelude::*;
 use std::path::PathBuf;
 use std::io::Write;
-use std::process::Command;
 use reqwest::Client;
 use serde_json::json;
 
@@ -74,6 +73,7 @@ pub struct TcsUpload {
 // rename on deserialize only so that ViralSeq can pick up snake_case in params.json files
 // no researilization happens to database where camelCase names are needed
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[allow(non_snake_case)]
 pub struct Primer {
     pub id: String,
     pub region: String,
@@ -95,13 +95,18 @@ pub struct Primer {
     pub ref_end: Option<u16>,
     #[serde(rename(deserialize = "allowIndels"))]
     pub allow_indels: bool,
-    pub trim: bool,
+    pub trim: Option<bool>,
     #[serde(rename(deserialize = "trimGenome"))]
     pub trim_genome: Option<String>,
     #[serde(rename(deserialize = "trimStart"))]
     pub trim_start: Option<u16>,
     #[serde(rename(deserialize = "trimEnd"))]
     pub trim_end: Option<u16>,
+    pub overlap: Option<u16>,
+    pub TCS_QC: Option<bool>,
+    pub trim_ref: Option<String>,
+    pub trim_ref_start: Option<u16>,
+    pub trim_ref_end: Option<u16>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -143,7 +148,6 @@ pub struct Pipeline<ApiData> {
     log_file: String,
     log_error_file: String,
     pub data: ApiData,
-    private_key_location: String,
     api_url: String,
     bucket_url: String,
     api_key: String,
@@ -183,7 +187,6 @@ impl<ApiData> Pipeline<ApiData> {
             log_error_file,
             api_url,
             bucket_url,
-            private_key_location: locations.private_key_location.clone(),
             api_key: locations.api_key.clone(),
             data,
         }
@@ -247,76 +250,24 @@ impl<ApiData> Pipeline<ApiData> {
         to_local: &str,
         download_recursive: bool
     ) -> Result<()> {
-        // if data_dir does not exist, create it
-        if std::path::Path::new(from).exists() {
-            return Ok(());
-        }
-
-        //todo count glob , below does not appear to be correct (c=1 when empty directory)
-        // else create_dir_all
-        // let output_pattern: &str = &format!("{}/**/*.fasta", &pipeline.scratch_dir);
-        // let c = glob::glob(output_pattern).into_iter().count();
-
-        let _ = std::fs::create_dir_all(to_local);
-
         let from_bucket = format!("{}/{}/{}", &self.bucket_url, &self.id, from);
-
-        let recursive = if download_recursive { "-r" } else { "" };
-
-        let cmd: String = format!("gsutil cp {} {} {}", recursive, from_bucket, to_local);
-        run_command(&cmd, "")?;
+        download(&from_bucket, to_local, download_recursive).context("Failed")?;
         Ok(())
     }
 
     pub fn bucket_upload(&self, from_local: &str, to: &str) -> Result<()> {
         let to_bucket = format!("{}/{}/{}", &self.bucket_url, &self.id, to);
-
-        self.add_log(
-            &format!("Uploading from local: {}\nUploading to bucket: {}", &from_local, &to_bucket)
-        )?;
-
-        let gs_cp_cmd = format!("gsutil cp {} {}", &from_local, to_bucket);
-        run_command(&gs_cp_cmd, "")?;
+        upload(from_local, &to_bucket).context("Failed to upload file")?;
         Ok(())
     }
 
     pub fn bucket_signed_url(&self, location: &str) -> Result<String> {
-        // sample output from gsutil signurl
-        // URL     HTTP Method     Expiration      Signed URL
-        // gs://bucket/file      GET     2022-10-12 07:25:31     https://storage.googleapis.com/user/file?x-goog-signature=...&x-goog-algorithm=...&x-goog-credential=....&x-goog-date=...&x-goog-signedheaders=...
-
         let bucket_location = format!("{}/{}/{}", &self.bucket_url, &self.id, location);
-
         println!("Bucket location for signed url: {}", &bucket_location);
-
-        let args_str = format!(
-            "signurl -d 7d -r us-east1 {} {}",
-            self.private_key_location,
-            bucket_location
-        );
-        let args: Vec<&str> = args_str.split(" ").collect::<Vec<&str>>();
-
-        let url = Command::new("gsutil")
-            .args(args)
-            .output()
-            .context("Command failed at generate signed url.")?;
-
-        let command_output = String::from_utf8(url.stdout)?;
-
-        let signed_url: String = command_output
-            .split("https://")
-            .collect::<Vec<&str>>()
-            .pop()
-            .context("Failed to generate signed url. API may have changed.")?
-            .trim()
-            .to_string();
-
-        if !signed_url.contains("storage.googleapis.com") {
-            println!("Signed URL failure: {}", &signed_url);
-            return Err(anyhow::anyhow!("Failed to generate signed url. API may have changed."));
-        }
-
-        Ok(format!("https://{}", signed_url))
+        let signedurl = get_signed_url(&bucket_location).context(
+            "Failed to generate signed URL for uploaded file."
+        )?;
+        Ok(signedurl)
     }
 }
 

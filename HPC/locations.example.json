@@ -36,5 +36,6 @@
   "conda_location": "/root/miniconda3/condabin/conda",
   "ogv_base_path": "/app/ogv-dating",
   "intactness_base_path": "/app/intactness",
-  "api_key": "replace this key with something more secure than 'secret-phrase'"
+  "api_key": "replace this key with something more secure than 'secret-phrase'",
+  "tcs_log_bucket_url": "gs://bucket"
 }

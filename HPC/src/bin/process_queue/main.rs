@@ -58,6 +58,8 @@ async fn main() -> Result<()> {
         exit(1);
     });
 
+    let slurm_error_handling = format!("--mail-type=FAIL --mail-user={}", locations.admin_email);
+
     if is_dev {
         std::env::var("PORT").unwrap_or_else(|_| {
             println!("Dev not running in the docker shell. Exiting.");
@@ -105,7 +107,8 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = format!(
-                    "sbatch -o {} -n 5 --job-name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    "sbatch {} -o {} -n 5 --job-name='{}' --mem=20000 -t 1440 --wrap='{}'",
+                    &slurm_error_handling,
                     format!("{}/{}.out", &locations.log_dir[PipelineType::Ogv], &ogv.id),
                     format!("ogv-{}", &ogv.id),
                     &cmd
@@ -136,7 +139,9 @@ async fn main() -> Result<()> {
         if intact.submit || run_is_stale {
             let is_dev_cmd = if is_dev { " --is_dev" } else { "" };
 
-            let mut cores = intact.upload_count.unwrap_or(0) / 2;
+            let paired_jobs = intact.upload_count.unwrap_or(0) / 2;
+
+            let mut cores = paired_jobs;
             if cores < 1 {
                 cores = 1;
             }
@@ -154,10 +159,11 @@ async fn main() -> Result<()> {
 
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
-                let time = cores * 10;
+                let time = "1440"; // paired_jobs * 30;
 
                 cmd = format!(
-                    "sbatch -o {} -n {} --job-name='{}' --mem={} -t {} --wrap=\"{}\"",
+                    "sbatch {} -o {} -n {} --job-name='{}' --mem={} -t {} --wrap=\"{}\"",
+                    &slurm_error_handling,
                     format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
                     cores + 1,
                     format!("intactness-{}", &intact.id),
@@ -166,6 +172,8 @@ async fn main() -> Result<()> {
                     &cmd
                 );
             }
+
+            println!("{}", &cmd);
 
             run_command(&cmd, &locations.base)?;
 
@@ -209,7 +217,7 @@ async fn main() -> Result<()> {
 
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
-                let time = cores * 30;
+                let time = "1440"; // cores * 30;
 
                 let output_file = format!(
                     "{}/{}.out",
@@ -219,7 +227,8 @@ async fn main() -> Result<()> {
                 let job_name = format!("tcs-{}", &tcs.id);
 
                 cmd = format!(
-                    "sbatch -o {} -n {} --job-name='{}' --mem={} -t {} --wrap='{}'",
+                    "sbatch {} -o {} -n {} --job-name='{}' --mem={} -t {} --wrap='{}'",
+                    &slurm_error_handling,
                     output_file,
                     cores + 1,
                     job_name,

@@ -34,7 +34,7 @@ pub fn receipt_email_template(details: &str) -> String {
     receipt
 }
 
-pub fn results_email_template(signed_url: String) -> String {
+pub fn results_email_template(signed_url: String, extra_notes: &str) -> String {
     let download_link = format!(
         "<a href='{}' style='font-size: 16px;'>Download Results</a><br><small>This link expires {}</small>",
         signed_url,
@@ -42,8 +42,9 @@ pub fn results_email_template(signed_url: String) -> String {
     );
 
     let body = format!(
-        "<html><body>Your results are ready for download.<br><br>{}{}</body></html>",
+        "<html><body>Your results are ready for download.<br><br>{}{}{}</body></html>",
         download_link,
+        extra_notes,
         email_signature()
     );
 

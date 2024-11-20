@@ -28,7 +28,7 @@ async function get(req, res) {
         createdAt,
         submit,
         pending,
-        uploadCount: !!htsf ? 10 : uploads?.length || 0,
+        uploadCount: !!htsf ? 20 : uploads?.length || 0,
       })
     );
     return res.status(200).json(all_tcsdr);

@@ -132,7 +132,7 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
 
     // generate and send receipt
     pipeline.add_log("Emailing results.")?;
-    let results_body = results_email_template(signed_url);
+    let results_body = results_email_template(signed_url, "");
     send_email(
         &format!("OGV Dating Results #{}", &job_id),
         &results_body,

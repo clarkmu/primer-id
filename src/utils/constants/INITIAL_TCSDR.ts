@@ -1,6 +1,11 @@
 import { PrimerInterface } from "@/models/TCSDR";
 
-export type drVersionType = "v1" | "v2";
+export type drVersionType = "v1" | "v2" | "v3";
+
+export enum ParamTypes {
+  JSON = "Use Existing Params",
+  NEW = "Start Your Run",
+}
 
 const INITIAL_TCSDR_PIPELINE = {
   email: "",
@@ -29,6 +34,7 @@ export const INITIAL_TCSDR = {
   isDR: false,
   useSaved: false,
   savedPrimers: [],
+  procedure: ParamTypes.NEW,
 };
 
 export type tcsdrType = {
@@ -60,4 +66,5 @@ export type tcsdrType = {
   isDR: boolean;
   useSaved: boolean;
   savedPrimers: PrimerInterface[];
+  procedure: ParamTypes;
 };

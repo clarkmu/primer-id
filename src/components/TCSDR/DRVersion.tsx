@@ -3,6 +3,11 @@ import Paper from "../form/Paper";
 import Button from "../form/Button";
 import { useTCSDRContext } from "@/contexts/TCSDRContext";
 import { drVersionType } from "@/utils/constants/INITIAL_TCSDR";
+import dynamic from "next/dynamic";
+
+const ReactJson = dynamic(() => import("react-json-view"), {
+  ssr: false,
+});
 
 export default function DRVersion() {
   const { params } = useDRParams();
@@ -17,12 +22,12 @@ export default function DRVersion() {
   const onChange = (drVersion: drVersionType) =>
     setState((s) => ({ ...s, pipeline: { ...s.pipeline, drVersion } }));
 
-  const drV = params[drVersion];
+  const versionKeys = Object.keys(params);
 
   return (
     <Paper className="flex flex-col gap-4">
       <div className="flex justify-around gap-8 mx-8">
-        {["v1", "v2"].map((v) => (
+        {versionKeys.map((v) => (
           <Button
             key={`button_drv${v}`}
             onClick={() => onChange(v)}
@@ -33,35 +38,19 @@ export default function DRVersion() {
           </Button>
         ))}
       </div>
-      <div className="">
-        {/* <pre className="max-h-[8rem] overflow-auto">
-          {JSON.stringify(params[drVersion] || "Loading...", undefined, 2)}
-        </pre> */}
-        {!drV ? (
+      <div className="border-2 b-primary max-h-[33vh] overflow-y-auto text-sm">
+        {!versionKeys.length ? (
           "Loading..."
         ) : (
-          <>
-            <div className="w-full text-center text-lg">
-              {drVersion.toUpperCase()} uses the following primer sequences:
-            </div>
-            <div className="flex flex-col gap-2 m-4 overflow-auto max-h-[10rem]">
-              <span className="">
-                Platform Error Rate: {drV.platform_error_rate}
-              </span>
-              {drV.primer_pairs.map((p) => (
-                <div
-                  key={`${drVersion}_${p.region}`}
-                  className="grid gap-x-2 grid-cols-[min-content_1fr] justify-start"
-                >
-                  <span className="underline col-span-2">{p.region}</span>
-                  <span>Forward:</span>
-                  <span>{p.forward}</span>
-                  <span>cDNA:</span>
-                  <span>{p.cdna}</span>
-                </div>
-              ))}
-            </div>
-          </>
+          <ReactJson
+            src={params[drVersion]}
+            // collapsed={1}
+            name={drVersion.toUpperCase()}
+            enableClipboard={false}
+            displayDataTypes={false}
+            displayObjectSize={false}
+            style={{ margin: "0.5rem 1rem" }}
+          />
         )}
       </div>
       <div className="">

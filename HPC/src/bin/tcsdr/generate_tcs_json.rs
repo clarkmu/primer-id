@@ -12,11 +12,29 @@ pub struct TcsJson {
 pub fn generate_tcs_json(data: &TcsAPI, dir: &str, name: &str) -> Result<String> {
     let raw_sequence_dir = format!("{}/params_{}.json", dir, name);
 
+    let mut primer_pairs: Vec<Primer> = vec![];
+
+    // adding primers.overlap = primers.overlap_end_join is a terrible workaround for
+    //    bypassing creating new structs for this one object.field rename...
+    //        a relic of using camelCase vs snake_case in the database/frontend vs where it's actually used
+    let primers = data.primers.clone().unwrap_or(vec![]);
+    for primer in primers {
+        let mut p: Primer = primer.clone();
+
+        p.overlap = primer.end_join_overlap;
+        p.TCS_QC = Some(primer.qc);
+        p.trim_ref = primer.trim_genome;
+        p.trim_ref_start = primer.trim_start;
+        p.trim_ref_end = primer.trim_end;
+
+        primer_pairs.push(p);
+    }
+
     let tcs_json = TcsJson {
         raw_sequence_dir: dir.to_string(),
         platform_error_rate: data.error_rate.unwrap_or(0.0),
         platform_format: data.platform_format.unwrap_or(0),
-        primer_pairs: data.primers.clone().unwrap_or(vec![]),
+        primer_pairs,
     };
 
     let json = serde_json::to_string(&tcs_json).context("Failed to serialize TcsJson.")?;

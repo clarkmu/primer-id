@@ -7,7 +7,7 @@ import Paper from "@/components/form/Paper";
 import Alert from "@/components/form/Alert";
 import Input from "@/components/form/Input";
 import InputFile from "@/components/form/InputFile";
-import { INITIAL_TCSDR } from "@/utils/constants/INITIAL_TCSDR";
+import { INITIAL_TCSDR, ParamTypes } from "@/utils/constants/INITIAL_TCSDR";
 import parse from "html-react-parser";
 
 const testData = { email: "tester@test.com" };
@@ -23,8 +23,9 @@ export default function UseJSON() {
     const pipeline = variablesFromViralSeqCLI(data);
 
     editState({
-      showUploads: true,
       pipeline: { ...INITIAL_TCSDR, ...pipeline },
+      procedure: ParamTypes.NEW,
+      showUploads: true,
     });
   };
 
@@ -87,23 +88,25 @@ export default function UseJSON() {
           reader.readAsText(files[0]);
         }}
       />
-      <Input
-        textArea={true}
-        rows={3}
-        label="JSON Input"
-        name="json-input"
-        data-cy="use-json-input"
-        placeholder="Paste JSON here that you recieved from the TCS CLI tool"
-        value={input}
-        onChange={(e) => handleChange(e.target.value)}
-      />
+      <Paper>
+        <Input
+          textArea={true}
+          rows={10}
+          label="JSON Input (editable)"
+          name="json-input"
+          data-cy="use-json-input"
+          placeholder="Paste JSON here that you recieved from the TCS CLI tool"
+          value={input}
+          onChange={(e) => handleChange(e.target.value)}
+        />
+      </Paper>
       {errors.length > 0 ? (
         errors.map((error, i) => <Alert key={`error_${i}`} msg={error} />)
       ) : (
         <Paper>
           <div>Verify JSON below:</div>
           <pre
-            className="whitespace-pre-wrap break-words"
+            className="whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto"
             name="json-output"
             data-cy="use-json-output"
           >

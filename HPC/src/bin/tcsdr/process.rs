@@ -7,6 +7,7 @@ use utils::{
     pipeline::{ Pipeline, TcsAPI },
     run_command::run_command,
     send_email::send_email,
+    cloud_storage::{ upload, get_signed_url },
 };
 use glob::glob;
 use std::path::PathBuf;
@@ -17,7 +18,7 @@ use crate::{
     validate_file_names::{ validate_file_names, FilesResults },
 };
 
-pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Result<()> {
+pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing TCS/DR pipeline #{}", &pipeline.id))?;
 
     // patch as pending
@@ -34,6 +35,12 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     let htsf_location = pipeline.data.htsf.clone().unwrap_or("".to_string());
     let job_id: String = format!("{}-results_{}", if is_dr { "dr" } else { "tcs" }, &pool_name);
     let samples_dir = format!("{}/{}", &pipeline.scratch_dir, pool_name);
+    let log_upload_location = format!(
+        "{}/logs/{}/log.html",
+        &locations.tcs_log_bucket_url,
+        &pipeline.id
+    );
+    let log_local_location = format!("{}_tcs/log.html", &samples_dir);
 
     if !Path::new(&samples_dir).exists() {
         std::fs::create_dir(&samples_dir).context("Failed to create DR directory.")?;
@@ -141,7 +148,11 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
     if is_dr {
         let temp_sdrm_dir = format!("{}/temp", &pipeline.scratch_dir);
         let input_sdrm = format!("{}_SDRM", &samples_dir);
-        let sdrm_command = format!("conda run -n tcsdr tcs_sdrm {}", &temp_sdrm_dir);
+        let sdrm_command = format!(
+            "conda run -n tcsdr tcs_sdrm {} {}",
+            &temp_sdrm_dir,
+            &pipeline.data.dr_version
+        );
         let sdrm_error_file = format!("{}/.error", &input_sdrm);
         let cp_command = format!(
             "cp -R {}/. {}/",
@@ -167,6 +178,14 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
             return Err(anyhow::anyhow!("SDRM Error:\n\n{}", sdrm_error_msg));
         }
     }
+
+    // add log to email as link
+    upload(&log_local_location, &log_upload_location).context("")?;
+    let log_signed_url = get_signed_url(&log_upload_location).context("")?;
+    let log_link_html = format!(
+        "<br><a href='{}' style='font-size: 18px;'>View Report</a><br>",
+        &log_signed_url
+    );
 
     // compress results
     let results_location = format!("{}/{}", &pipeline.scratch_dir, &job_id);
@@ -205,7 +224,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, _locations: Locations) -> Resu
 
     // generate and send receipt
     pipeline.add_log("Emailing results.")?;
-    let results_body = results_email_template(signed_url);
+    let results_body = results_email_template(signed_url, &log_link_html);
     send_email(
         &format!("{} Results #{}", if is_dr { "DR" } else { "TCS" }, &job_id),
         &results_body,
@@ -269,8 +288,11 @@ async fn sort_files(dir: &str, destination: &str) -> Result<()> {
         if !destination_dir.exists() {
             std::fs
                 ::create_dir(&destination_dir)
-                .context(
-                    "Failed to create destination directory while iterating viralseq.result.files."
+                .with_context(||
+                    format!(
+                        "Failed to create destination directory while iterating viralseq.result.files.: {}",
+                        file.file_path.display()
+                    )
                 )?;
         }
 

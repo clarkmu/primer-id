@@ -182,7 +182,7 @@ pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Re
 
     // generate and send receipt
     pipeline.add_log("Emailing results.")?;
-    let body = results_email_template(signed_url);
+    let body = results_email_template(signed_url, "");
     send_email(
         &format!("Intactness Results #{}", &job_id),
         &body,

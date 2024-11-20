@@ -5,14 +5,16 @@ import MyCollapse from "@/components/form/MyCollapse";
 import Button from "@/components/form/Button";
 import Paper from "@/components/form/Paper";
 import Collapse from "@/components/form/Collapse";
-
-enum ParamTypes {
-  JSON = "Use Existing Params",
-  NEW = "Start Your Run",
-}
+import { useTCSDRContext } from "@/contexts/TCSDRContext";
+import { ParamTypes } from "@/utils/constants/INITIAL_TCSDR";
 
 export default function TCSContainer() {
-  const [procedure, setProcedure] = useState(ParamTypes.NEW);
+  const {
+    editState,
+    state: { procedure },
+  } = useTCSDRContext();
+
+  const setProcedure = (procedure: ParamTypes) => editState({ procedure });
 
   return (
     <Paper>

@@ -7,3 +7,4 @@ pub mod send_email;
 pub mod compress;
 pub mod run_command;
 pub mod email_templates;
+pub mod cloud_storage;
