@@ -71,12 +71,13 @@ async fn main() -> Result<()> {
         format!("{}/lock_process", &locations.base)
     );
     if lock_file.exists().unwrap_or(true) {
+        println!("\n\nProcess currently running.\nExiting.\n\n");
+
         if lock_file.is_stale().unwrap_or(true) {
             //todo: send a notification email to locations.admin_email
             return Ok(());
         }
 
-        println!("\n\nProcess currently running.\nExiting.\n\n");
         exit(1);
     } else {
         lock_file.create()?;
@@ -173,8 +174,6 @@ async fn main() -> Result<()> {
                 );
             }
 
-            println!("{}", &cmd);
-
             run_command(&cmd, &locations.base)?;
 
             patch_pending(
@@ -205,7 +204,7 @@ async fn main() -> Result<()> {
             }
             cores = std::cmp::min(cores, 9);
 
-            let memory: u32 = 20000 * (cores as u32);
+            let memory: u32 = 25000 * (cores as u32);
 
             let mut cmd = format!(
                 "cargo run --bin tcsdr -- --id={} --cores={}{}{}",
