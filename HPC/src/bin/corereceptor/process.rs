@@ -34,7 +34,7 @@ pub async fn process(pipeline: &Pipeline<CoreReceptorAPI>, locations: Locations)
         "conda run -n corereceptor python3 {}/core_receptor.py {} {}",
         &locations.corereceptor_base_path,
         &sequence_file,
-        job_id
+        &output_csv_location
     );
 
     let sequences_html = format!(

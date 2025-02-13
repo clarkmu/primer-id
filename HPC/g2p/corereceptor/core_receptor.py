@@ -5,7 +5,7 @@ import os
 
 from Bio.SeqIO import parse as SeqIO_parse
 
-args = dict(zip(['script', 'input_path', 'job_id'], sys.argv))
+args = dict(zip(['script', 'input_path', 'output_csv_location'], sys.argv))
 
 def create_webdriver():
     chrome_options = webdriver.ChromeOptions()
@@ -55,10 +55,6 @@ def parse_fasta(file_path):
 def process():
     input_path = args['input_path']
 
-    job_id = args['job_id'] or 'Geno2PhenoTest_log'
-
-    output_path = input_path
-
     seqs = []
 
     if os.path.isfile(input_path):
@@ -75,7 +71,10 @@ def process():
                     SeqIO_parse(file, "fasta")
                 )
 
-    log_file_path = os.path.join(output_path, f"{job_id}.csv")
+    log_file_location = args['output_csv_location']
+
+    if not os.path.exists(os.path.dirname(log_file_location)):
+        os.makedirs(os.path.dirname(log_file_location))
 
     seqs = list(seqs)
 
@@ -99,7 +98,7 @@ def process():
         csv_output += parse_results(results_arr)
         new_input(driver)
 
-    with open(log_file_path, 'w') as log_file:
+    with open(log_file_location, 'w') as log_file:
         log_file.write(csv_output)
 
     driver.quit()

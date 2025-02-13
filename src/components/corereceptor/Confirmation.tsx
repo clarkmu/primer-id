@@ -6,7 +6,7 @@ import { useState } from "react";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { fasta } from "bioinformatics-parser";
-import { BioinformaticsParserType } from "./Page";
+import { BioinformaticsParserType } from "@/hooks/useSequenceFile";
 
 export default function Confirmation({
   onClose,

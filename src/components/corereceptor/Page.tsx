@@ -2,25 +2,28 @@ import { SEOCoreReceptor } from "@/components/SEO";
 import Alert from "@/components/form/Alert";
 import Button from "@/components/form/Button";
 import Input from "@/components/form/Input";
-import InputFile from "@/components/form/InputFile";
 import { useState } from "react";
 import Confirmation from "./Confirmation";
 import RadioGroup from "@/components/form/RadioGroup";
 import Paper from "@/components/form/Paper";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
-import { fasta } from "bioinformatics-parser";
-import { BioinformaticsParserType } from "../intactness/Page";
+import useSequenceFile from "@/hooks/useSequenceFile";
 
 export default function IntactnessPage() {
   const [email, setEmail] = useState("");
-  const [sequences, setSequences] = useState<BioinformaticsParserType>({});
   const [open, setOpen] = useState(false);
-  const [parseError, setParseError] = useState("");
   const [error, setError] = useState("");
   const [jobID, setJobID] = useState("");
   const [resultsFormat, setResultsFormat] = useState<"tar" | "zip">("tar");
   const [continued, setContinued] = useState(false);
-  const [filename, setFilename] = useState("");
+
+  const {
+    SequenceFileInput,
+    sequences,
+    parseError,
+    filename,
+    approvedFileTypes,
+  } = useSequenceFile();
 
   const [scrollToRef] = useScrollToDivOnVisibilityToggle(continued);
 
@@ -41,38 +44,6 @@ export default function IntactnessPage() {
     setOpen(true);
   };
 
-  const loadFiles = async (files: FileList) => {
-    const file = Array.from(files)[0];
-
-    setFilename("");
-    setParseError("");
-
-    if (!file) {
-      return;
-    }
-
-    if (!file.name.includes(".fasta")) {
-      setParseError("Please use .fasta files.");
-    }
-
-    const text = await file.text();
-    const parsed = fasta.parse(text);
-
-    if (parsed?.error?.message) {
-      setParseError(parsed.error.message);
-    }
-
-    if (parsed.result?.length > 100 || file.size > 16000000) {
-      setParseError(
-        "Maximum exceeded of 100 sequences or 16MB per submission.",
-      );
-      return;
-    }
-
-    setFilename(file.name);
-    setSequences(parsed);
-  };
-
   return (
     <SEOCoreReceptor>
       <div className="flex flex-col gap-4 m-4">
@@ -83,6 +54,11 @@ export default function IntactnessPage() {
           <div>
             <b>DESCRIPTION</b> Upload multiple unaligned sequences to run
             through Geno2Pheno Core Receptor.
+          </div>
+          <div>
+            <b>FILES</b> should be uncompressed and in one of the following
+            formats: {approvedFileTypes.join(",")}. Submissions cannot exceed
+            16MB.
           </div>
           <div>
             <b>RESULTS</b> include ID, V3 Loop, Subtype, FPR, Percentage.
@@ -104,8 +80,8 @@ export default function IntactnessPage() {
           <div className="text-center text-lg">
             Upload .fa, .fasta, or .fastq files (uncompressed)
           </div>
-          <InputFile onChange={loadFiles} multiple={false} />
-          {!!parseError && filename.length ? (
+          <SequenceFileInput />
+          {!!parseError ? (
             <Alert severity="info" msg={parseError} />
           ) : !!sequences?.result?.length && filename.length ? (
             <div className="flex flex-col gap-2 font-bold my-2">

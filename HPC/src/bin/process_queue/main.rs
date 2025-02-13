@@ -28,9 +28,6 @@ struct SharedAPIData {
     pub upload_count: Option<u8>,
 }
 
-// todo: need to patch pipeline {submit: false, pending: true} directly after sbatch
-// todo add --email fail admin_email to sbatches
-
 async fn patch_pending(api_key: &str, url: &str) -> Result<()> {
     let data = json!({"pending": true, "submit": false});
 
@@ -45,7 +42,6 @@ async fn patch_pending(api_key: &str, url: &str) -> Result<()> {
 }
 
 fn create_sbatch_cmd(
-    admin_email: &str,
     output_file: &str,
     cores: u8,
     job_name: &str,
@@ -53,9 +49,14 @@ fn create_sbatch_cmd(
     time: u32,
     wrap: &str
 ) -> String {
+    let Locations { admin_email, base, .. } = load_locations().unwrap_or_else(|e| {
+        println!("Error loading locations.json: {:?}", e);
+        exit(1);
+    });
+
     let slurm_error_handling = format!("--mail-type=FAIL --mail-user={}", admin_email);
 
-    format!(
+    let sbatch_command = format!(
         "sbatch {} -o {} -n {} --job-name='{}' --mem={} -t {} --wrap='{}'",
         slurm_error_handling,
         output_file,
@@ -64,7 +65,17 @@ fn create_sbatch_cmd(
         memory,
         time,
         wrap
-    )
+    );
+
+    // append sbatch command to a file located at {}/sbatch_commands.txt
+    let sbatch_commands_file = format!("{}/sbatch_commands.txt", &base);
+    let contents = format!("{}\n\n", &sbatch_command);
+    std::fs::write(&sbatch_commands_file, contents).unwrap_or_else(|e| {
+        println!("Error writing sbatch command to file: {:?}", e);
+        exit(1);
+    });
+
+    sbatch_command
 }
 
 #[tokio::main]
@@ -125,7 +136,6 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = create_sbatch_cmd(
-                    &locations.admin_email,
                     &format!("{}/{}.out", &locations.log_dir[PipelineType::Ogv], &ogv.id),
                     5,
                     &format!("ogv-{}", &ogv.id),
@@ -179,7 +189,6 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = create_sbatch_cmd(
-                    &locations.admin_email,
                     &format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
                     cores + 1,
                     &format!("intactness-{}", &intact.id),
@@ -231,7 +240,6 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = create_sbatch_cmd(
-                    &locations.admin_email,
                     &format!("{}/{}.out", &locations.log_dir[PipelineType::Tcs], &tcs.id),
                     cores + 1,
                     &format!("tcs-{}", &tcs.id),
@@ -268,7 +276,7 @@ async fn main() -> Result<()> {
 
         if core_receptor.submit || run_is_stale {
             let mut cmd = format!(
-                "cargo run --release --bin intactness -- --id={} {}{}",
+                "cargo run --release --bin corereceptor -- --id={} {}{}",
                 &core_receptor.id,
                 &is_dev_cmd,
                 is_stale
@@ -277,7 +285,6 @@ async fn main() -> Result<()> {
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = create_sbatch_cmd(
-                    &locations.admin_email,
                     &format!(
                         "{}/{}.out",
                         &locations.log_dir[PipelineType::CoreReceptor],
