@@ -18,6 +18,10 @@ const pipelineLinks = [
     value: "/intactness",
     label: "Intactness",
   },
+  {
+    value: "/corereceptor",
+    label: "Geno2Pheno Core Receptor",
+  },
 ];
 
 const MyLink = ({

@@ -70,6 +70,24 @@ pub struct TcsUpload {
     pub pool_name: String,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct CoreReceptorAPI {
+    #[serde(rename = "_id")]
+    pub id: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "jobID")]
+    pub job_id: String,
+    #[serde(rename = "resultsFormat")]
+    pub results_format: String,
+    pub sequences: String,
+    pub email: String,
+    pub submit: bool,
+    pub pending: bool,
+    #[serde(rename = "processingError")]
+    pub processing_error: bool,
+}
+
 // rename on deserialize only so that ViralSeq can pick up snake_case in params.json files
 // no researilization happens to database where camelCase names are needed
 #[derive(Deserialize, Serialize, Debug, Clone)]

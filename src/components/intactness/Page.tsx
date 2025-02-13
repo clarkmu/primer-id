@@ -21,7 +21,7 @@ export default function IntactnessPage() {
   const [open, setOpen] = useState(false);
   const [parseError, setParseError] = useState("");
   const [error, setError] = useState("");
-  const [jobID, setJodID] = useState("");
+  const [jobID, setJobID] = useState("");
   const [resultsFormat, setResultsFormat] = useState<"tar" | "zip">("tar");
   const [continued, setContinued] = useState(false);
   const [filename, setFilename] = useState("");
@@ -68,7 +68,7 @@ export default function IntactnessPage() {
 
     if (parsed.result?.length > 100 || file.size > 16000000) {
       setParseError(
-        "Maximum exceeded of 100 sequences or 16MB per submission."
+        "Maximum exceeded of 100 sequences or 16MB per submission.",
       );
       return;
     }
@@ -154,7 +154,7 @@ export default function IntactnessPage() {
               label="Name Output (optional* whitespace is replaced by _)"
               placeholder=""
               value={jobID}
-              onChange={(e) => setJodID(e.target.value.replace(/\s/g, "_"))}
+              onChange={(e) => setJobID(e.target.value.replace(/\s/g, "_"))}
             />
             <RadioGroup
               label={`Results Format: intactness-results_${jobID || "{id}"}${

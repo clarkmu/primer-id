@@ -14,6 +14,7 @@ pub struct PipelineKeys {
     pub ogv: String,
     pub tcs: String,
     pub intact: String,
+    pub corereceptor: String,
 }
 
 #[derive(Clone, Copy)]
@@ -22,6 +23,7 @@ pub enum PipelineType {
     Ogv,
     Tcs,
     Intact,
+    CoreReceptor,
 }
 
 impl Index<PipelineType> for PipelineKeys {
@@ -32,6 +34,7 @@ impl Index<PipelineType> for PipelineKeys {
             PipelineType::Ogv => &self.ogv,
             PipelineType::Tcs => &self.tcs,
             PipelineType::Intact => &self.intact,
+            PipelineType::CoreReceptor => &self.corereceptor,
         }
     }
 }
@@ -48,6 +51,7 @@ pub struct Locations {
     pub api_url: PipelineKeys,
     pub bucket_url: PipelineKeys,
     pub ogv_base_path: String,
+    pub corereceptor_base_path: String,
     pub intactness_base_path: String,
     pub api_key: String,
     pub smtp_address: String,
@@ -84,5 +88,6 @@ mod tests {
         assert!(locations.api_url[PipelineType::Ogv].contains("api"));
         assert!(locations.api_url[PipelineType::Tcs].contains("api"));
         assert!(locations.api_url[PipelineType::Intact].contains("api"));
+        assert!(locations.api_url[PipelineType::CoreReceptor].contains("api"));
     }
 }
