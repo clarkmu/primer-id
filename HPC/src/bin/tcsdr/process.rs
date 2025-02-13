@@ -147,7 +147,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     // run SDRM
     if is_dr {
         let temp_sdrm_dir = format!("{}/temp", &pipeline.scratch_dir);
-        let input_sdrm = format!("{}_SDRM", &samples_dir);
+        let input_sdrm = format!("{}_DRM_analysis", &samples_dir);
         let sdrm_command = format!(
             "conda run -n tcsdr tcs_sdrm {} {}",
             &temp_sdrm_dir,

@@ -86,3 +86,16 @@ export const SEODR = ({ children }) => (
     {children}
   </>
 );
+
+export const SEOCoreReceptor = ({ children }) => (
+  <>
+    <Head>
+      <title>Geno2Pheno Core Receptor</title>
+      <meta
+        name="description"
+        content="Automate multiple submissions to the Geno2Pheno Core Receptor pipeline."
+      />
+    </Head>
+    {children}
+  </>
+);

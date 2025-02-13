@@ -40,6 +40,11 @@ path = "src/bin/tcsdr/main.rs"
 name = "intactness"
 path = "src/bin/intactness/main.rs"
 
+# cargo run --bin corereceptor -- --id=67a94db7981472ce971c5438 --is_dev --cores=1
+[[bin]]
+name = "corereceptor"
+path = "src/bin/corereceptor/main.rs"
+
 [dependencies]
 # neeed for production
 openssl = { version = "0.10.59", features = ["vendored"]}
