@@ -14,33 +14,33 @@
     "tcs": "gs://bucket/tcs-dr",
     "ogv": "gs://bucket/ogv-dating",
     "intact": "gs://bucket/intactness",
-    "corereceptor": "gs://bucket/corereceptor"
+    "coreceptor": "gs://bucket/coreceptor"
   },
   "log_dir": {
     "base": "/app/work/log",
     "tcs": "/app/work/log/tcsdr",
     "ogv": "/app/work/log/ogv",
     "intact": "/app/work/log/intact",
-    "corereceptor": "/app/work/log/corereceptor"
+    "coreceptor": "/app/work/log/coreceptor"
   },
   "scratch_space": {
     "base": "/app/work/scratch",
     "tcs": "/app/work/scratch/tcsdr",
     "ogv": "/app/work/scratch/ogv",
     "intact": "/app/work/scratch/intact",
-    "corereceptor": "/app/work/scratch/corereceptor"
+    "coreceptor": "/app/work/scratch/coreceptor"
   },
   "api_url": {
     "base": "http://host.docker.internal:3000/api",
     "tcs": "http://host.docker.internal:3000/api/tcsdr",
     "ogv": "http://host.docker.internal:3000/api/ogv",
     "intact": "http://host.docker.internal:3000/api/intactness",
-    "corereceptor": "http://host.docker.internal:3000/api/corereceptor"
+    "coreceptor": "http://host.docker.internal:3000/api/coreceptor"
   },
   "conda_location": "/root/miniconda3/condabin/conda",
   "ogv_base_path": "/app/ogv-dating",
   "intactness_base_path": "/app/intactness",
-  "corereceptor_base_path": "/app/g2p/corereceptor",
+  "coreceptor_base_path": "/app/g2p/coreceptor",
   "api_key": "replace this key with something more secure than 'secret-phrase'",
   "tcs_log_bucket_url": "gs://bucket"
 }

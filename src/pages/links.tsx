@@ -52,7 +52,7 @@ export const LinksPage = () => (
         </div>
         <div className="flex-1 flex flex-col gap-4">
           <MyCard src={IMAGES.geno2pheno} title="Geno2Pheno">
-            <LinkButton href={LINKS.G2P}>Geno2pheno[corereceptor]</LinkButton>
+            <LinkButton href={LINKS.G2P}>Geno2pheno[coreceptor]</LinkButton>
           </MyCard>
           <MyCard src={IMAGES.figtree} title="Fig Tree with sequence viewer">
             <div className="text-lg font-lg">Fig Tree with sequence viewer</div>

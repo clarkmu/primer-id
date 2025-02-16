@@ -1,6 +1,6 @@
 import { useMutation } from "react-query";
 
-export default function useCoreReceptor() {
+export default function useCoreceptor() {
   const mutateSubmit = useMutation(
     async ({
       body,
@@ -14,7 +14,7 @@ export default function useCoreReceptor() {
       callback: (id: string) => void;
     }) => {
       return await (
-        await fetch("/api/corereceptor", {
+        await fetch("/api/coreceptor", {
           method: "POST",
           body: JSON.stringify(body),
         })

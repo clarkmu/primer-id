@@ -67,7 +67,7 @@ pub struct TcsUpload {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct CoreReceptorAPI {
+pub struct CoreceptorAPI {
     pub id: String,
     #[serde(rename = "createdAt")]
     pub created_at: String,

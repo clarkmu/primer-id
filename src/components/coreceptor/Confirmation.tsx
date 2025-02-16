@@ -1,4 +1,4 @@
-import useCoreReceptor from "@/hooks/useCoreReceptor";
+import useCoreceptor from "@/hooks/useCoreceptor";
 import Modal from "../form/Modal";
 import Alert from "../form/Alert";
 import Button from "../form/Button";
@@ -28,7 +28,7 @@ export default function Confirmation({
   const { reload } = useRouter();
   const [error, setError] = useState("");
 
-  const { mutate, isLoading } = useCoreReceptor();
+  const { mutate, isLoading } = useCoreceptor();
   const [submitted, setSubmitted] = useState(false);
 
   const onSubmit = async () => {

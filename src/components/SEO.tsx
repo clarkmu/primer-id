@@ -87,13 +87,13 @@ export const SEODR = ({ children }) => (
   </>
 );
 
-export const SEOCoreReceptor = ({ children }) => (
+export const SEOCoreceptor = ({ children }) => (
   <>
     <Head>
-      <title>Geno2Pheno Core Receptor</title>
+      <title>Geno2Pheno Coreceptor</title>
       <meta
         name="description"
-        content="Automate multiple submissions to the Geno2Pheno Core Receptor pipeline."
+        content="Automate multiple submissions to the Geno2Pheno Coreceptor pipeline."
       />
     </Head>
     {children}

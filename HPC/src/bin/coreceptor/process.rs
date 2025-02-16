@@ -4,12 +4,12 @@ use utils::{
     email_templates::{ receipt_email_template, results_email_template },
     load_env_vars::{ load_env_vars, EnvVars },
     load_locations::Locations,
-    pipeline::{ CoreReceptorAPI, Pipeline },
+    pipeline::{ CoreceptorAPI, Pipeline },
     run_command::run_command,
     send_email::send_email,
 };
 
-pub async fn process(pipeline: &Pipeline<CoreReceptorAPI>, locations: Locations) -> Result<()> {
+pub async fn process(pipeline: &Pipeline<CoreceptorAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing OGV pipeline #{}", &pipeline.id))?;
 
     let EnvVars { is_dev, .. } = load_env_vars();
@@ -20,7 +20,7 @@ pub async fn process(pipeline: &Pipeline<CoreReceptorAPI>, locations: Locations)
         .context("Failed to patch pipeline as pending.")?;
 
     let job_id: String = if pipeline.data.job_id.is_empty() {
-        format!("corereceptor-results_{}", &pipeline.data.id)
+        format!("coreceptor-results_{}", &pipeline.data.id)
     } else {
         pipeline.data.job_id.clone()
     };
@@ -31,8 +31,8 @@ pub async fn process(pipeline: &Pipeline<CoreReceptorAPI>, locations: Locations)
     let results_location = format!("{}/{}", &pipeline.scratch_dir, &job_id);
     let output_csv_location = format!("{}/{}.csv", &results_location, &job_id);
     let run_pipeline_command: String = format!(
-        "conda run -n corereceptor python3 {}/core_receptor.py {} {}",
-        &locations.corereceptor_base_path,
+        "conda run -n coreceptor python3 {}/coreceptor.py {} {}",
+        &locations.coreceptor_base_path,
         &sequence_file,
         &output_csv_location
     );
@@ -58,23 +58,23 @@ pub async fn process(pipeline: &Pipeline<CoreReceptorAPI>, locations: Locations)
     // email receipt
     pipeline.add_log("Emailing receipt.")?;
     send_email(
-        &format!("Core Receptor Submission #{}", &job_id),
+        &format!("Coreceptor Submission #{}", &job_id),
         &receipt_body,
         &pipeline.data.email,
         true
     ).await.context("Failed to send receipt email.")?;
 
-    // core_receptor.py run
+    // coreceptor.py run
     if !is_dev {
         pipeline.add_log(
             format!(
-                "Running Core Receptor command: {:?}\nExec Location: {}",
+                "Running Coreceptor command: {:?}\nExec Location: {}",
                 &run_pipeline_command,
                 &results_location
             ).as_str()
         )?;
         run_command(&run_pipeline_command, &pipeline.scratch_dir).expect(
-            "Failed in core_receptor.py run."
+            "Failed in coreceptor.py run."
         );
     } else {
         // can't run Selenium on Mac, so...
@@ -113,7 +113,7 @@ pub async fn process(pipeline: &Pipeline<CoreReceptorAPI>, locations: Locations)
     pipeline.add_log("Emailing results.")?;
     let results_body = results_email_template(signed_url, "");
     send_email(
-        &format!("Core Receptor Results #{}", &job_id),
+        &format!("Coreceptor Results #{}", &job_id),
         &results_body,
         &pipeline.data.email,
         false

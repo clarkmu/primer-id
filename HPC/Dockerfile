@@ -71,9 +71,9 @@ RUN conda run -n intactness pip3 install requests biopython==1.79 reportlab==4.1
 RUN mkdir /app/intactness
 RUN git clone https://github.com/clarkmu/intactness-pipeline /app/intactness
 
-# CORE RECEPTOR dependencies
-RUN conda create -n corereceptor python=3.10 selenium=4.28.0
-RUN conda run -n corereceptor pip3 install biopython==1.79
+# CORECEPTOR dependencies
+RUN conda create -n coreceptor python=3.10 selenium=4.28.0
+RUN conda run -n coreceptor pip3 install biopython==1.79
 # COPY g2p /app
 
 COPY storage-admin.json /app/storage-admin.json

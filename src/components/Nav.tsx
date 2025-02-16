@@ -19,8 +19,8 @@ const pipelineLinks = [
     label: "Intactness",
   },
   {
-    value: "/corereceptor",
-    label: "Geno2Pheno Core Receptor",
+    value: "/coreceptor",
+    label: "Geno2Pheno Coreceptor",
   },
 ];
 

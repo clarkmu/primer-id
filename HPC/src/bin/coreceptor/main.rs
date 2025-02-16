@@ -2,10 +2,10 @@ use utils::{
     get_api::get_api,
     load_env_vars::{ load_env_vars, EnvVars },
     load_locations::{ load_locations, Locations, PipelineType },
-    pipeline::{ CoreReceptorAPI, Pipeline },
+    pipeline::{ CoreceptorAPI, Pipeline },
 };
 
-// cargo run --bin corereceptor -- --id=667af1f0fe90441ac2375c50 --is_dev --is_stale
+// cargo run --bin coreceptor -- --id=667af1f0fe90441ac2375c50 --is_dev --is_stale
 
 mod process;
 
@@ -18,20 +18,20 @@ async fn main() -> () {
         std::process::exit(1);
     });
 
-    let url = format!("{}/{}", &locations.api_url[PipelineType::CoreReceptor], &id);
-    let data: CoreReceptorAPI = get_api(&url).await.unwrap_or_else(|e| {
+    let url = format!("{}/{}", &locations.api_url[PipelineType::Coreceptor], &id);
+    let data: CoreceptorAPI = get_api(&url).await.unwrap_or_else(|e| {
         // try again later
         println!("Error getting API: {:?}", e);
         std::process::exit(1);
     });
 
-    let pipeline = Pipeline::new(data.id.clone(), data, &locations, PipelineType::CoreReceptor);
+    let pipeline = Pipeline::new(data.id.clone(), data, &locations, PipelineType::Coreceptor);
 
     // placed process is_stale here because pipeline is already set up , left it out of process_queue.main
     if !is_stale.is_empty() {
         pipeline
             .add_error(
-                &format!("Stale Core Receptor Job: {}", &id),
+                &format!("Stale Coreceptor Job: {}", &id),
                 "Pipeline has been pending for over 24 hours and has been cancelled.",
                 &pipeline.data.email
             ).await
@@ -45,8 +45,8 @@ async fn main() -> () {
     if let Err(e) = process::process(&pipeline, locations).await {
         pipeline
             .add_error(
-                &format!("Core Receptor Processing Error"),
-                &format!("Failed to process Core Receptor pipeline #{}.\n\n{:?}", &pipeline.id, e),
+                &format!("Coreceptor Processing Error"),
+                &format!("Failed to process Coreceptor pipeline #{}.\n\n{:?}", &pipeline.id, e),
                 &pipeline.data.email
             ).await
             .unwrap_or_else(|e| {

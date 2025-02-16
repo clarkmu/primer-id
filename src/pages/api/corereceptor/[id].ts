@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import type { corereceptors } from "@prisma/client";
+import type { coreceptors } from "@prisma/client";
 import prisma from "@/utils/prisma";
 import { getById, patchItem, validateIdRequest } from "@/utils/api";
 
-type Data = corereceptors | { error: string };
+type Data = coreceptors | { error: string };
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,9 +16,9 @@ export default async function handler(
 
   switch (req.method) {
     case "GET":
-      return getById(id, res, prisma.corereceptors.findUnique);
+      return getById(id, res, prisma.coreceptors.findUnique);
     case "PATCH":
-      return patchItem(req, res, id, prisma.corereceptors.update);
+      return patchItem(req, res, id, prisma.coreceptors.update);
     default:
       return res.status(404).end();
   }

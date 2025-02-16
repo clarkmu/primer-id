@@ -1,6 +1,6 @@
 /**
  *  Used to process uploaded sequences for
- *      Intactness and Core Receptor pages
+ *      Intactness and Coreceptor pages
  */
 
 import { useState } from "react";

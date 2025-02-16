@@ -258,14 +258,14 @@ async fn main() -> Result<()> {
         }
     }
 
-    let core_receptors: Vec<SharedAPIData> = get_api(
-        &locations.api_url[PipelineType::CoreReceptor]
+    let coreceptors: Vec<SharedAPIData> = get_api(
+        &locations.api_url[PipelineType::Coreceptor]
     ).await.unwrap_or(vec![]);
 
-    for core_receptor in core_receptors {
+    for coreceptor in coreceptors {
         let is_stale = if
-            core_receptor.pending &&
-            pipeline_is_stale(&core_receptor.created_at).unwrap_or(true)
+            coreceptor.pending &&
+            pipeline_is_stale(&coreceptor.created_at).unwrap_or(true)
         {
             " --is_stale"
         } else {
@@ -274,10 +274,10 @@ async fn main() -> Result<()> {
 
         let run_is_stale = !is_stale.is_empty();
 
-        if core_receptor.submit || run_is_stale {
+        if coreceptor.submit || run_is_stale {
             let mut cmd = format!(
-                "cargo run --release --bin corereceptor -- --id={} {}{}",
-                &core_receptor.id,
+                "cargo run --release --bin coreceptor -- --id={} {}{}",
+                &coreceptor.id,
                 &is_dev_cmd,
                 is_stale
             );
@@ -287,11 +287,11 @@ async fn main() -> Result<()> {
                 cmd = create_sbatch_cmd(
                     &format!(
                         "{}/{}.out",
-                        &locations.log_dir[PipelineType::CoreReceptor],
-                        &core_receptor.id
+                        &locations.log_dir[PipelineType::Coreceptor],
+                        &coreceptor.id
                     ),
                     1,
-                    &format!("core_receptor-{}", &core_receptor.id),
+                    &format!("coreceptor-{}", &coreceptor.id),
                     5000,
                     1440,
                     &cmd
@@ -304,8 +304,8 @@ async fn main() -> Result<()> {
                 &locations.api_key,
                 format!(
                     "{}/{}",
-                    &locations.api_url[PipelineType::CoreReceptor],
-                    &core_receptor.id
+                    &locations.api_url[PipelineType::Coreceptor],
+                    &coreceptor.id
                 ).as_str()
             ).await?;
         }

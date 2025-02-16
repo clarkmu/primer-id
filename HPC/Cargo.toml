@@ -40,10 +40,10 @@ path = "src/bin/tcsdr/main.rs"
 name = "intactness"
 path = "src/bin/intactness/main.rs"
 
-# cargo run --bin corereceptor -- --id=67a94db7981472ce971c5438 --is_dev --cores=1
+# cargo run --bin coreceptor -- --id=67a94db7981472ce971c5438 --is_dev --cores=1
 [[bin]]
-name = "corereceptor"
-path = "src/bin/corereceptor/main.rs"
+name = "coreceptor"
+path = "src/bin/coreceptor/main.rs"
 
 [dependencies]
 # neeed for production

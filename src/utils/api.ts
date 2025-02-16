@@ -58,7 +58,7 @@ export const getPublic = async (
   }
 };
 
-// GET api/corereceptor|intactness/[id]
+// GET api/coreceptor|intactness/[id]
 export const getById = async (
   id: String,
   res: NextApiResponse,

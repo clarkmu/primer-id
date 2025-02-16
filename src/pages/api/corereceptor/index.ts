@@ -11,7 +11,7 @@ async function post(req, res) {
   if (!email) return res.status(500).json({ error: "Email is required." });
 
   try {
-    await prisma.corereceptors.create({
+    await prisma.coreceptors.create({
       data: {
         sequences: sequences.trim(),
         email,
@@ -32,7 +32,7 @@ export default async function handler(
 ) {
   switch (req.method) {
     case "GET":
-      return getPublic(prisma.corereceptors.findMany, res, (item) => 0);
+      return getPublic(prisma.coreceptors.findMany, res, (item) => 0);
     case "POST":
       return post(req, res);
     default:

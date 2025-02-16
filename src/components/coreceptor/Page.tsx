@@ -1,4 +1,4 @@
-import { SEOCoreReceptor } from "@/components/SEO";
+import { SEOCoreceptor } from "@/components/SEO";
 import Alert from "@/components/form/Alert";
 import Button from "@/components/form/Button";
 import Input from "@/components/form/Input";
@@ -45,15 +45,15 @@ export default function IntactnessPage() {
   };
 
   return (
-    <SEOCoreReceptor>
+    <SEOCoreceptor>
       <div className="flex flex-col gap-4 m-4">
         <Paper className="flex flex-col gap-8">
           <h1 className=" text-lg font-bold mx-auto">
-            Geno2Pheno Core Receptor Pipeline
+            Geno2Pheno Coreceptor Pipeline
           </h1>
           <div>
             <b>DESCRIPTION</b> Upload multiple unaligned sequences to run
-            through Geno2Pheno Core Receptor.
+            through Geno2Pheno Coreceptor.
           </div>
           <div>
             <b>FILES</b> should be uncompressed and in one of the following
@@ -71,7 +71,7 @@ export default function IntactnessPage() {
               rel="noreferrer"
               className="underline ml-1"
             >
-              Geno2Pheno Core Receptor page
+              Geno2Pheno Coreceptor page
             </a>
             .
           </div>
@@ -143,6 +143,6 @@ export default function IntactnessPage() {
           jobID={jobID}
         />
       </div>
-    </SEOCoreReceptor>
+    </SEOCoreceptor>
   );
 }
