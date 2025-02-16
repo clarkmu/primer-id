@@ -35,13 +35,13 @@ function List() {
           {["Email", "Date", "Type", "State", "Primer Count", "ID"].map(
             (header) => (
               <td key={header}>{header}</td>
-            )
+            ),
           )}
         </tr>
       </th>
       <tbody>
         {data.map((row) => (
-          <tr key={row._id}>
+          <tr key={row.id}>
             <td>{row.email}</td>
             <td>{new Date(row.createdAt).toLocaleDateString("en-US")}</td>
             <td>{row.htsf ? "HTSF" : row.dropbox ? "DropBox" : "Upload"}</td>
@@ -53,7 +53,7 @@ function List() {
                 ? row.primers.length
                 : "DR"}
             </td>
-            <td>{row._id}</td>
+            <td>{row.id}</td>
           </tr>
         ))}
       </tbody>

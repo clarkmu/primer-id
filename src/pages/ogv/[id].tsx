@@ -2,8 +2,7 @@ import Alert from "@/components/form/Alert";
 import OGVPage from "@/components/OGV/OGVPage";
 import { SEOOGV } from "@/components/SEO";
 import OGVContextProvider from "@/contexts/OGVContext";
-import OGV from "@/models/OGV";
-import dbConnect from "@/utils/dbConnect";
+import prisma from "@/utils/prisma";
 import { useRouter } from "next/router";
 
 export async function getServerSideProps(context) {
@@ -12,8 +11,7 @@ export async function getServerSideProps(context) {
     pipeline = null;
 
   try {
-    await dbConnect();
-    pipeline = await OGV.findById(id);
+    pipeline = await prisma.ogvs.findUnique({ where: { id } });
     if (!pipeline) {
       error = "Failed to find pipeline by ID.";
       pipeline = null;

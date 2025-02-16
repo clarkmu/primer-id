@@ -178,7 +178,7 @@ const Confirmation = () => {
           <div className="flex justify-end items-end gap-4">
             <Button
               onClick={handleClose}
-              variant="none"
+              variant="outlined"
               color="error"
               disabled={submitting}
             >

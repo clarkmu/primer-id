@@ -97,7 +97,7 @@ export default function ConfirmModal() {
             </Button>
           ) : (
             <>
-              <Button variant="none" onClick={onClose}>
+              <Button variant="outlined" onClick={onClose}>
                 Back
               </Button>
               <Button onClick={onSubmit} isLoading={submitting}>

@@ -3,9 +3,9 @@ import GlobalSettings from "./GlobalSettings";
 import { useTCSDRContext } from "@/contexts/TCSDRContext";
 import Accordion from "@/components/form/Accordion";
 import PrimerContextProvider from "@/contexts/PrimerContext";
-import { PrimerInterface } from "@/models/TCSDR";
 import { useEffect } from "react";
 import INITIAL_PRIMER from "@/utils/constants/INITIAL_PRIMER";
+import { TcsdrsPrimers } from "@prisma/client";
 
 export default function PrimersContainer() {
   const {
@@ -29,7 +29,7 @@ export default function PrimersContainer() {
   return (
     <>
       <GlobalSettings />
-      {primers.map((primer: PrimerInterface, i) => (
+      {primers.map((primer: TcsdrsPrimers, i) => (
         <Accordion
           key={`primer_${i}`}
           title={`Sequence Region #${i + 1}${

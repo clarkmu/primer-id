@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model corereceptors {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt       DateTime @db.Date @default(now())
+  email           String
+  jobID           String
+  resultsFormat   String
+  sequences       String
+  submit          Boolean  @default(true)
+  pending         Boolean  @default(false)
+  processingError Boolean  @default(false)
+}
+
+model intacts {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt       DateTime @db.Date @default(now())
+  email           String
+  jobID           String
+  resultsFormat   String
+  sequences       String
+  submit          Boolean  @default(true)
+  pending         Boolean  @default(false)
+  processingError Boolean  @default(false)
+}
+
+model ogvs {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt       DateTime      @db.Date @default(now())
+  conversion      Json?
+  email           String
+  jobID           String?
+  resultsFormat   String?
+  pending         Boolean       @default(false)
+  processingError Boolean       @default(false)
+  submit          Boolean       @default(true)
+  uploads         OgvsUploads[]
+}
+
+model tcsdrs {
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt       DateTime        @db.Date @default(now())
+  drVersion       String?         @default("")
+  dropbox         String?
+  email           String
+  errorRate       Float?
+  htsf            String?
+  jobID           String?
+  resultsFormat   String?
+  platformFormat  Int?
+  poolName        String?
+  submit          Boolean         @default(true)
+  pending         Boolean         @default(false)
+  processingError Boolean         @default(false)
+  uploads         TcsdrsUploads[]
+  primers         TcsdrsPrimers[]
+}
+
+type TcsdrsPrimers {
+  forward        String
+  cdna           String
+  region         String
+  endJoin        Boolean  @default(false)
+  endJoinOption  Int?     @default(0)
+  endJoinOverlap Int?     @default(0)
+  allowIndels    Boolean? @default(false)
+  supermajority  Float    @default(0.5)
+  qc             Boolean? @default(false)
+  refGenome      String   @default("")
+  refStart       Int?     @default(0)
+  refEnd         Int?     @default(0)
+  trim           Boolean? @default(false)
+  trimGenome     String?  @default("")
+  trimStart      Int?     @default(0)
+  trimEnd        Int?     @default(0)
+}
+
+type OgvsUploads {
+  fileName String
+  libName  String
+}
+
+type TcsdrsUploads {
+  fileName String
+  poolName String
+}

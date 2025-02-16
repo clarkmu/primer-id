@@ -29,6 +29,10 @@ At `/HPC` , run `docker-compose up -d` to create backend
 
 Rename `HPC/locations.example.json` to `locations.json` with location variables set
 
+`yarn global add dotenv-cli`
+
+<small>Todo: Make a Dockerfile for frontend</small>
+
 ## Processing
 
 To process submisisons , run `cargo run process_queue` at `/HPC` manually (no cron is set up)
@@ -36,3 +40,7 @@ To process submisisons , run `cargo run process_queue` at `/HPC` manually (no cr
 ## Backend Testing
 
 Open project using VSCode's Remote Explorer to run tests with dependencies
+
+## Database Viewer
+
+`npx prisma studio`

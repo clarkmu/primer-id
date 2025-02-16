@@ -1,4 +1,4 @@
-import { PrimerInterface } from "@/models/TCSDR";
+import { TcsdrsPrimers } from "@prisma/client";
 
 export type drVersionType = "v1" | "v2" | "v3";
 
@@ -7,7 +7,7 @@ export enum ParamTypes {
   NEW = "Start Your Run",
 }
 
-const INITIAL_TCSDR_PIPELINE = {
+export const INITIAL_TCSDR_PIPELINE = {
   email: "",
   jobID: "",
   resultsFormat: "tar",
@@ -48,7 +48,7 @@ export type tcsdrType = {
     htsf: string;
     poolName: string;
     dropbox: string;
-    primers: PrimerInterface[];
+    primers: TcsdrsPrimers[];
     drVersion: drVersionType;
   };
   showUploads: boolean;
@@ -65,6 +65,6 @@ export type tcsdrType = {
   uploadedFiles: { [filename: string]: number | boolean };
   isDR: boolean;
   useSaved: boolean;
-  savedPrimers: PrimerInterface[];
+  savedPrimers: TcsdrsPrimers[];
   procedure: ParamTypes;
 };

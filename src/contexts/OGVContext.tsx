@@ -82,7 +82,7 @@ export default function OGVContextProvider({
       .filter(
         (f) =>
           f.name.indexOf(".fast") !== -1 &&
-          !state.files.find((fi) => fi.name === f.name)?.name
+          !state.files.find((fi) => fi.name === f.name)?.name,
       )
       .map((f) => whitelistCharsInFilenames(f));
 
@@ -146,7 +146,7 @@ export default function OGVContextProvider({
               uploads: s.uploads.map((u) =>
                 u.name === signedURL.name
                   ? { ...u, progress: parseInt((p.loaded / p.total) * 100) }
-                  : u
+                  : u,
               ),
             }));
           },
@@ -159,7 +159,7 @@ export default function OGVContextProvider({
         await axios.put(signedURL.signedURL, file, config);
       }
 
-      await axios.delete(`/api/ogv/submit/${data._id}`);
+      await axios.delete(`/api/ogv/submit/${data.id}`);
     } catch (e) {
       console.log(e);
       return "File upload error. Please try again later.";
@@ -175,8 +175,8 @@ export default function OGVContextProvider({
       Object.keys(
         //make an object of conversions with empty strings
         Object.fromEntries(
-          Object.entries(state.conversion).filter(([key, value]) => !value)
-        )
+          Object.entries(state.conversion).filter(([key, value]) => !value),
+        ),
       ).length
     );
 

@@ -15,9 +15,8 @@ use serde_json::json;
 use anyhow::{ Context, Result };
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Upload {
-    #[serde(rename = "_id")]
-    pub id: String,
+pub struct OgvUpload {
+    // pub id: String,
     #[serde(rename = "fileName")]
     pub file_name: String,
     #[serde(rename = "libName")]
@@ -26,7 +25,6 @@ pub struct Upload {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct OgvAPI {
-    #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "createdAt")]
     pub created_at: String,
@@ -34,7 +32,7 @@ pub struct OgvAPI {
     pub job_id: String,
     #[serde(rename = "resultsFormat")]
     pub results_format: String,
-    pub uploads: Vec<Upload>,
+    pub uploads: Vec<OgvUpload>,
     pub conversion: HashMap<String, String>,
     pub email: String,
     pub submit: bool,
@@ -45,7 +43,6 @@ pub struct OgvAPI {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct IntactAPI {
-    #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "createdAt")]
     pub created_at: String,
@@ -63,7 +60,6 @@ pub struct IntactAPI {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct TcsUpload {
-    pub id: String,
     #[serde(rename = "fileName")]
     pub file_name: String,
     #[serde(rename = "poolName")]
@@ -72,7 +68,6 @@ pub struct TcsUpload {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct CoreReceptorAPI {
-    #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "createdAt")]
     pub created_at: String,
@@ -93,7 +88,7 @@ pub struct CoreReceptorAPI {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct Primer {
-    pub id: String,
+    // pub id: String,
     pub region: String,
     pub supermajority: f32,
     pub forward: String,
@@ -129,7 +124,6 @@ pub struct Primer {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct TcsAPI {
-    #[serde(rename = "_id")]
     pub id: String,
     #[serde(rename = "createdAt")]
     pub created_at: String,
@@ -146,7 +140,6 @@ pub struct TcsAPI {
     pub primers: Option<Vec<Primer>>,
     pub dropbox: Option<String>,
     pub htsf: Option<String>,
-    pub uploaded: bool,
     #[serde(rename = "errorRate")]
     pub error_rate: Option<f32>,
     #[serde(rename = "platformFormat")]
@@ -315,8 +308,7 @@ mod tests {
             created_at: "2021-01-01".to_string(),
             job_id: "results-named".to_string(),
             results_format: "zip".to_string(),
-            uploads: vec![Upload {
-                id: "123".to_string(),
+            uploads: vec![OgvUpload {
                 file_name: "file".to_string(),
                 lib_name: "lib".to_string(),
             }],

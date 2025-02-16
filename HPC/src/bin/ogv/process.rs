@@ -4,7 +4,7 @@ use std::io::{ BufWriter, Write };
 use anyhow::{ Result, Context };
 use utils::compress::compress_dir;
 use utils::email_templates::{ receipt_email_template, results_email_template };
-use utils::pipeline::Upload;
+use utils::pipeline::OgvUpload;
 use utils::run_command::run_command;
 use utils::{ pipeline::{ OgvAPI, Pipeline }, send_email::send_email, load_locations::Locations };
 
@@ -153,7 +153,10 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
     Ok(())
 }
 
-fn generate_receipt_email(conversion: &HashMap<String, String>, uploads: &Vec<Upload>) -> String {
+fn generate_receipt_email(
+    conversion: &HashMap<String, String>,
+    uploads: &Vec<OgvUpload>
+) -> String {
     let conversion_html =
         "<u>Start2Art</u>:<br>".to_string() +
         &conversion
@@ -175,7 +178,7 @@ fn generate_receipt_email(conversion: &HashMap<String, String>, uploads: &Vec<Up
     receipt
 }
 
-fn generate_samples_file(uploads: &Vec<Upload>, samples_file_location: &str) -> Result<()> {
+fn generate_samples_file(uploads: &Vec<OgvUpload>, samples_file_location: &str) -> Result<()> {
     #[derive(serde::Serialize)]
     struct Samples {
         samples: Vec<String>,
@@ -241,13 +244,11 @@ mod tests {
         let conversion = vec![("Start2Art".to_string(), "1".to_string())].into_iter().collect();
 
         let uploads = vec![
-            Upload {
-                id: "1".to_string(),
+            OgvUpload {
                 lib_name: "lib1".to_string(),
                 file_name: "file1".to_string(),
             },
-            Upload {
-                id: "2".to_string(),
+            OgvUpload {
                 lib_name: "lib2".to_string(),
                 file_name: "file2".to_string(),
             }
@@ -263,13 +264,11 @@ mod tests {
     #[test]
     fn test_generate_samples_file() {
         let uploads = vec![
-            Upload {
-                id: "1".to_string(),
+            OgvUpload {
                 lib_name: "lib1".to_string(),
                 file_name: "file1".to_string(),
             },
-            Upload {
-                id: "2".to_string(),
+            OgvUpload {
                 lib_name: "lib2".to_string(),
                 file_name: "file2".to_string(),
             }

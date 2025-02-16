@@ -1,6 +1,6 @@
-import { PrimerInterface } from "@/models/TCSDR";
+import { TcsdrsPrimers } from "@prisma/client";
 
-const INITIAL_PRIMER: PrimerInterface = {
+const INITIAL_PRIMER: TcsdrsPrimers = {
   region: "",
   supermajority: 0.5,
   forward: "",

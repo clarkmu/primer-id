@@ -1,9 +1,9 @@
-import TCSDR from "@/models/TCSDR";
+import prisma from "@/utils/prisma";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "POST") {
     return res.status(404).end();
@@ -15,7 +15,11 @@ export default async function handler(
     return res.status(400).json({ error: "Incorrect password." });
   }
   try {
-    let all = await TCSDR.find({}).sort({ createdAt: "desc" });
+    let all = await prisma.tcsdrs.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
     return res.status(200).json(all);
   } catch (e) {
     return res.status(400).json({ error: "Database error. Please try again." });

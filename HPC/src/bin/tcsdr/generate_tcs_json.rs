@@ -62,7 +62,6 @@ mod tests {
             job_id: "test".to_string(),
             pending: false,
             submit: true,
-            uploaded: true,
             pool_name: Some("".to_string()),
             results_format: "zip".to_string(),
             processing_error: false,

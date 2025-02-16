@@ -2,8 +2,7 @@ import Alert from "@/components/form/Alert";
 import { SEODR } from "@/components/SEO";
 import Form from "@/components/TCSDR/Form";
 import TCSDRContextProvider from "@/contexts/TCSDRContext";
-import TCSDR from "@/models/TCSDR";
-import dbConnect from "@/utils/dbConnect";
+import prisma from "@/utils/prisma";
 import { useRouter } from "next/router";
 
 export async function getServerSideProps(context) {
@@ -12,8 +11,7 @@ export async function getServerSideProps(context) {
     pipeline = null;
 
   try {
-    await dbConnect();
-    pipeline = await TCSDR.findById(id);
+    pipeline = await prisma.tcsdrs.findUnique({ where: { id } });
 
     if (!pipeline) {
       pipeline = null;

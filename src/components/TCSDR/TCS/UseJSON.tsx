@@ -7,13 +7,16 @@ import Paper from "@/components/form/Paper";
 import Alert from "@/components/form/Alert";
 import Input from "@/components/form/Input";
 import InputFile from "@/components/form/InputFile";
-import { INITIAL_TCSDR, ParamTypes } from "@/utils/constants/INITIAL_TCSDR";
+import {
+  INITIAL_TCSDR_PIPELINE,
+  ParamTypes,
+} from "@/utils/constants/INITIAL_TCSDR";
 import parse from "html-react-parser";
 
 const testData = { email: "tester@test.com" };
 
 export default function UseJSON() {
-  const { state, editState } = useTCSDRContext();
+  const { editState } = useTCSDRContext();
 
   const [input, setInput] = useState(JSON.stringify(testData));
   const [data, setData] = useState(testData);
@@ -23,7 +26,7 @@ export default function UseJSON() {
     const pipeline = variablesFromViralSeqCLI(data);
 
     editState({
-      pipeline: { ...INITIAL_TCSDR, ...pipeline },
+      pipeline: { ...INITIAL_TCSDR_PIPELINE, ...pipeline },
       procedure: ParamTypes.NEW,
       showUploads: true,
     });
@@ -70,7 +73,7 @@ export default function UseJSON() {
   };
 
   const preHTML = syntaxHighlight(
-    JSON.stringify(data, null, 2).replace(/\\"/g, "").replace(/\\n/g, "")
+    JSON.stringify(data, null, 2).replace(/\\"/g, "").replace(/\\n/g, ""),
   );
 
   return (

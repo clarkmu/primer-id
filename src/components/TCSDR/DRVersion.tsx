@@ -17,10 +17,10 @@ export default function DRVersion() {
       pipeline: { drVersion },
     },
     setState,
+    editPipeline,
   } = useTCSDRContext();
 
-  const onChange = (drVersion: drVersionType) =>
-    setState((s) => ({ ...s, pipeline: { ...s.pipeline, drVersion } }));
+  const onChange = (drVersion: drVersionType) => editPipeline({ drVersion });
 
   const versionKeys = Object.keys(params);
 
@@ -38,9 +38,9 @@ export default function DRVersion() {
           </Button>
         ))}
       </div>
-      <div className="border-2 b-primary max-h-[33vh] overflow-y-auto text-sm">
+      <div className="border-2 b-primary max-h-[33vh] min-h-[100px] overflow-y-auto text-sm transition-all">
         {!versionKeys.length ? (
-          "Loading..."
+          <span className="text-xl m-[1rem]">Loading...</span>
         ) : (
           <ReactJson
             src={params[drVersion]}

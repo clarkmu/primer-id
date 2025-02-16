@@ -33,12 +33,12 @@ export default function Button({
         (isDisabled
           ? " bg-grey !text-gray-500 border border-primary cursor-not-allowed "
           : variant === "outlined"
-          ? "bg-transparent hover:bg-primary !text-primary font-semibold hover:!text-white border border-primary hover:border-transparent"
-          : variant === "none"
-          ? `bg-transparent hover:bg-primary text-primary font-semibold hover:text-white `
-          : iconButton
-          ? "hover:bg-grey rounded-full w-8 h-8"
-          : `bg-primary hover:bg-secondary text-white font-bold shadow`)
+            ? "bg-transparent hover:bg-primary !text-primary font-semibold hover:!text-white border border-primary hover:border-transparent"
+            : variant === "none"
+              ? `bg-transparent hover:bg-primary !text-primary hover:!text-white font-semibold hover:text-white `
+              : iconButton
+                ? "hover:bg-grey rounded-full w-8 h-8"
+                : `bg-primary hover:bg-secondary text-white font-bold shadow`)
       }
     >
       {isLoading ? (

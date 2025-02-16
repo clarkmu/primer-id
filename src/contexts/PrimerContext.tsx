@@ -1,4 +1,4 @@
-import { PrimerInterface } from "@/models/TCSDR";
+import { TcsdrsPrimers } from "@prisma/client";
 import INITIAL_PRIMER from "@/utils/constants/INITIAL_PRIMER";
 import React, {
   Dispatch,
@@ -11,11 +11,11 @@ import { createContext } from "react";
 import { useTCSDRContext } from "./TCSDRContext";
 
 type ContextType = {
-  primer: PrimerInterface;
+  primer: TcsdrsPrimers;
   page: number;
   errors: object;
   setErrors: Dispatch<SetStateAction<object>>;
-  addPrimer: (priemr: PrimerInterface | boolean) => void;
+  addPrimer: (priemr: TcsdrsPrimers | boolean) => void;
   updatePrimer: (key: string, value: any) => void;
   deletePrimer: (i: number) => void;
   finish: () => void;
@@ -47,7 +47,7 @@ export default function PrimerContextProvider({
   finish,
 }: {
   children: ReactNode;
-  primer: PrimerInterface;
+  primer: TcsdrsPrimers;
   index: number;
   finish: () => void;
 }) {

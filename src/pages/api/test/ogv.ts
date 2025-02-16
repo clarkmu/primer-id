@@ -1,11 +1,11 @@
+import type { ogvs } from "@prisma/client";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { OGVInterface } from "@/models/OGV";
 
-type Data = OGVInterface | { error: string };
+type Data = ogvs | { error: string };
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse<Data>,
 ) {
   // switch (req.method) {
   //   case "GET":

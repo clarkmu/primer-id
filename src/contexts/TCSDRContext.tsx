@@ -12,7 +12,7 @@ import { INITIAL_TCSDR, tcsdrType } from "@/utils/constants/INITIAL_TCSDR";
 import INITIAL_PRIMER from "@/utils/constants/INITIAL_PRIMER";
 import { variablesToViralSeqCLI } from "@/utils/translateVariablesForCLI";
 import { useRouter } from "next/router";
-import { PrimerInterface } from "@/models/TCSDR";
+import { TcsdrsPrimers } from "@prisma/client";
 
 const USE_SAVED_PRIMERS_KEY = "primer-id-use-saved-primers";
 const STORAGE_SAVED_PRIMERS_KEY = "primer-id-saved-primers";
@@ -117,7 +117,7 @@ export default function TCSDRContextProvider({
     editPipeline({ [name]: value });
   };
 
-  const addPrimer = (primer: PrimerInterface | false) => {
+  const addPrimer = (primer: TcsdrsPrimers | false) => {
     setState((s) => ({
       ...s,
       pipeline: {
@@ -145,7 +145,7 @@ export default function TCSDRContextProvider({
       pipeline: {
         ...s.pipeline,
         primers: s.pipeline.primers.map((p, i) =>
-          i === index ? { ...p, [key]: value } : p
+          i === index ? { ...p, [key]: value } : p,
         ),
       },
     }));
@@ -185,7 +185,7 @@ export default function TCSDRContextProvider({
             const { signedURL } = upload;
 
             const file = state.files.find(
-              (f) => f.file.name === upload.fileName
+              (f) => f.file.name === upload.fileName,
             );
 
             if (!file) {
@@ -230,7 +230,7 @@ export default function TCSDRContextProvider({
 
             resolve(true);
           })();
-        })
+        }),
     );
 
     await Promise.all(promises);
@@ -251,7 +251,6 @@ export default function TCSDRContextProvider({
 
     const data = {
       ...state.pipeline,
-      files: [],
       uploads: state.files.map((file) => ({
         fileName: file.file.name,
         type: file.file.type,
@@ -288,8 +287,8 @@ export default function TCSDRContextProvider({
 
       editState({ submitting: false });
 
-      // patchPipeline(res.data._id, { submit: true });
-      axios.delete(`/api/tcsdr/submit/${res.data._id}`);
+      // patchPipeline(res.data.id, { submit: true });
+      axios.delete(`/api/tcsdr/submit/${res.data.id}`);
     }
 
     editState({ submitted: true, submitting: false });
@@ -351,7 +350,7 @@ export default function TCSDRContextProvider({
 
     localStorage.setItem(
       STORAGE_SAVED_PRIMERS_KEY,
-      JSON.stringify(locallySaved)
+      JSON.stringify(locallySaved),
     );
   };
 
