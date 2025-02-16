@@ -21,7 +21,7 @@ export default function IntactnessPage() {
     parseError,
     filename,
     sequences,
-    approvedFileTypes,
+    approvedFileTypesDisplay,
   } = useSequenceFile();
 
   const [scrollToRef] = useScrollToDivOnVisibilityToggle(continued);
@@ -54,8 +54,7 @@ export default function IntactnessPage() {
         </div>
         <div>
           <b>FILES</b> should be uncompressed and in one of the following
-          formats: {approvedFileTypes.join(",")}. Submissions cannot exceed
-          16MB.
+          formats: {approvedFileTypesDisplay}. Submissions cannot exceed 16MB.
         </div>
         <div>
           <b>RESULTS</b> include alignment views, Gene Cutter results, and a
@@ -94,7 +93,8 @@ export default function IntactnessPage() {
       </Paper>
       <Paper className="flex flex-col gap-4">
         <div className="text-center text-lg">
-          Upload a .fastq file (uncompressed)
+          Upload an uncompressed file with an extension of{" "}
+          {approvedFileTypesDisplay}
         </div>
         <SequenceFileInput />
         {!!parseError ? (

@@ -14,6 +14,9 @@ export type BioinformaticsParserType = {
 };
 
 const approvedFileTypes = ["fasta", "fa", "fastq", "txt"];
+const approvedFileTypesDisplay = approvedFileTypes
+  .map((type) => `.${type}`)
+  .join(", ");
 
 export default function useSequenceFile() {
   const [parseError, setParseError] = useState("");
@@ -73,5 +76,6 @@ export default function useSequenceFile() {
     SequenceFileInput,
     filename,
     approvedFileTypes,
+    approvedFileTypesDisplay,
   };
 }
