@@ -68,6 +68,17 @@ export default function HomePage() {
           </Button>
         )}
       />
+      <Card
+        priority={false}
+        title="HIV Coreceptor Tropism"
+        alt="HIV Coreceptor Tropism"
+        src="https://clinicalinfo.hiv.gov/sites/default/files/glossaries/images/ViralTropism-800.jpg"
+        Buttons={() => (
+          <Button onClick={() => push("/coreceptor")}>
+            Coreceptor Pipeline
+          </Button>
+        )}
+      />
     </div>
   );
 }

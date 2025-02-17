@@ -252,7 +252,14 @@ fn generate_receipt_email(data: &TcsAPI) -> String {
     let htsf = &data.htsf.clone().unwrap_or("".to_string());
 
     if !uploads.is_empty() {
-        content = String::from("You have uploaded the following sequences:\n");
+        content = String::from("You have uploaded the following sequences:\n\n");
+
+        let filenames: Vec<String> = uploads
+            .iter()
+            .map(|upload| upload.file_name.clone())
+            .collect();
+        let filenames_str = filenames.join("\n");
+        content.push_str(&filenames_str);
     } else if !htsf.is_empty() {
         let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
         content = format!("HTSF Location: {}", &htsf);
