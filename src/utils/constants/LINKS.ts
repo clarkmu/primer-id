@@ -26,7 +26,8 @@ const LINKS = {
   DRDB: "https://www.hivdb.stanford.edu/",
   G2P: "https://coreceptor.geno2pheno.org/",
   FASTTREE_DOWNLOAD: {
-    DOWNLOAD: publicBucketPath + "fasttree.zip",
+    ARM: publicBucketPath + "fasttree/ARM/FastTree",
+    X86: publicBucketPath + "fasttree/x86/FastTree",
     IMAGE: "https://morgannprice.github.io/fasttree/splits.png",
   },
 };

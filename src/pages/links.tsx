@@ -52,8 +52,11 @@ export const LinksPage = () => (
             src={LINKS.FASTTREE_DOWNLOAD.IMAGE}
             title="FastTree Downloads"
           >
-            <LinkButton href={LINKS.FASTTREE_DOWNLOAD.DOWNLOAD}>
-              FastTree ARM + x86
+            <LinkButton href={LINKS.FASTTREE_DOWNLOAD.ARM}>
+              FastTree ARM
+            </LinkButton>
+            <LinkButton href={LINKS.FASTTREE_DOWNLOAD.X86}>
+              FastTree x86
             </LinkButton>
           </MyCard>
           <MyCard src={IMAGES.swanstrom} title="Swanstrom Lab">
