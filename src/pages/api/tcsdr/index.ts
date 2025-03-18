@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getPublic } from "@/utils/api";
 import prisma from "@/utils/prisma";
 import createSignedUrls from "@/utils/gcp/createSignedUrls";
+import { toPrismaInt } from "@/utils/prismaUtils";
 
 async function post(req, res) {
   const { body } = req;
@@ -12,13 +13,13 @@ async function post(req, res) {
     primers: body.primers.map((p) => ({
       ...p,
       //convert empty strings to null for field type Int
-      endJoinOption: p.endJoinOption || 0,
-      endJoinOverlap: p.endJoinOverlap || 0,
-      supermajority: p.supermajority || 0,
-      refStart: p.refStart || 0,
-      refEnd: p.refEnd || 0,
-      trimStart: p.trimStart || 0,
-      trimEnd: p.trimEnd || 0,
+      endJoinOption: toPrismaInt(p.endJoinOption),
+      endJoinOverlap: toPrismaInt(p.endJoinOverlap),
+      supermajority: toPrismaInt(p.supermajority),
+      refStart: toPrismaInt(p.refStart),
+      refEnd: toPrismaInt(p.refEnd),
+      trimStart: toPrismaInt(p.trimStart),
+      trimEnd: toPrismaInt(p.trimEnd),
     })),
     // if there are uploads, don't submit yet
     submit: !body.uploads?.length,
