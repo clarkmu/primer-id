@@ -1,4 +1,4 @@
-import useCoreceptor from "@/hooks/useCoreceptor";
+import useCoreceptor from "@/hooks/queries/useCoreceptor";
 import Modal from "../form/Modal";
 import Alert from "../form/Alert";
 import Button from "../form/Button";

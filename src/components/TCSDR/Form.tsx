@@ -2,7 +2,7 @@ import Uploads from "./Uploads";
 import Confirmation from "./Confirmation";
 import { useTCSDRContext } from "@/contexts/TCSDRContext";
 import MyCollapse from "@/components/form/MyCollapse";
-import useTCSVersion from "@/hooks/useTCSVersion";
+import useTCSVersion from "@/hooks/queries/useTCSVersion";
 import Button from "../form/Button";
 import Input from "../form/Input";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
@@ -12,6 +12,7 @@ import LINKS from "@/utils/constants/LINKS";
 // import TCSContainer from "./TCS/TCSContainer";
 import dynamic from "next/dynamic";
 import DRVersion from "./DRVersion";
+import PageDescription from "../templates/PageDescription";
 const TCSContainer = dynamic(() => import("./TCS/TCSContainer"), {
   loading: () => null,
 });
@@ -32,7 +33,7 @@ export default function Form() {
 
   const [scrollToUploads] = useScrollToDivOnVisibilityToggle(
     showUploads,
-    "end"
+    "end",
   );
 
   const [scrollToSubmit] = useScrollToDivOnVisibilityToggle(showSubmit, "end");
@@ -40,43 +41,46 @@ export default function Form() {
   return (
     <div className="flex flex-col gap-4">
       <Paper>
-        <div className="flex flex-col gap-4">
-          <div className="text-lg font-bold text-center">
-            {isDR ? "Drug Resistance" : "Template Concensus Sequence"} Pipeline
-          </div>
-          {isDR ? (
-            <div>
-              <b>DESCRIPTION</b> Generate TCS and drug resistance report for
-              using the HIV Drug Resistance Pipeline by the Swanstrom{"'"}s lab.
+        <PageDescription
+          title={
+            isDR
+              ? "Drug Resistance Pipeline"
+              : "Template Concensus Sequence Pipeline"
+          }
+          description={
+            isDR
+              ? "Generate TCS and drug resistance report for using the HIV Drug Resistance Pipeline by the Swanstrom's lab."
+              : "General application to create template concensus sequences (TCS) for single or multiplexed pair-end Primer ID (PID) MiSeq sequencing."
+          }
+          // files="should be uncompressed and in one of the following formats: fastq, fastq.gz, fq, fq.gz. Submissions cannot exceed 16MB."
+          // results="include alignment views, Gene Cutter results, and a summary of large deletions, internal inversions, and inferred intactness."
+          extra={
+            <div className="flex flex-col gap-4">
+              <div>
+                <a
+                  href={LINKS.prepProtocol}
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  Primer ID Lib Prep Protocol
+                </a>
+              </div>
+              <div className="text-xs">
+                Please cite TCS pipeline Version {tcsVersion}
+              </div>
+              <div className="text-xs">
+                Zhou S, Jones C, Mieczkowski P, Swanstrom R. 2015. Primer ID
+                Validates Template Sampling Depth and Greatly Reduces the Error
+                Rate of Next-Generation Sequencing of HIV-1 Genomic RNA
+                Populations. J Virol 89:8540-55.{" "}
+                <a href={LINKS.citation} target="_BLANK" rel="noreferrer">
+                  {LINKS.citation}
+                </a>
+              </div>
             </div>
-          ) : (
-            <div>
-              <b>DESCRIPTION</b> General application to create template
-              concensus sequences (TCS) for single or multiplexed pair-end
-              Primer ID (PID) MiSeq sequencing.
-            </div>
-          )}
-          <a
-            href={LINKS.prepProtocol}
-            target="_BLANK"
-            rel="noreferrer"
-            className="underline"
-          >
-            Primer ID Lib Prep Protocol
-          </a>
-          <div className="text-xs">
-            Please cite TCS pipeline Version {tcsVersion}
-          </div>
-          <div className="text-xs">
-            Zhou S, Jones C, Mieczkowski P, Swanstrom R. 2015. Primer ID
-            Validates Template Sampling Depth and Greatly Reduces the Error Rate
-            of Next-Generation Sequencing of HIV-1 Genomic RNA Populations. J
-            Virol 89:8540-55.{" "}
-            <a href={LINKS.citation} target="_BLANK" rel="noreferrer">
-              {LINKS.citation}
-            </a>
-          </div>
-        </div>
+          }
+        />
       </Paper>
       {isDR ? <DRVersion /> : <TCSContainer />}
       <div ref={scrollToUploads}>

@@ -22,6 +22,10 @@ const pipelineLinks = [
     value: "/coreceptor",
     label: "Geno2Pheno Coreceptor",
   },
+  {
+    value: "/splicing",
+    label: "HIV-1 Splicing",
+  },
 ];
 
 const MyLink = ({

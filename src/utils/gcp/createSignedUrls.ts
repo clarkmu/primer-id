@@ -12,7 +12,7 @@ const bucketPrefixDev = NODE_ENV === "production" ? "" : "dev/";
 
 type InputFile = any;
 
-interface InputFileWithSignedUrl extends InputFile {
+export interface InputFileWithSignedUrl extends InputFile {
   signedURL: string;
 }
 
@@ -50,6 +50,7 @@ async function createSignedUrls(
 
     return signedUrls;
   } catch (e) {
+    console.log({ e });
     return [];
   }
 }

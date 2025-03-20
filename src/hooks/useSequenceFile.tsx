@@ -3,7 +3,7 @@
  *      Intactness and Coreceptor pages
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { fasta } from "bioinformatics-parser";
 import InputFile from "@/components/form/InputFile";
 
@@ -13,16 +13,20 @@ export type BioinformaticsParserType = {
   error?: { message: string };
 };
 
-const approvedFileTypes = ["fasta", "fa", "fastq", "txt"];
-const approvedFileTypesDisplay = approvedFileTypes
-  .map((type) => `.${type}`)
-  .join(", ");
+const approvedFileTypesDefault = ["fasta", "fa", "fastq", "txt"];
 
-export default function useSequenceFile() {
+export default function useSequenceFile(
+  approvedFileTypes: String[] = approvedFileTypesDefault,
+) {
   const [parseError, setParseError] = useState("");
   const [sequences, setSequences] = useState<BioinformaticsParserType>({});
   const [cumulativeSize, setCumulativeSize] = useState(0);
   const [filename, setFilename] = useState("");
+
+  const approvedFileTypesDisplay: String[] = useMemo(
+    () => approvedFileTypes.map((type) => `.${type}`).join(", "),
+    [approvedFileTypes],
+  );
 
   const handleFile = async (files: FileList) => {
     const file = Array.from(files)[0];

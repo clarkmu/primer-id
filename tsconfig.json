@@ -18,8 +18,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "~/*": ["./public/*"]
-    }
+    },
+    "types": ["jest", "node"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "cypress", "HPC"]
+  "exclude": ["node_modules", "HPC"]
 }

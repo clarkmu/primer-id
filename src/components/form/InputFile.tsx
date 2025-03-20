@@ -5,6 +5,7 @@ const InputFile = ({
   onChange = () => null,
   disabled = false,
   multiple = true,
+  ...inputProps
 }: {
   onChange: () => void;
   disabled?: boolean;
@@ -25,8 +26,9 @@ const InputFile = ({
         className:
           "dropzone w-full border-secondary hover:border-primary hover:cursor-pointer border-2 border-dashed flex flex-col justify-center items-center gap-4 p-4",
       })}
+      data-cy="dropzone"
     >
-      <input {...getInputProps()} />
+      <input {...getInputProps()} {...inputProps} />
       <p>
         Drag and drop {multiple ? "files and directories" : "a file"} here or
         click the button below to use selector

@@ -8,6 +8,9 @@ import RadioGroup from "@/components/form/RadioGroup";
 import Paper from "@/components/form/Paper";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
 import useSequenceFile from "@/hooks/useSequenceFile";
+import PageDescription from "../templates/PageDescription";
+
+const approvedFileTypes = ["fasta", "fasta.gz", "fastq", "fastq.gz"];
 
 export default function IntactnessPage() {
   const [email, setEmail] = useState("");
@@ -23,7 +26,7 @@ export default function IntactnessPage() {
     parseError,
     filename,
     approvedFileTypesDisplay,
-  } = useSequenceFile();
+  } = useSequenceFile(approvedFileTypes);
 
   const [scrollToRef] = useScrollToDivOnVisibilityToggle(continued);
 
@@ -48,32 +51,26 @@ export default function IntactnessPage() {
     <SEOCoreceptor>
       <div className="flex flex-col gap-4 m-4">
         <Paper className="flex flex-col gap-8">
-          <h1 className=" text-lg font-bold mx-auto">
-            Geno2Pheno Coreceptor Pipeline
-          </h1>
-          <div>
-            <b>DESCRIPTION</b> Upload multiple unaligned sequences to run
-            through Geno2Pheno Coreceptor.
-          </div>
-          <div>
-            <b>FILES</b> should be uncompressed and in one of the following
-            formats: {approvedFileTypesDisplay}. Submissions cannot exceed 16MB.
-          </div>
-          <div>
-            <b>RESULTS</b> include ID, V3 Loop, Subtype, FPR, Percentage.
-          </div>
-          <div>
-            More details can be found at the
-            <a
-              href="https://coreceptor.geno2pheno.org/"
-              target="_BLANK"
-              rel="noreferrer"
-              className="underline ml-1"
-            >
-              Geno2Pheno Coreceptor page
-            </a>
-            .
-          </div>
+          <PageDescription
+            title="Geno2Pheno Coreceptor Pipeline"
+            description="Upload multiple unaligned sequences to run through Geno2Pheno Coreceptor"
+            files={`should be uncompressed and in one of the following formats: ${approvedFileTypesDisplay}. Submissions cannot exceed 16MB.`}
+            results="include ID, V3 Loop, Subtype, FPR, Percentage."
+            extra={
+              <>
+                More details can be found at the{" "}
+                <a
+                  href="https://coreceptor.geno2pheno.org/"
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline ml-1"
+                >
+                  Geno2Pheno Coreceptor page
+                </a>
+                .
+              </>
+            }
+          />
         </Paper>
         <Paper className="flex flex-col gap-4">
           <div className="text-center text-lg">

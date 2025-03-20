@@ -4,6 +4,7 @@ import Submit from "@/components/OGV/Submit";
 import Uploads from "@/components/OGV/Uploads";
 import { useOGVContext } from "@/contexts/OGVContext";
 import Paper from "@/components/form/Paper";
+import PageDescription from "../templates/PageDescription";
 
 export default function OGVPage() {
   const {
@@ -13,23 +14,11 @@ export default function OGVPage() {
   return (
     <div className="flex flex-col gap-4 items-center justify-center">
       <Paper>
-        <div className="flex flex-col gap-4">
-          <div className="text-lg font-bold text-center">
-            Outgrowth Virus Dating Pipeline
-          </div>
-          <div>
-            <b>DESCRIPTION</b> This pipeline times outgrowth virus (OGV) strains
-            from a single host using serially sampled RNA data. Four different
-            approaches are used to assign dates to unobserved strains. First,
-            each tree is rooted to maximize the root-to-tip to sampling time
-            correlation coefficient.
-          </div>
-          <div>
-            <b>FILE NAMING CONVENTION</b> File names should be formatted as
-            {` {subject}_{sample}.fasta`}. Special characters (-/*) in filename
-            will be filtered out.
-          </div>
-          <div>
+        <PageDescription
+          title="Outgrowth Virus Dating Pipeline"
+          description="This pipeline times outgrowth virus (OGV) strains from a single host using serially sampled RNA data. Four different approaches are used to assign dates to unobserved strains. First, each tree is rooted to maximize the root-to-tip to sampling time correlation coefficient."
+          files="File names should be formatted as {subject}_{sample}.fasta. Special characters (-/*) in filename will be filtered out."
+          extra={
             <div>
               <a
                 href="https://github.com/clarkmu/ogv-dating"
@@ -59,8 +48,8 @@ export default function OGVPage() {
               </a>
               .
             </div>
-          </div>
-        </div>
+          }
+        />
       </Paper>
       <Paper>
         <Uploads />

@@ -1,5 +1,7 @@
 import { defineConfig } from "cypress";
 
+const local = require("dotenv").config({ path: ".env.test" });
+
 export default defineConfig({
   component: {
     devServer: {
@@ -9,8 +11,13 @@ export default defineConfig({
   },
 
   e2e: {
+    baseUrl: "http://localhost:3000",
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      config.env = {
+        ...local.parsed,
+        ...config.env,
+      };
+      return config;
     },
   },
 });

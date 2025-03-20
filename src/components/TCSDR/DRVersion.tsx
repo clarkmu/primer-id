@@ -1,4 +1,4 @@
-import useDRParams from "@/hooks/useDRParams";
+import useDRParams from "@/hooks/queries/useDRParams";
 import Paper from "../form/Paper";
 import Button from "../form/Button";
 import { useTCSDRContext } from "@/contexts/TCSDRContext";

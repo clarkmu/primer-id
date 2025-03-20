@@ -7,6 +7,7 @@ import RadioGroup from "@/components/form/RadioGroup";
 import Paper from "@/components/form/Paper";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
 import useSequenceFile from "@/hooks/useSequenceFile";
+import PageDescription from "../templates/PageDescription";
 
 export default function IntactnessPage() {
   const [email, setEmail] = useState("");
@@ -46,50 +47,45 @@ export default function IntactnessPage() {
   return (
     <div className="flex flex-col gap-4 m-4">
       <Paper className="flex flex-col gap-8">
-        <h1 className=" text-lg font-bold mx-auto">Intactness Pipeline</h1>
-        <div>
-          <b>DESCRIPTION</b> This pipeline is a proviral intactness checker for
-          HIV-1 sequences. Pipeline runs sequences through primer and alignment
-          checks, hypermut, premature stop codons, and 5&apos; defects.
-        </div>
-        <div>
-          <b>FILES</b> should be uncompressed and in one of the following
-          formats: {approvedFileTypesDisplay}. Submissions cannot exceed 16MB.
-        </div>
-        <div>
-          <b>RESULTS</b> include alignment views, Gene Cutter results, and a
-          summary of large deletions, internal inversions, and inferred
-          intactness.
-        </div>
-        <div>
-          <a
-            href="https://github.com/clarkmu/intactness-pipeline"
-            target="_BLANK"
-            rel="noreferrer"
-            className="underline"
-          >
-            This pipeline
-          </a>{" "}
-          was adapted from the{" "}
-          <a
-            href="https://github.com/BWH-Lichterfeld-Lab/Intactness-Pipeline"
-            target="_BLANK"
-            rel="noreferrer"
-            className="underline"
-          >
-            Intactness Pipeline
-          </a>{" "}
-          made by{" "}
-          <a
-            href="https://ragoninstitute.org/lichterfeld/"
-            target="_BLANK"
-            rel="noreferrer"
-            className="underline"
-          >
-            Lichterfield Lab at BWH
-          </a>
-          .
-        </div>
+        <PageDescription
+          title="Intactness Pipeline"
+          description="This pipeline is a proviral intactness checker for HIV-1 sequences. Pipeline runs sequences through primer and alignment checks, hypermut, premature stop codons, and 5' defects."
+          files={`should be uncompressed and in one of the following formats: ${approvedFileTypesDisplay}. Submissions cannot exceed 16MB.`}
+          results="include alignment views, Gene Cutter results, and a summary of large deletions, internal inversions, and inferred intactness."
+          extra={
+            <>
+              <div>
+                <a
+                  href="https://github.com/clarkmu/intactness-pipeline"
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  This pipeline
+                </a>{" "}
+                was adapted from the{" "}
+                <a
+                  href="https://github.com/BWH-Lichterfeld-Lab/Intactness-Pipeline"
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  Intactness Pipeline
+                </a>{" "}
+                made by{" "}
+                <a
+                  href="https://ragoninstitute.org/lichterfeld/"
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  Lichterfield Lab at BWH
+                </a>
+                .
+              </div>
+            </>
+          }
+        />
       </Paper>
       <Paper className="flex flex-col gap-4">
         <div className="text-center text-lg">

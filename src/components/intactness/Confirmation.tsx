@@ -1,4 +1,4 @@
-import useIntactness from "@/hooks/useIntactness";
+import useIntactness from "@/hooks/queries/useIntactness";
 import Modal from "../form/Modal";
 import Alert from "../form/Alert";
 import Button from "../form/Button";
