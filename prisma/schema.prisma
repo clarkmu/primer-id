@@ -73,6 +73,7 @@ model splice {
   pending         Boolean  @default(false)
   processingError Boolean  @default(false)
 
+  strain String
   distance Int?
   sequence String?
 

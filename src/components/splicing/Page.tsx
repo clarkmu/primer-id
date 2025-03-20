@@ -21,6 +21,7 @@ export default function Page() {
   const { sharedSubmissionData, setSharedSubmissionData } =
     useSharedSubmissionData();
   const [spliceConfig, setSpliceConfig] = useState<splice | {}>({
+    strain: "NL43",
     distance: "2",
     sequence: "",
   });

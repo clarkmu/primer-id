@@ -4,6 +4,11 @@ import { Dispatch, SetStateAction, useState } from "react";
 import MyCollapse from "../form/MyCollapse";
 import Button from "../form/Button";
 
+const strains = [
+  { value: "NL43", label: "NL4-3" },
+  { value: "B", label: "Consensus B" },
+];
+
 export default function SpliceConfig({
   spliceConfig,
   setSpliceConfig,
@@ -16,8 +21,15 @@ export default function SpliceConfig({
   return (
     <div className="flex flex-col gap-6">
       <div className="text-lg font-bold self-center">Strain Config</div>
-      <div className="text-center">
-        <span className=" underline">NL43</span> Consensus B
+      <div className="flex space-around justify-around">
+        {strains.map(({ label, value }) => (
+          <Button
+            variant={spliceConfig.strain === value ? "primary" : "outlined"}
+            onClick={() => setSpliceConfig({ ...spliceConfig, strain: value })}
+          >
+            {label}
+          </Button>
+        ))}
       </div>
 
       <Button
@@ -35,6 +47,7 @@ export default function SpliceConfig({
           }
           placeholder="Distance"
           type="number"
+          min={0}
         />
         <Input
           label="HIV Sequence (optional)"
