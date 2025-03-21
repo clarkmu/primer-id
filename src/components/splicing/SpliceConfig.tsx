@@ -24,6 +24,7 @@ export default function SpliceConfig({
       <div className="flex space-around justify-around">
         {strains.map(({ label, value }) => (
           <Button
+            key={`strain_${value}`}
             variant={spliceConfig.strain === value ? "primary" : "outlined"}
             onClick={() => setSpliceConfig({ ...spliceConfig, strain: value })}
           >

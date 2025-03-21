@@ -24,22 +24,18 @@ export function validateMatchingFiles(files: File[]): FileError[] {
       if (!isValid) {
         errors.push({
           name: file.name,
-          error: "R1 file does not have a matching R2 file.",
+          error: "R1 file does not have a matching R2 file: " + file.name,
         });
       }
-      return isValid;
     } else if (isR2) {
       const r1Name = name.replace(/r2/g, "r1");
       const isValid = files.some((f) => f.name.toLocaleLowerCase() === r1Name);
       if (!isValid) {
         errors.push({
           name: file.name,
-          error: "R2 file does not have a matching R1 file.",
+          error: "R2 file does not have a matching R1 file: " + file.name,
         });
       }
-      return isValid;
-    } else {
-      return false;
     }
   });
 
