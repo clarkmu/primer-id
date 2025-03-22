@@ -7,6 +7,9 @@ import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import Button from "../form/Button";
 import useUploadSignedURLs from "@/hooks/useUploadSignedURLs";
 import { splice } from "@prisma/client";
+import spliceConfigValues from "./spliceConfigValues.json";
+
+const { assays, strains } = spliceConfigValues;
 
 const ConfirmationDisplay = ({ label, value }) => (
   <span>
@@ -75,6 +78,18 @@ export default function Confirmation({ submission, open, onClose }) {
         <ConfirmationDisplay
           label="Results Format"
           value={submission.resultsFormat}
+        />
+        <ConfirmationDisplay
+          label="Strain Config"
+          value={
+            strains.find((strain) => strain.value === submission.strain)?.label
+          }
+        />
+        <ConfirmationDisplay
+          label="Assay Design"
+          value={
+            assays.find((assay) => assay.value === submission.assay)?.label
+          }
         />
         <ConfirmationDisplay
           label="Splice Distance"

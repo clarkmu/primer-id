@@ -15,14 +15,18 @@ import useStepForm from "@/hooks/useStepForm";
 import useUploadsOrHTSF from "@/hooks/useUploadsOrHTSF";
 import useSharedSubmissionData from "@/hooks/useSharedSubmissionData";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
+import spliceConfigValues from "./spliceConfigValues.json";
+
+const { assays, strains, distance } = spliceConfigValues;
 
 export default function Page() {
   const [files, setFiles] = useState<File[]>([]);
   const { sharedSubmissionData, setSharedSubmissionData } =
     useSharedSubmissionData();
   const [spliceConfig, setSpliceConfig] = useState<splice | {}>({
-    strain: "NL43",
-    distance: "2",
+    strain: strains[0].value,
+    assay: assays[0].value,
+    distance,
     sequence: "",
   });
 

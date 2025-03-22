@@ -1,0 +1,13 @@
+{
+  "strains": [
+    { "value": "NL43", "label": "NL4-3" },
+    { "value": "B", "label": "Consensus B" }
+  ],
+  "assays": [
+    { "value": "rrp", "label": "Random Reverse" },
+    { "value": "kmer", "label": "K-mer" },
+    { "value": "ssp", "label": "Size Specific Primer" }
+  ],
+  "distance": 2,
+  "sequence": ""
+}

@@ -3,11 +3,9 @@ import Input from "../form/Input";
 import { Dispatch, SetStateAction, useState } from "react";
 import MyCollapse from "../form/MyCollapse";
 import Button from "../form/Button";
+import spliceConfigValues from "./spliceConfigValues.json";
 
-const strains = [
-  { value: "NL43", label: "NL4-3" },
-  { value: "B", label: "Consensus B" },
-];
+const { strains, assays } = spliceConfigValues;
 
 export default function SpliceConfig({
   spliceConfig,
@@ -32,7 +30,18 @@ export default function SpliceConfig({
           </Button>
         ))}
       </div>
-
+      <div className="text-lg font-bold self-center">Splicing Assay Design</div>
+      <div className="flex space-around justify-around">
+        {assays.map(({ label, value }) => (
+          <Button
+            key={`assay_${value}`}
+            variant={spliceConfig.assay === value ? "primary" : "outlined"}
+            onClick={() => setSpliceConfig({ ...spliceConfig, assay: value })}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
       <Button
         onClick={() => setShowAdvancedSettings((b) => !b)}
         variant={showAdvancedSettings ? "none" : "outlined"}
