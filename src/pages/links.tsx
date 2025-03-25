@@ -23,7 +23,12 @@ export const LinksPage = () => (
     <div className="flex flex-col gap-4">
       <Paper className="flex flex-col">
         <div>Shuntai Zhou</div>
-        <a href="mailto:shuntaiz@email.unc.edu">shuntaiz@email.unc.edu</a>
+        <a
+          className="text-blue-600 hover:underline"
+          href="mailto:shuntaiz@email.unc.edu"
+        >
+          shuntaiz@email.unc.edu
+        </a>
         <div>University of North Carolina at Chapel Hill</div>
         <div>450 West Dr.</div>
         <div>Chapel Hill, NC USA</div>
@@ -31,11 +36,29 @@ export const LinksPage = () => (
       <Paper>
         <div>
           Technical issues about this webapp should be directed to Michael Clark
-          (<a href="mailto:clarkmu@gmail.com">clarkmu@gmail.com</a>)
+          (
+          <a
+            className="text-blue-600 hover:underline"
+            href="mailto:clarkmu@gmail.com"
+          >
+            clarkmu@gmail.com
+          </a>
+          )
         </div>
       </Paper>
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 flex flex-col gap-4">
+          <MyCard
+            src={LINKS.FASTTREE_DOWNLOAD.IMAGE}
+            title="FastTree Downloads"
+          >
+            <LinkButton href={LINKS.FASTTREE_DOWNLOAD.ARM}>
+              FastTree ARM
+            </LinkButton>
+            <LinkButton href={LINKS.FASTTREE_DOWNLOAD.X86}>
+              FastTree x86
+            </LinkButton>
+          </MyCard>
           <MyCard src={IMAGES.swanstrom} title="Swanstrom Lab">
             <LinkButton href={LINKS.SWANSTROM_HOMEPAGE}>
               Swanstrom Lab Webpage
