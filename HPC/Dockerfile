@@ -74,9 +74,12 @@ RUN git clone https://github.com/clarkmu/intactness-pipeline /app/intactness
 # CORECEPTOR dependencies
 RUN conda create -n coreceptor python=3.10 selenium=4.28.0
 RUN conda run -n coreceptor pip3 install biopython==1.79
-# COPY g2p /app
 
-COPY storage-admin.json /app/storage-admin.json
+# SPLICING dependencies
+RUN conda create -n splicing python=3.10 rust=1.85.0
+RUN git clone https://github.com/ViralSeq/viRust-splicing /app/splicing
+
+# COPY storage-admin.json /app/storage-admin.json
 RUN gcloud auth activate-service-account --key-file /app/storage-admin.json
 
 ENTRYPOINT [ "sleep", "infinity" ]

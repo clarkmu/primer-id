@@ -2,6 +2,14 @@ import { getPublic } from "@/utils/api";
 import prisma from "@/utils/prisma";
 import type { NextApiRequest, NextApiResponse } from "next";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "15mb",
+    },
+  },
+};
+
 async function post(req, res) {
   const { sequences, email, resultsFormat, jobID } = JSON.parse(req.body);
 

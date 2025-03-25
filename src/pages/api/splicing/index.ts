@@ -5,6 +5,7 @@ import prisma from "@/utils/prisma";
 import createSignedUrls, {
   InputFileWithSignedUrl,
 } from "@/utils/gcp/createSignedUrls";
+import { toPrismaInt } from "@/utils/prismaUtils";
 
 type Data = splice | { error: string };
 
@@ -16,8 +17,7 @@ async function post(req, res) {
   delete data.poolName;
   delete data.id;
 
-  // TODO use prismaInt function on this after merge with master branch
-  data.distance = parseInt(data.distance);
+  data.distance = toPrismaInt(data.distance);
 
   let newItem = await prisma.splice.create({
     data,

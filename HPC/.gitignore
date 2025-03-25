@@ -1,7 +1,9 @@
 /target
 /work
-ogv-dating
-HPC/intactness/*
+
+/ogv-dating
+/intactness
+/splicing
 
 locations.json
 locations.dev.json

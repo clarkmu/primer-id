@@ -14,33 +14,38 @@
     "tcs": "gs://bucket/tcs-dr",
     "ogv": "gs://bucket/ogv-dating",
     "intact": "gs://bucket/intactness",
-    "coreceptor": "gs://bucket/coreceptor"
+    "coreceptor": "gs://bucket/coreceptor",
+    "splicing": "gs://bucket/splicing"
   },
   "log_dir": {
     "base": "/app/work/log",
     "tcs": "/app/work/log/tcsdr",
     "ogv": "/app/work/log/ogv",
     "intact": "/app/work/log/intact",
-    "coreceptor": "/app/work/log/coreceptor"
+    "coreceptor": "/app/work/log/coreceptor",
+    "splicing": "/app/work/log/splicing"
   },
   "scratch_space": {
     "base": "/app/work/scratch",
     "tcs": "/app/work/scratch/tcsdr",
     "ogv": "/app/work/scratch/ogv",
     "intact": "/app/work/scratch/intact",
-    "coreceptor": "/app/work/scratch/coreceptor"
+    "coreceptor": "/app/work/scratch/coreceptor",
+    "splicing": "/app/work/scratch/splicing"
   },
   "api_url": {
     "base": "http://host.docker.internal:3000/api",
     "tcs": "http://host.docker.internal:3000/api/tcsdr",
     "ogv": "http://host.docker.internal:3000/api/ogv",
     "intact": "http://host.docker.internal:3000/api/intactness",
-    "coreceptor": "http://host.docker.internal:3000/api/coreceptor"
+    "coreceptor": "http://host.docker.internal:3000/api/coreceptor",
+    "splicing": "http://host.docker.internal:3000/api/splicing"
   },
   "conda_location": "/root/miniconda3/condabin/conda",
   "ogv_base_path": "/app/ogv-dating",
   "intactness_base_path": "/app/intactness",
   "coreceptor_base_path": "/app/g2p/coreceptor",
+  "splicing_base_path": "/app/splicing",
   "api_key": "replace this key with something more secure than 'secret-phrase'",
   "tcs_log_bucket_url": "gs://bucket"
 }

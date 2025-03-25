@@ -54,11 +54,12 @@ export default function Page() {
     [showConfirmation],
   );
 
-  const fileErrors: FileError[] =
-    (useUploads && files.length > 0 && validateMatchingFiles(files)) || [];
+  const fileErrors: FileError[] = useMemo(
+    () =>
+      (useUploads && files.length > 0 && validateMatchingFiles(files)) || [],
+    [files, useUploads],
+  );
 
-  // if htsf , ensure htsf and poolname
-  // if files , ensure each r1 file has a matching r2 file
   const isFileSelectionValid = useUploads
     ? files.length > 0 && !fileErrors.length
     : !!sharedSubmissionData.htsf && !!sharedSubmissionData.poolName;
@@ -70,7 +71,7 @@ export default function Page() {
           title="HIV Splicing Pipeline"
           description="RNA synthesis from the HIV-1 provirus results in only full-length transcripts, and
 most avoid splicing to remain full length at approximately 9.2 kb"
-          files="Use uncompressed .fastq or .fasta files."
+          files="NAMING CONVENTION: <lib_name>_r1.fasta. ACCEPTED FORMATS: .fastq, .fasta, fastq.gz, or fasta.gz."
         />
       </Paper>
       <Paper className="flex flex-col gap-4">

@@ -2,7 +2,7 @@ use std::process::{ Command, Stdio };
 use anyhow::{ Result, Context };
 use crate::load_locations::{ load_locations, Locations };
 
-pub fn run_command(cmd: &str, current_dir: &str) -> Result<()> {
+pub fn run_command(cmd: &str, current_dir: &str) -> Result<String> {
     let mut dir: String = current_dir.to_string().clone();
 
     if dir.is_empty() {
@@ -37,7 +37,7 @@ pub fn run_command(cmd: &str, current_dir: &str) -> Result<()> {
 
     println!("Command output: {}", output);
 
-    Ok(())
+    Ok(output)
 }
 
 mod tests {

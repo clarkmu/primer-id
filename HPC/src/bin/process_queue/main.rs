@@ -311,6 +311,51 @@ async fn main() -> Result<()> {
         }
     }
 
+    let splicings: Vec<SharedAPIData> = get_api(
+        &locations.api_url[PipelineType::Splicing]
+    ).await.unwrap_or(vec![]);
+
+    for splicing in splicings {
+        let is_stale = if
+            splicing.pending &&
+            pipeline_is_stale(&splicing.created_at).unwrap_or(true)
+        {
+            " --is_stale"
+        } else {
+            ""
+        };
+
+        let run_is_stale = !is_stale.is_empty();
+
+        if splicing.submit || run_is_stale {
+            let mut cmd = format!(
+                "cargo run --release --bin splicing -- --id={} {}{}",
+                &splicing.id,
+                &is_dev_cmd,
+                is_stale
+            );
+
+            // no need to sbatch for is_stale , no heavy processing
+            if !is_dev && !run_is_stale {
+                cmd = create_sbatch_cmd(
+                    &format!("{}/{}.out", &locations.log_dir[PipelineType::Splicing], &splicing.id),
+                    1,
+                    &format!("splicing-{}", &splicing.id),
+                    5000,
+                    1440,
+                    &cmd
+                );
+            }
+
+            run_command(&cmd, &locations.base)?;
+
+            patch_pending(
+                &locations.api_key,
+                format!("{}/{}", &locations.api_url[PipelineType::Splicing], &splicing.id).as_str()
+            ).await?;
+        }
+    }
+
     lock_file.delete()?;
 
     Ok(())

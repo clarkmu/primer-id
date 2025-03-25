@@ -10,15 +10,33 @@ export interface FileError {
   error: string;
 }
 
+// Splicing - validate that submitted files have a unique lib name and corresponding R1/R2
 export function validateMatchingFiles(files: File[]): FileError[] {
   let errors: FileError[] = [];
+
+  const libNames: { [key: string]: number } = {};
 
   files.forEach((file) => {
     const name = file.name.toLocaleLowerCase();
     const isR1 = name.indexOf("r1") !== -1;
     const isR2 = name.indexOf("r2") !== -1;
 
-    if (isR1) {
+    const libName = name.split(/r1|r2/)[0] || "";
+
+    libNames[libName] = (libNames[libName] || 0) + 1;
+
+    if (!libName) {
+      const rString = isR1 ? "r1" : "r2";
+      errors.push({
+        name: file.name,
+        error: `Please use a valid file name format: <lib_name>_${rString}.fastq.gz`,
+      });
+    } else if (libNames[libName] > 2) {
+      errors.push({
+        name: file.name,
+        error: `Duplicate library detected: ${libName} @ ${file.name}.`,
+      });
+    } else if (isR1) {
       const r2Name = name.replace(/r1/g, "r2");
       const isValid = files.some((f) => f.name.toLocaleLowerCase() === r2Name);
       if (!isValid) {

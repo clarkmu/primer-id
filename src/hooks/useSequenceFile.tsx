@@ -59,7 +59,7 @@ export default function useSequenceFile(
       return;
     }
 
-    if (cumulativeSize + file.size > 16000000) {
+    if (cumulativeSize + file.size > 15000000) {
       setParseError("Maximum cumulative file size of 16MB per submission.");
       return;
     }

@@ -83,6 +83,32 @@ pub struct CoreceptorAPI {
     pub processing_error: bool,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct SplicingAPI {
+    pub id: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "jobID")]
+    pub job_id: String,
+    #[serde(rename = "resultsFormat")]
+    pub results_format: String,
+    pub email: String,
+    pub submit: bool,
+    pub pending: bool,
+    #[serde(rename = "processingError")]
+    pub processing_error: bool,
+
+    pub strain: String,
+    pub assay: String,
+    pub distance: u8,
+    pub sequence: String,
+
+    pub htsf: Option<String>,
+    #[serde(rename = "poolName")]
+    pub pool_name: Option<String>,
+    pub uploads: Option<Vec<TcsUpload>>,
+}
+
 // rename on deserialize only so that ViralSeq can pick up snake_case in params.json files
 // no researilization happens to database where camelCase names are needed
 #[derive(Deserialize, Serialize, Debug, Clone)]

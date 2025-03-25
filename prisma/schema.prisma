@@ -80,6 +80,7 @@ model splice {
 
   uploads TcsdrsUploads[]
   htsf String?
+  poolName String?
 }
 
 type TcsdrsPrimers {

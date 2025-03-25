@@ -4,9 +4,9 @@
     { "value": "B", "label": "Consensus B" }
   ],
   "assays": [
-    { "value": "rrp", "label": "Random Reverse" },
+    { "value": "random_reverse", "label": "Random Reverse" },
     { "value": "kmer", "label": "K-mer" },
-    { "value": "ssp", "label": "Size Specific Primer" }
+    { "value": "size_specific", "label": "Size Specific Primer" }
   ],
   "distance": 2,
   "sequence": ""
