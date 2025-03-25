@@ -69,8 +69,7 @@ export default function Page() {
       <Paper>
         <PageDescription
           title="HIV Splicing Pipeline"
-          description="RNA synthesis from the HIV-1 provirus results in only full-length transcripts, and
-most avoid splicing to remain full length at approximately 9.2 kb"
+          description="High-performance 🦀Rust🦀-based tool that processes RNA sequencing data with unique molecular identifier (UMI) to identify and quantify complex HIV splicing patterns. It offers interactive visualization and isoform quantification, empowering researchers to study HIV splicing regulation and its functional impacts."
           files="NAMING CONVENTION: <lib_name>_r1.fasta. ACCEPTED FORMATS: .fastq, .fasta, fastq.gz, or fasta.gz."
         />
       </Paper>

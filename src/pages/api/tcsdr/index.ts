@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getPublic } from "@/utils/api";
 import prisma from "@/utils/prisma";
 import createSignedUrls from "@/utils/gcp/createSignedUrls";
-import { toPrismaInt } from "@/utils/prismaUtils";
+import { toPrismaFloat, toPrismaInt } from "@/utils/prismaUtils";
 
 async function post(req, res) {
   const { body } = req;
@@ -15,7 +15,7 @@ async function post(req, res) {
       //convert empty strings to null for field type Int
       endJoinOption: toPrismaInt(p.endJoinOption),
       endJoinOverlap: toPrismaInt(p.endJoinOverlap),
-      supermajority: toPrismaInt(p.supermajority),
+      supermajority: toPrismaFloat(p.supermajority),
       refStart: toPrismaInt(p.refStart),
       refEnd: toPrismaInt(p.refEnd),
       trimStart: toPrismaInt(p.trimStart),
