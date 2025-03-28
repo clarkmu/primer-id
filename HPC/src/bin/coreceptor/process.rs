@@ -34,7 +34,7 @@ pub async fn process(pipeline: &Pipeline<CoreceptorAPI>, locations: Locations) -
         "conda run -n coreceptor python3 {}/coreceptor.py {} {}",
         &locations.coreceptor_base_path,
         &sequence_file,
-        &output_csv_location
+        &job_id
     );
 
     let sequences_html = format!(
@@ -80,6 +80,15 @@ pub async fn process(pipeline: &Pipeline<CoreceptorAPI>, locations: Locations) -
         // can't run Selenium on Mac, so...
         // create file at output_csv_location and write "test" to it
         std::fs::write(&output_csv_location, "test").context("Failed to write test to file.")?;
+    }
+
+    let existing_csv_location = format!("{}/{}.csv", &pipeline.scratch_dir, &job_id);
+    if std::path::Path::new(&existing_csv_location).exists() {
+        let destination = format!("{}/{}.csv", &results_location, &job_id);
+        std::fs::create_dir_all(&results_location).context("Failed to create results directory.")?;
+        std::fs
+            ::rename(&existing_csv_location, &destination)
+            .context("Failed to move existing CSV file to results location.")?;
     }
 
     if !std::path::Path::new(&output_csv_location).exists() {
