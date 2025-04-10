@@ -3,19 +3,19 @@
 // 2>/dev/null  silence MADV_DONTNEED in Docker container
 // RUST_BACKTRACE=1 cargo watch -c -w src -x 'run --bin main -- --is_dev' --poll 2>/dev/null
 
-use std::process::exit;
-use anyhow::{ Result, Context };
+use anyhow::{Context, Result};
+use reqwest::Client;
 use serde::Deserialize;
+use serde_json::json;
+use std::process::exit;
 use utils::{
     get_api::get_api,
-    load_env_vars::{ load_env_vars, EnvVars },
-    load_locations::{ Locations, PipelineType, load_locations },
+    load_env_vars::{load_env_vars, EnvVars},
+    load_locations::{load_locations, Locations, PipelineType},
     lock_file,
     pipeline::pipeline_is_stale,
     run_command::run_command,
 };
-use reqwest::Client;
-use serde_json::json;
 
 #[derive(Debug, Deserialize)]
 struct SharedAPIData {
@@ -35,7 +35,8 @@ async fn patch_pending(api_key: &str, url: &str) -> Result<()> {
         .patch(url)
         .json(&data)
         .header("x-api-key", api_key)
-        .send().await
+        .send()
+        .await
         .context("Failed to patch pipeline.")?;
 
     Ok(())
@@ -47,9 +48,11 @@ fn create_sbatch_cmd(
     job_name: &str,
     memory: u32,
     time: u32,
-    wrap: &str
+    wrap: &str,
 ) -> String {
-    let Locations { admin_email, base, .. } = load_locations().unwrap_or_else(|e| {
+    let Locations {
+        admin_email, base, ..
+    } = load_locations().unwrap_or_else(|e| {
         println!("Error loading locations.json: {:?}", e);
         exit(1);
     });
@@ -58,13 +61,7 @@ fn create_sbatch_cmd(
 
     let sbatch_command = format!(
         "sbatch {} -o {} -n {} --job-name='{}' --mem={} -t {} --wrap='{}'",
-        slurm_error_handling,
-        output_file,
-        cores,
-        job_name,
-        memory,
-        time,
-        wrap
+        slurm_error_handling, output_file, cores, job_name, memory, time, wrap
     );
 
     // append sbatch command to a file located at {}/sbatch_commands.txt
@@ -96,9 +93,8 @@ async fn main() -> Result<()> {
 
     let is_dev_cmd = if is_dev { " --is_dev" } else { "" };
 
-    let lock_file: lock_file::LockFile = lock_file::LockFile::new(
-        format!("{}/lock_process", &locations.base)
-    );
+    let lock_file: lock_file::LockFile =
+        lock_file::LockFile::new(format!("{}/lock_process", &locations.base));
     if lock_file.exists().unwrap_or(true) {
         println!("\n\nProcess currently running.\nExiting.\n\n");
 
@@ -112,9 +108,9 @@ async fn main() -> Result<()> {
         lock_file.create()?;
     }
 
-    let ogvs: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Ogv]).await.unwrap_or(
-        vec![]
-    );
+    let ogvs: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Ogv])
+        .await
+        .unwrap_or(vec![]);
 
     for ogv in ogvs {
         let is_stale = if ogv.pending && pipeline_is_stale(&ogv.created_at).unwrap_or(true) {
@@ -128,9 +124,7 @@ async fn main() -> Result<()> {
         if ogv.submit || run_is_stale {
             let mut cmd = format!(
                 "cargo run --release --bin ogv -- --id={}{}{}",
-                &ogv.id,
-                &is_dev_cmd,
-                is_stale
+                &ogv.id, &is_dev_cmd, is_stale
             );
 
             // no need to sbatch for is_stale , no heavy processing
@@ -141,7 +135,7 @@ async fn main() -> Result<()> {
                     &format!("ogv-{}", &ogv.id),
                     20000,
                     1440,
-                    &cmd
+                    &cmd,
                 );
             }
 
@@ -149,14 +143,15 @@ async fn main() -> Result<()> {
 
             patch_pending(
                 &locations.api_key,
-                format!("{}/{}", &locations.api_url[PipelineType::Ogv], &ogv.id).as_str()
-            ).await?;
+                format!("{}/{}", &locations.api_url[PipelineType::Ogv], &ogv.id).as_str(),
+            )
+            .await?;
         }
     }
 
-    let intacts: Vec<SharedAPIData> = get_api(
-        &locations.api_url[PipelineType::Intact]
-    ).await.unwrap();
+    let intacts: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Intact])
+        .await
+        .unwrap();
 
     for intact in intacts {
         let is_stale = if intact.pending && pipeline_is_stale(&intact.created_at).unwrap_or(true) {
@@ -180,21 +175,22 @@ async fn main() -> Result<()> {
 
             let mut cmd = format!(
                 "cargo run --release --bin intactness -- --id={} --cores={}{}{}",
-                &intact.id,
-                cores,
-                &is_dev_cmd,
-                is_stale
+                &intact.id, cores, &is_dev_cmd, is_stale
             );
 
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = create_sbatch_cmd(
-                    &format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
+                    &format!(
+                        "{}/{}.out",
+                        &locations.log_dir[PipelineType::Intact],
+                        &intact.id
+                    ),
                     cores + 1,
                     &format!("intactness-{}", &intact.id),
                     memory,
                     1440,
-                    &cmd
+                    &cmd,
                 );
             }
 
@@ -202,14 +198,20 @@ async fn main() -> Result<()> {
 
             patch_pending(
                 &locations.api_key,
-                format!("{}/{}", &locations.api_url[PipelineType::Intact], &intact.id).as_str()
-            ).await?;
+                format!(
+                    "{}/{}",
+                    &locations.api_url[PipelineType::Intact],
+                    &intact.id
+                )
+                .as_str(),
+            )
+            .await?;
         }
     }
 
-    let tcss: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Tcs]).await.unwrap_or(
-        vec![]
-    );
+    let tcss: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Tcs])
+        .await
+        .unwrap_or(vec![]);
 
     for tcs in tcss {
         let is_stale = if tcs.pending && pipeline_is_stale(&tcs.created_at).unwrap_or(true) {
@@ -230,11 +232,8 @@ async fn main() -> Result<()> {
             let memory: u32 = 25000 * (cores as u32);
 
             let mut cmd = format!(
-                "cargo run --bin tcsdr -- --id={} --cores={}{}{}",
-                &tcs.id,
-                cores,
-                &is_dev_cmd,
-                is_stale
+                "cargo run --release --bin tcsdr -- --id={} --cores={}{}{}",
+                &tcs.id, cores, &is_dev_cmd, is_stale
             );
 
             // no need to sbatch for is_stale , no heavy processing
@@ -245,7 +244,7 @@ async fn main() -> Result<()> {
                     &format!("tcs-{}", &tcs.id),
                     memory,
                     1440,
-                    &cmd
+                    &cmd,
                 );
             }
 
@@ -253,33 +252,30 @@ async fn main() -> Result<()> {
 
             patch_pending(
                 &locations.api_key,
-                format!("{}/{}", &locations.api_url[PipelineType::Tcs], &tcs.id).as_str()
-            ).await?;
+                format!("{}/{}", &locations.api_url[PipelineType::Tcs], &tcs.id).as_str(),
+            )
+            .await?;
         }
     }
 
-    let coreceptors: Vec<SharedAPIData> = get_api(
-        &locations.api_url[PipelineType::Coreceptor]
-    ).await.unwrap_or(vec![]);
+    let coreceptors: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Coreceptor])
+        .await
+        .unwrap_or(vec![]);
 
     for coreceptor in coreceptors {
-        let is_stale = if
-            coreceptor.pending &&
-            pipeline_is_stale(&coreceptor.created_at).unwrap_or(true)
-        {
-            " --is_stale"
-        } else {
-            ""
-        };
+        let is_stale =
+            if coreceptor.pending && pipeline_is_stale(&coreceptor.created_at).unwrap_or(true) {
+                " --is_stale"
+            } else {
+                ""
+            };
 
         let run_is_stale = !is_stale.is_empty();
 
         if coreceptor.submit || run_is_stale {
             let mut cmd = format!(
                 "cargo run --release --bin coreceptor -- --id={} {}{}",
-                &coreceptor.id,
-                &is_dev_cmd,
-                is_stale
+                &coreceptor.id, &is_dev_cmd, is_stale
             );
 
             // no need to sbatch for is_stale , no heavy processing
@@ -294,7 +290,7 @@ async fn main() -> Result<()> {
                     &format!("coreceptor-{}", &coreceptor.id),
                     5000,
                     1440,
-                    &cmd
+                    &cmd,
                 );
             }
 
@@ -306,44 +302,46 @@ async fn main() -> Result<()> {
                     "{}/{}",
                     &locations.api_url[PipelineType::Coreceptor],
                     &coreceptor.id
-                ).as_str()
-            ).await?;
+                )
+                .as_str(),
+            )
+            .await?;
         }
     }
 
-    let splicings: Vec<SharedAPIData> = get_api(
-        &locations.api_url[PipelineType::Splicing]
-    ).await.unwrap_or(vec![]);
+    let splicings: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Splicing])
+        .await
+        .unwrap_or(vec![]);
 
     for splicing in splicings {
-        let is_stale = if
-            splicing.pending &&
-            pipeline_is_stale(&splicing.created_at).unwrap_or(true)
-        {
-            " --is_stale"
-        } else {
-            ""
-        };
+        let is_stale =
+            if splicing.pending && pipeline_is_stale(&splicing.created_at).unwrap_or(true) {
+                " --is_stale"
+            } else {
+                ""
+            };
 
         let run_is_stale = !is_stale.is_empty();
 
         if splicing.submit || run_is_stale {
             let mut cmd = format!(
                 "cargo run --release --bin splicing -- --id={} {}{}",
-                &splicing.id,
-                &is_dev_cmd,
-                is_stale
+                &splicing.id, &is_dev_cmd, is_stale
             );
 
             // no need to sbatch for is_stale , no heavy processing
             if !is_dev && !run_is_stale {
                 cmd = create_sbatch_cmd(
-                    &format!("{}/{}.out", &locations.log_dir[PipelineType::Splicing], &splicing.id),
+                    &format!(
+                        "{}/{}.out",
+                        &locations.log_dir[PipelineType::Splicing],
+                        &splicing.id
+                    ),
                     1,
                     &format!("splicing-{}", &splicing.id),
                     5000,
                     1440,
-                    &cmd
+                    &cmd,
                 );
             }
 
@@ -351,8 +349,14 @@ async fn main() -> Result<()> {
 
             patch_pending(
                 &locations.api_key,
-                format!("{}/{}", &locations.api_url[PipelineType::Splicing], &splicing.id).as_str()
-            ).await?;
+                format!(
+                    "{}/{}",
+                    &locations.api_url[PipelineType::Splicing],
+                    &splicing.id
+                )
+                .as_str(),
+            )
+            .await?;
         }
     }
 
