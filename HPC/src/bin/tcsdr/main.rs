@@ -1,5 +1,4 @@
 use utils::{
-    get_api::get_api,
     load_env_vars::{ EnvVars, load_env_vars },
     load_locations::{ Locations, PipelineType, load_locations },
     pipeline::{ TcsAPI, Pipeline },
@@ -10,6 +9,7 @@ use utils::{
 mod process;
 mod validate_file_names;
 mod generate_tcs_json;
+mod sort_files;
 
 #[tokio::main]
 async fn main() -> () {
@@ -20,19 +20,13 @@ async fn main() -> () {
         std::process::exit(1);
     });
 
-    let url = format!("{}/{}", &locations.api_url[PipelineType::Tcs], &id);
-    let data: TcsAPI = get_api(&url).await.unwrap_or_else(|e| {
-        // try again later
-        println!("Error getting API: {:?}", e);
-        std::process::exit(1);
-    });
-
-    let pipeline: Pipeline<TcsAPI> = Pipeline::new(
-        data.id.clone(),
-        data,
-        &locations,
-        PipelineType::Tcs
-    );
+    let pipeline: Pipeline<TcsAPI> = match Pipeline::new(id.clone(), PipelineType::Tcs).await {
+        Ok(p) => p,
+        Err(e) => {
+            println!("Error creating pipeline: {:?}", e);
+            std::process::exit(1);
+        }
+    };
 
     // placed process is_stale here because pipeline is already set up , left it out of process_queue.main
     if !is_stale.is_empty() {

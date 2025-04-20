@@ -1,7 +1,7 @@
 use anyhow::{ Result, Context };
 use utils::{
     compress::compress_dir,
-    email_templates::{ receipt_email_template, results_email_template },
+    email_templates::results_email_template,
     load_env_vars::{ load_env_vars, EnvVars },
     load_locations::Locations,
     pipeline::{ CoreceptorAPI, Pipeline },
@@ -10,20 +10,11 @@ use utils::{
 };
 
 pub async fn process(pipeline: &Pipeline<CoreceptorAPI>, locations: Locations) -> Result<()> {
-    pipeline.add_log(&format!("Initializing OGV pipeline #{}", &pipeline.id))?;
+    pipeline.add_log(&format!("Initializing Coreceptor pipeline #{}", &pipeline.id))?;
 
     let EnvVars { is_dev, .. } = load_env_vars();
 
-    // patch as pending
-    pipeline
-        .patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await
-        .context("Failed to patch pipeline as pending.")?;
-
-    let job_id: String = if pipeline.data.job_id.is_empty() {
-        format!("coreceptor-results_{}", &pipeline.data.id)
-    } else {
-        pipeline.data.job_id.clone()
-    };
+    let job_id: String = pipeline.job_id();
 
     let sequence_file = format!("{}/sequences.fasta", &pipeline.scratch_dir);
 
@@ -37,32 +28,12 @@ pub async fn process(pipeline: &Pipeline<CoreceptorAPI>, locations: Locations) -
         &job_id
     );
 
-    let sequences_html = format!(
-        "<u>Sequences</u></br>{}",
-        &pipeline.data.sequences
-            .split("\n")
-            .filter(|line| line.starts_with(">"))
-            .map(|l| l.replace(">", ""))
-            .collect::<Vec<String>>()
-            .join("</br>")
-    );
-    let receipt_body = receipt_email_template(&sequences_html);
-
     // write pipeline.data.sequences to a file
     if !std::path::Path::new(&sequence_file).exists() {
         std::fs
             ::write(&sequence_file, &pipeline.data.sequences)
             .context("Failed to write sequences to file.")?;
     }
-
-    // email receipt
-    pipeline.add_log("Emailing receipt.")?;
-    send_email(
-        &format!("Coreceptor Submission #{}", &job_id),
-        &receipt_body,
-        &pipeline.data.email,
-        true
-    ).await.context("Failed to send receipt email.")?;
 
     // coreceptor.py run
     if !is_dev {

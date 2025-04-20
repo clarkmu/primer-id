@@ -1,5 +1,4 @@
 use utils::{
-    get_api::get_api,
     load_env_vars::{ load_env_vars, EnvVars },
     load_locations::{ load_locations, Locations, PipelineType },
     pipeline::{ IntactAPI, Pipeline },
@@ -19,14 +18,13 @@ async fn main() -> () {
         std::process::exit(1);
     });
 
-    let url = format!("{}/{}", &locations.api_url[PipelineType::Intact], &id);
-    let data: IntactAPI = get_api(&url).await.unwrap_or_else(|e| {
-        // try again later
-        println!("Error getting API: {:?}", e);
-        std::process::exit(1);
-    });
-
-    let pipeline = Pipeline::new(data.id.clone(), data, &locations, PipelineType::Intact);
+    let pipeline: Pipeline<IntactAPI> = match Pipeline::new(id.clone(), PipelineType::Intact).await {
+        Ok(p) => p,
+        Err(e) => {
+            println!("Error creating pipeline: {:?}", e);
+            std::process::exit(1);
+        }
+    };
 
     // placed process is_stale here because pipeline is already set up , left it out of process_queue.main
     if !is_stale.is_empty() {

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::{ Context, Result };
 use flate2::write::GzEncoder;
 use flate2::Compression;

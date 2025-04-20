@@ -3,7 +3,7 @@ use std::fs::{ File, OpenOptions };
 use std::io::{ BufWriter, Write };
 use anyhow::{ Result, Context };
 use utils::compress::compress_dir;
-use utils::email_templates::{ receipt_email_template, results_email_template };
+use utils::email_templates::results_email_template;
 use utils::pipeline::OgvUpload;
 use utils::run_command::run_command;
 use utils::{ pipeline::{ OgvAPI, Pipeline }, send_email::send_email, load_locations::Locations };
@@ -11,26 +11,13 @@ use utils::{ pipeline::{ OgvAPI, Pipeline }, send_email::send_email, load_locati
 pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing OGV pipeline #{}", &pipeline.id))?;
 
-    // patch as pending
-    pipeline
-        .patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await
-        .context("Failed to patch pipeline as pending.")?;
-
     // set up variables
-    let receipt_body: String = generate_receipt_email(
-        &pipeline.data.conversion,
-        &pipeline.data.uploads
-    );
     let download_to: &str = &format!("{}/data", &pipeline.scratch_dir);
     let samples_file_location: String = format!("{}/samples.json", &pipeline.scratch_dir);
     let results_location: String = format!("{}/results", &pipeline.scratch_dir);
     let summary_location: String = format!("{}/summary.csv", &results_location);
     let conversion_location: String = format!("{}/conversion.json", &pipeline.scratch_dir);
-    let job_id: String = if pipeline.data.job_id.is_empty() {
-        format!("ogv-results_{}", &pipeline.data.id)
-    } else {
-        pipeline.data.job_id.clone()
-    };
+    let job_id: String = pipeline.job_id();
     let run_summary_command: String = format!(
         "conda run -n ogv python3 {}/scripts/result-summary.py -d {} -j {} -o {}",
         &locations.ogv_base_path,
@@ -45,15 +32,6 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
         &locations.ogv_base_path,
         &locations.ogv_base_path
     );
-
-    // email receipt
-    pipeline.add_log("Emailing receipt.")?;
-    send_email(
-        &format!("OGV Dating Submission #{}", &job_id),
-        &receipt_body,
-        &pipeline.data.email,
-        true
-    ).await.context("Failed to send receipt email.")?;
 
     // download from bucket
     pipeline.add_log(&format!("Downloading from bucket to {}", &download_to))?;
@@ -151,31 +129,6 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
         .context("Failed to patch pipeline as completed.")?;
 
     Ok(())
-}
-
-fn generate_receipt_email(
-    conversion: &HashMap<String, String>,
-    uploads: &Vec<OgvUpload>
-) -> String {
-    let conversion_html =
-        "<u>Start2Art</u>:<br>".to_string() +
-        &conversion
-            .iter()
-            .map(|(k, v)| format!("{}: {}", k, v))
-            .collect::<Vec<String>>()
-            .join("<br>");
-
-    let uploads_html =
-        "<u>Uploads</u>:<br>".to_string() +
-        &uploads
-            .iter()
-            .map(|u| format!("{}: {}", u.lib_name, u.file_name))
-            .collect::<Vec<String>>()
-            .join("<br>");
-
-    let receipt = receipt_email_template(&format!("{}</br></br>{}", conversion_html, uploads_html));
-
-    receipt
 }
 
 fn generate_samples_file(uploads: &Vec<OgvUpload>, samples_file_location: &str) -> Result<()> {

@@ -1,7 +1,7 @@
 use anyhow::{ Result, Context };
 use utils::{
     compress::compress_dir,
-    email_templates::{ receipt_email_template, results_email_template },
+    email_templates::results_email_template,
     load_locations::Locations,
     pipeline::{ IntactAPI, Pipeline },
     run_command::run_command,
@@ -18,39 +18,11 @@ const RESULTS_HEADER: &str =
 pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing Intactness pipeline #{}", &pipeline.id))?;
 
-    // patch as pending
-    // pipeline
-    //     .patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await
-    //     .context("Failed to patch pipeline as pending.")?;
-
-    // create variables
-    // let input_sequence_file = format!("{}/seqs.fasta", &pipeline.scratch_dir);
     let results_location = format!("{}", &pipeline.scratch_dir);
-    let sequences_html = format!(
-        "<u>Sequences</u></br>{}",
-        &pipeline.data.sequences
-            .split("\n")
-            .filter(|line| line.starts_with(">"))
-            .map(|l| l.replace(">", ""))
-            .collect::<Vec<String>>()
-            .join("</br>")
-    );
-    let receipt = receipt_email_template(&sequences_html);
-    let job_id: String = if pipeline.data.job_id.is_empty() {
-        format!("intactness-results_{}", &pipeline.data.id)
-    } else {
-        pipeline.data.job_id.clone()
-    };
+
+    let job_id: String = pipeline.job_id();
 
     let seq_paths = split_sequences(&pipeline.data.sequences, &pipeline.scratch_dir)?;
-
-    // email receipt
-    send_email(
-        &format!("Intactness Submission #{}", &job_id),
-        &receipt,
-        &pipeline.data.email,
-        true
-    ).await.context("Failed to send email receipt.")?;
 
     seq_paths
         .clone()

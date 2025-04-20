@@ -2,7 +2,7 @@ use std::{ collections::HashMap, path::Path, sync::{ Arc, Mutex } };
 use anyhow::{ Result, Context };
 use utils::{
     compress::compress_dir,
-    email_templates::{ receipt_email_template, results_email_template },
+    email_templates::results_email_template,
     load_locations::Locations,
     pipeline::{ Pipeline, SplicingAPI },
     run_command::run_command,
@@ -28,16 +28,9 @@ results
 pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing Splicing pipeline #{}", &pipeline.id))?;
 
-    // patch as pending
-    pipeline
-        .patch_pipeline(serde_json::json!({"pending": true, "submit": false})).await
-        .context("Failed to patch pipeline as pending.")?;
-
     // set up variables
-    let receipt_body: String = generate_receipt_email(&pipeline.data);
-    let pool_name = pipeline.data.pool_name.clone().unwrap_or(pipeline.data.id.clone());
+    let job_id = pipeline.job_id();
     let htsf_location = pipeline.data.htsf.clone().unwrap_or("".to_string());
-    let job_id: String = format!("splicing-results_{}", &pool_name);
     let samples_dir = format!("{}/libs", &pipeline.scratch_dir);
     let results_location = format!("{}/{}", &pipeline.scratch_dir, &job_id);
 
@@ -49,15 +42,6 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
     if !Path::new(&results_location).exists() {
         std::fs::create_dir(&results_location).context("Failed to create results directory.")?;
     }
-
-    // mail receipt
-    pipeline.add_log("Emailing receipt.")?;
-    send_email(
-        &format!("Splicing Submission #{}", &job_id),
-        &receipt_body,
-        &pipeline.data.email,
-        true
-    ).await.context("Failed to send receipt email.")?;
 
     let jobs: HashMap<String, RFiles>;
 
@@ -145,9 +129,9 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
         }
     });
 
-    println!("Errors: {:?}", &errors);
+    // println!("Errors: {:?}", &errors);
 
-    return Ok(());
+    // return Ok(());
 
     // move files to results location
     // let move_files_command = format!("mv {}/* {}", &pipeline.scratch_dir, &results_location);
@@ -198,29 +182,4 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
         .context("Failed to patch pipeline as completed.")?;
 
     Ok(())
-}
-
-fn generate_receipt_email(data: &SplicingAPI) -> String {
-    let mut content: String = String::from("");
-
-    let uploads = &data.uploads.clone().unwrap_or(vec![]);
-    let htsf = &data.htsf.clone().unwrap_or("".to_string());
-
-    if !uploads.is_empty() {
-        content = String::from("You have uploaded the following sequences:\n\n");
-
-        let filenames: Vec<String> = uploads
-            .iter()
-            .map(|upload| upload.file_name.clone())
-            .collect();
-        let filenames_str = filenames.join("\n");
-        content.push_str(&filenames_str);
-    } else if !htsf.is_empty() {
-        let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
-        content = format!("HTSF Location: {}", &htsf);
-    }
-
-    let receipt = receipt_email_template(&content);
-
-    receipt
 }

@@ -1,22 +1,19 @@
+use anyhow::{ Context, Result };
+use glob::glob;
+use rayon::prelude::*;
 use std::path::Path;
-use anyhow::{ Result, Context };
+use std::path::PathBuf;
 use utils::{
+    cloud_storage::{ get_signed_url, upload },
     compress::compress_dir,
-    email_templates::{ receipt_email_template, results_email_template },
+    email_templates::results_email_template,
     load_locations::Locations,
     pipeline::{ Pipeline, TcsAPI },
     run_command::run_command,
     send_email::send_email,
-    cloud_storage::{ upload, get_signed_url },
 };
-use glob::glob;
-use std::path::PathBuf;
-use rayon::prelude::*;
 
-use crate::{
-    generate_tcs_json::generate_tcs_json,
-    validate_file_names::{ validate_file_names, FilesResults },
-};
+use crate::{ generate_tcs_json::generate_tcs_json, sort_files::sort_files };
 
 pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing TCS/DR pipeline #{}", &pipeline.id))?;
@@ -27,13 +24,10 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
         .context("Failed to patch pipeline as pending.")?;
 
     // set up variables
-    let temp_primers = pipeline.data.primers.clone().unwrap_or(vec![]);
-    let is_dr: bool = temp_primers.is_empty();
-    let receipt_body: String = generate_receipt_email(&pipeline.data);
-    let temp_pool_name = pipeline.data.pool_name.clone().unwrap_or("".to_string());
-    let pool_name = if temp_pool_name.is_empty() { "TCSDR".to_string() } else { temp_pool_name };
+    let is_dr: bool = pipeline.is_dr();
+    let pool_name = pipeline.pool_name();
     let htsf_location = pipeline.data.htsf.clone().unwrap_or("".to_string());
-    let job_id: String = format!("{}-results_{}", if is_dr { "dr" } else { "tcs" }, &pool_name);
+    let job_id: String = pipeline.job_id();
     let samples_dir = format!("{}/{}", &pipeline.scratch_dir, pool_name);
     let log_upload_location = format!(
         "{}/logs/{}/log.html",
@@ -45,15 +39,6 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     if !Path::new(&samples_dir).exists() {
         std::fs::create_dir(&samples_dir).context("Failed to create DR directory.")?;
     }
-
-    // mail receipt
-    pipeline.add_log("Emailing receipt.")?;
-    send_email(
-        &format!("{} Submission #{}", if is_dr { "DR" } else { "TCS" }, &job_id),
-        &receipt_body,
-        &pipeline.data.email,
-        true
-    ).await.context("Failed to send receipt email.")?;
 
     // transfer samples
     if !htsf_location.is_empty() {
@@ -131,9 +116,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     if !tcs_error_files.is_empty() {
         let tcs_error_msg = tcs_error_files
             .iter()
-            .map(|f| {
-                std::fs::read_to_string(f).unwrap_or("Failed to read error file.".to_string())
-            })
+            .map(|f| std::fs::read_to_string(f).unwrap_or("Failed to read error file.".to_string()))
             .collect::<Vec<String>>()
             .join("\n\n");
 
@@ -236,101 +219,11 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     pipeline
         .patch_pipeline(
             serde_json::json!({
-                    "pending": false,
-                    "submit": false,
-                })
+            "pending": false,
+            "submit": false,
+        })
         ).await
         .context("Failed to patch pipeline as completed.")?;
 
     Ok(())
-}
-
-fn generate_receipt_email(data: &TcsAPI) -> String {
-    let mut content: String = String::from("");
-
-    let uploads = &data.uploads.clone().unwrap_or(vec![]);
-    let htsf = &data.htsf.clone().unwrap_or("".to_string());
-
-    if !uploads.is_empty() {
-        content = String::from("You have uploaded the following sequences:\n\n");
-
-        let filenames: Vec<String> = uploads
-            .iter()
-            .map(|upload| upload.file_name.clone())
-            .collect();
-        let filenames_str = filenames.join("\n");
-        content.push_str(&filenames_str);
-    } else if !htsf.is_empty() {
-        let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
-        content = format!("HTSF Location: {}", &htsf);
-    }
-
-    let receipt = receipt_email_template(&content);
-
-    receipt
-}
-
-async fn sort_files(dir: &str, destination: &str) -> Result<()> {
-    if !Path::new(destination).exists() {
-        std::fs
-            ::create_dir(destination)
-            .context("Failed to create destination directory at file sorting.")?;
-    }
-
-    let location = Path::new(dir);
-
-    let files: Vec<PathBuf> = glob(location.join("**").join("*.fast*").to_str().unwrap_or(""))?
-        .map(|f| f.unwrap())
-        .collect();
-
-    let results: Vec<FilesResults> = validate_file_names(files).await.context(
-        "Failed to validate file names."
-    )?;
-
-    for file in results {
-        // /path/to/destination/{lib_name}/{file_name}
-        let destination_dir = Path::new(destination).join(file.lib_name);
-        let destination = destination_dir.join(file.file_name);
-
-        if !destination_dir.exists() {
-            std::fs
-                ::create_dir(&destination_dir)
-                .with_context(||
-                    format!(
-                        "Failed to create destination directory while iterating viralseq.result.files.: {}",
-                        file.file_path.display()
-                    )
-                )?;
-        }
-
-        std::fs
-            ::copy(file.file_path, destination)
-            .context("Failed to copy file while iterating viralseq.result.files .")?;
-    }
-
-    Ok(())
-}
-
-mod tests {
-    #[allow(unused_imports)]
-    use super::*;
-
-    #[tokio::test]
-    async fn test_sort_files() {
-        // tests sort_files and ./validate_file_names
-
-        let dir = "./tests/fixtures/tcsdr/dr_control";
-        let destination = "./tests/sort_fasta_output";
-
-        let result = sort_files(dir, &destination).await;
-
-        assert!(result.is_ok());
-
-        let files = glob(PathBuf::from(destination).join("**").join("*.fast*").to_str().unwrap())
-            .unwrap()
-            .map(|f| f.unwrap())
-            .collect::<Vec<PathBuf>>();
-
-        assert_eq!(files.len(), 2);
-    }
 }

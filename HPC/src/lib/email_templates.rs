@@ -1,6 +1,9 @@
 use chrono::{ Utc, Duration };
 
-use crate::load_locations::{ load_locations, Locations, PipelineType };
+use crate::{
+    load_locations::{ load_locations, Locations, PipelineType },
+    pipeline::{ OgvAPI, SplicingAPI, TcsAPI },
+};
 
 // contact us and outro
 fn email_signature() -> String {
@@ -49,4 +52,76 @@ pub fn results_email_template(signed_url: String, extra_notes: &str) -> String {
     );
 
     body
+}
+
+pub fn generate_tcs_receipt(data: &TcsAPI) -> String {
+    let mut content: String = String::from("");
+
+    let uploads = &data.uploads.clone().unwrap_or(vec![]);
+    let htsf = &data.htsf.clone().unwrap_or("".to_string());
+
+    if !uploads.is_empty() {
+        content = String::from("You have uploaded the following sequences:\n\n");
+
+        let filenames: Vec<String> = uploads
+            .iter()
+            .map(|upload| upload.file_name.clone())
+            .collect();
+        let filenames_str = filenames.join("\n");
+        content.push_str(&filenames_str);
+    } else if !htsf.is_empty() {
+        let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
+        content = format!("HTSF Location: {}", &htsf);
+    }
+
+    let receipt = receipt_email_template(&content);
+
+    receipt
+}
+
+pub fn generate_ogv_receipt(data: &OgvAPI) -> String {
+    let conversion_html =
+        "<u>Start2Art</u>:<br>".to_string() +
+        &data.conversion
+            .iter()
+            .map(|(k, v)| format!("{}: {}", k, v))
+            .collect::<Vec<String>>()
+            .join("<br>");
+
+    let uploads_html =
+        "<u>Uploads</u>:<br>".to_string() +
+        &data.uploads
+            .iter()
+            .map(|u| format!("{}: {}", u.lib_name, u.file_name))
+            .collect::<Vec<String>>()
+            .join("<br>");
+
+    let receipt = receipt_email_template(&format!("{}</br></br>{}", conversion_html, uploads_html));
+
+    receipt
+}
+
+pub fn generate_splicing_receipt(data: &SplicingAPI) -> String {
+    let mut content: String = String::from("");
+
+    let uploads = &data.uploads.clone().unwrap_or(vec![]);
+    let htsf = &data.htsf.clone().unwrap_or("".to_string());
+
+    if !uploads.is_empty() {
+        content = String::from("You have uploaded the following sequences:\n\n");
+
+        let filenames: Vec<String> = uploads
+            .iter()
+            .map(|upload| upload.file_name.clone())
+            .collect();
+        let filenames_str = filenames.join("\n");
+        content.push_str(&filenames_str);
+    } else if !htsf.is_empty() {
+        let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
+        content = format!("HTSF Location: {}", &htsf);
+    }
+
+    let receipt = receipt_email_template(&content);
+
+    receipt
 }

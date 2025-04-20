@@ -1,19 +1,24 @@
-#![allow(unused_imports, dead_code, unused_variables)]
 // --poll for Linux
 // 2>/dev/null  silence MADV_DONTNEED in Docker container
 // RUST_BACKTRACE=1 cargo watch -c -w src -x 'run --bin main -- --is_dev' --poll 2>/dev/null
 
-use anyhow::{Context, Result};
-use reqwest::Client;
+use anyhow::Result;
 use serde::Deserialize;
-use serde_json::json;
 use std::process::exit;
 use utils::{
     get_api::get_api,
-    load_env_vars::{load_env_vars, EnvVars},
-    load_locations::{load_locations, Locations, PipelineType},
+    load_env_vars::{ load_env_vars, EnvVars },
+    load_locations::{ load_locations, Locations, PipelineType },
     lock_file,
-    pipeline::pipeline_is_stale,
+    pipeline::{
+        pipeline_is_stale,
+        CoreceptorAPI,
+        IntactAPI,
+        OgvAPI,
+        Pipeline,
+        SplicingAPI,
+        TcsAPI,
+    },
     run_command::run_command,
 };
 
@@ -28,31 +33,15 @@ struct SharedAPIData {
     pub upload_count: Option<u8>,
 }
 
-async fn patch_pending(api_key: &str, url: &str) -> Result<()> {
-    let data = json!({"pending": true, "submit": false});
-
-    Client::new()
-        .patch(url)
-        .json(&data)
-        .header("x-api-key", api_key)
-        .send()
-        .await
-        .context("Failed to patch pipeline.")?;
-
-    Ok(())
-}
-
 fn create_sbatch_cmd(
     output_file: &str,
     cores: u8,
     job_name: &str,
     memory: u32,
     time: u32,
-    wrap: &str,
+    wrap: &str
 ) -> String {
-    let Locations {
-        admin_email, base, ..
-    } = load_locations().unwrap_or_else(|e| {
+    let Locations { admin_email, base, .. } = load_locations().unwrap_or_else(|e| {
         println!("Error loading locations.json: {:?}", e);
         exit(1);
     });
@@ -61,7 +50,13 @@ fn create_sbatch_cmd(
 
     let sbatch_command = format!(
         "sbatch {} -o {} -n {} --job-name='{}' --mem={} -t {} --wrap='{}'",
-        slurm_error_handling, output_file, cores, job_name, memory, time, wrap
+        slurm_error_handling,
+        output_file,
+        cores,
+        job_name,
+        memory,
+        time,
+        wrap
     );
 
     // append sbatch command to a file located at {}/sbatch_commands.txt
@@ -69,7 +64,7 @@ fn create_sbatch_cmd(
     let contents = format!("{}\n\n", &sbatch_command);
     std::fs::write(&sbatch_commands_file, contents).unwrap_or_else(|e| {
         println!("Error writing sbatch command to file: {:?}", e);
-        exit(1);
+        // exit(1);
     });
 
     sbatch_command
@@ -93,8 +88,9 @@ async fn main() -> Result<()> {
 
     let is_dev_cmd = if is_dev { " --is_dev" } else { "" };
 
-    let lock_file: lock_file::LockFile =
-        lock_file::LockFile::new(format!("{}/lock_process", &locations.base));
+    let lock_file: lock_file::LockFile = lock_file::LockFile::new(
+        format!("{}/lock_process", &locations.base)
+    );
     if lock_file.exists().unwrap_or(true) {
         println!("\n\nProcess currently running.\nExiting.\n\n");
 
@@ -108,255 +104,243 @@ async fn main() -> Result<()> {
         lock_file.create()?;
     }
 
-    let ogvs: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Ogv])
-        .await
-        .unwrap_or(vec![]);
+    let ogvs: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Ogv]).await.unwrap_or(
+        vec![]
+    );
 
     for ogv in ogvs {
-        let is_stale = if ogv.pending && pipeline_is_stale(&ogv.created_at).unwrap_or(true) {
-            " --is_stale"
-        } else {
-            ""
-        };
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&ogv.pending, &ogv.created_at);
 
-        let run_is_stale = !is_stale.is_empty();
+        if ogv.submit || is_stale {
+            let pipeline: Pipeline<OgvAPI> = match
+                Pipeline::new(ogv.id.clone(), PipelineType::Ogv).await
+            {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("Error creating pipeline: {:?}", e);
+                    continue; // skip this iteration if pipeline creation fails
+                }
+            };
 
-        if ogv.submit || run_is_stale {
+            let (cores, memory) = pipeline.cores_and_memory();
+
             let mut cmd = format!(
                 "cargo run --release --bin ogv -- --id={}{}{}",
-                &ogv.id, &is_dev_cmd, is_stale
+                &ogv.id,
+                &is_dev_cmd,
+                is_stale_cmd
             );
 
             // no need to sbatch for is_stale , no heavy processing
-            if !is_dev && !run_is_stale {
+            if !is_dev && !is_stale {
                 cmd = create_sbatch_cmd(
                     &format!("{}/{}.out", &locations.log_dir[PipelineType::Ogv], &ogv.id),
-                    5,
+                    cores + 1,
                     &format!("ogv-{}", &ogv.id),
-                    20000,
+                    memory,
                     1440,
-                    &cmd,
+                    &cmd
                 );
             }
 
             run_command(&cmd, &locations.base)?;
 
-            patch_pending(
-                &locations.api_key,
-                format!("{}/{}", &locations.api_url[PipelineType::Ogv], &ogv.id).as_str(),
-            )
-            .await?;
+            let _ = pipeline.send_receipt().await;
+            let _ = pipeline.patch_pending().await?;
         }
     }
 
-    let intacts: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Intact])
-        .await
-        .unwrap();
+    let intacts: Vec<SharedAPIData> = get_api(
+        &locations.api_url[PipelineType::Intact]
+    ).await.unwrap_or(vec![]);
 
     for intact in intacts {
-        let is_stale = if intact.pending && pipeline_is_stale(&intact.created_at).unwrap_or(true) {
-            " --is_stale"
-        } else {
-            ""
-        };
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&intact.pending, &intact.created_at);
 
-        let run_is_stale = !is_stale.is_empty();
+        if intact.submit || is_stale {
+            let pipeline: Pipeline<IntactAPI> = match
+                Pipeline::new(intact.id.clone(), PipelineType::Intact).await
+            {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("Error creating pipeline: {:?}", e);
+                    continue; // skip this iteration if pipeline creation fails
+                }
+            };
 
-        if intact.submit || run_is_stale {
-            let paired_jobs = intact.upload_count.unwrap_or(0) / 2;
-
-            let mut cores = paired_jobs;
-            if cores < 1 {
-                cores = 1;
-            }
-            cores = std::cmp::min(cores, 9);
-
-            let memory: u32 = 20000 * (cores as u32);
+            let (cores, memory) = pipeline.cores_and_memory(intact.upload_count);
 
             let mut cmd = format!(
                 "cargo run --release --bin intactness -- --id={} --cores={}{}{}",
-                &intact.id, cores, &is_dev_cmd, is_stale
+                &intact.id,
+                cores + 1,
+                &is_dev_cmd,
+                is_stale_cmd
             );
 
             // no need to sbatch for is_stale , no heavy processing
-            if !is_dev && !run_is_stale {
+            if !is_dev && !is_stale {
                 cmd = create_sbatch_cmd(
-                    &format!(
-                        "{}/{}.out",
-                        &locations.log_dir[PipelineType::Intact],
-                        &intact.id
-                    ),
+                    &format!("{}/{}.out", &locations.log_dir[PipelineType::Intact], &intact.id),
                     cores + 1,
                     &format!("intactness-{}", &intact.id),
                     memory,
                     1440,
-                    &cmd,
+                    &cmd
                 );
             }
 
             run_command(&cmd, &locations.base)?;
 
-            patch_pending(
-                &locations.api_key,
-                format!(
-                    "{}/{}",
-                    &locations.api_url[PipelineType::Intact],
-                    &intact.id
-                )
-                .as_str(),
-            )
-            .await?;
+            let _ = pipeline.send_receipt().await;
+            let _ = pipeline.patch_pending().await?;
         }
     }
 
-    let tcss: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Tcs])
-        .await
-        .unwrap_or(vec![]);
+    let tcss: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Tcs]).await.unwrap_or(
+        vec![]
+    );
 
     for tcs in tcss {
-        let is_stale = if tcs.pending && pipeline_is_stale(&tcs.created_at).unwrap_or(true) {
-            " --is_stale"
-        } else {
-            ""
-        };
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&tcs.pending, &tcs.created_at);
 
-        let run_is_stale = !is_stale.is_empty();
+        if tcs.submit || is_stale {
+            let pipeline: Pipeline<TcsAPI> = match
+                Pipeline::new(tcs.id.clone(), PipelineType::Tcs).await
+            {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("Error creating pipeline: {:?}", e);
+                    continue; // skip this iteration if pipeline creation fails
+                }
+            };
 
-        if tcs.submit || run_is_stale {
-            let mut cores = tcs.upload_count.unwrap_or(0) / 2;
-            if cores < 1 {
-                cores = 1;
-            }
-            cores = std::cmp::min(cores, 9);
-
-            let memory: u32 = 25000 * (cores as u32);
+            let (cores, memory) = pipeline.cores_and_memory(&tcs.upload_count);
 
             let mut cmd = format!(
                 "cargo run --release --bin tcsdr -- --id={} --cores={}{}{}",
-                &tcs.id, cores, &is_dev_cmd, is_stale
+                &tcs.id,
+                cores + 1,
+                &is_dev_cmd,
+                is_stale_cmd
             );
 
             // no need to sbatch for is_stale , no heavy processing
-            if !is_dev && !run_is_stale {
+            if !is_dev && !is_stale {
                 cmd = create_sbatch_cmd(
                     &format!("{}/{}.out", &locations.log_dir[PipelineType::Tcs], &tcs.id),
                     cores + 1,
                     &format!("tcs-{}", &tcs.id),
                     memory,
                     1440,
-                    &cmd,
+                    &cmd
                 );
             }
 
             run_command(&cmd, &locations.base)?;
 
-            patch_pending(
-                &locations.api_key,
-                format!("{}/{}", &locations.api_url[PipelineType::Tcs], &tcs.id).as_str(),
-            )
-            .await?;
+            let _ = pipeline.send_receipt().await;
+
+            let _ = pipeline.patch_pending().await?;
         }
     }
 
-    let coreceptors: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Coreceptor])
-        .await
-        .unwrap_or(vec![]);
+    let coreceptors: Vec<SharedAPIData> = get_api(
+        &locations.api_url[PipelineType::Coreceptor]
+    ).await.unwrap_or(vec![]);
 
     for coreceptor in coreceptors {
-        let is_stale =
-            if coreceptor.pending && pipeline_is_stale(&coreceptor.created_at).unwrap_or(true) {
-                " --is_stale"
-            } else {
-                ""
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(
+            &coreceptor.pending,
+            &coreceptor.created_at
+        );
+
+        if coreceptor.submit || is_stale {
+            let pipeline: Pipeline<CoreceptorAPI> = match
+                Pipeline::new(coreceptor.id.clone(), PipelineType::Coreceptor).await
+            {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("Error creating pipeline: {:?}", e);
+                    continue; // skip this iteration if pipeline creation fails
+                }
             };
 
-        let run_is_stale = !is_stale.is_empty();
+            let (cores, memory) = pipeline.cores_and_memory();
 
-        if coreceptor.submit || run_is_stale {
             let mut cmd = format!(
                 "cargo run --release --bin coreceptor -- --id={} {}{}",
-                &coreceptor.id, &is_dev_cmd, is_stale
+                &coreceptor.id,
+                &is_dev_cmd,
+                is_stale_cmd
             );
 
             // no need to sbatch for is_stale , no heavy processing
-            if !is_dev && !run_is_stale {
+            if !is_dev && !is_stale {
                 cmd = create_sbatch_cmd(
                     &format!(
                         "{}/{}.out",
                         &locations.log_dir[PipelineType::Coreceptor],
                         &coreceptor.id
                     ),
-                    1,
+                    cores + 1,
                     &format!("coreceptor-{}", &coreceptor.id),
-                    5000,
+                    memory,
                     1440,
-                    &cmd,
+                    &cmd
                 );
             }
 
             run_command(&cmd, &locations.base)?;
 
-            patch_pending(
-                &locations.api_key,
-                format!(
-                    "{}/{}",
-                    &locations.api_url[PipelineType::Coreceptor],
-                    &coreceptor.id
-                )
-                .as_str(),
-            )
-            .await?;
+            pipeline.send_receipt().await?;
+            pipeline.patch_pending().await?;
         }
     }
 
-    let splicings: Vec<SharedAPIData> = get_api(&locations.api_url[PipelineType::Splicing])
-        .await
-        .unwrap_or(vec![]);
+    let splicings: Vec<SharedAPIData> = get_api(
+        &locations.api_url[PipelineType::Splicing]
+    ).await.unwrap_or(vec![]);
 
     for splicing in splicings {
-        let is_stale =
-            if splicing.pending && pipeline_is_stale(&splicing.created_at).unwrap_or(true) {
-                " --is_stale"
-            } else {
-                ""
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&splicing.pending, &splicing.created_at);
+
+        if splicing.submit || is_stale {
+            let pipeline: Pipeline<SplicingAPI> = match
+                Pipeline::new(splicing.id.clone(), PipelineType::Splicing).await
+            {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("Error creating pipeline: {:?}", e);
+                    continue; // skip this iteration if pipeline creation fails
+                }
             };
 
-        let run_is_stale = !is_stale.is_empty();
+            let (cores, memory) = pipeline.cores_and_memory();
 
-        if splicing.submit || run_is_stale {
             let mut cmd = format!(
                 "cargo run --release --bin splicing -- --id={} {}{}",
-                &splicing.id, &is_dev_cmd, is_stale
+                &splicing.id,
+                &is_dev_cmd,
+                is_stale_cmd
             );
 
             // no need to sbatch for is_stale , no heavy processing
-            if !is_dev && !run_is_stale {
+            if !is_dev && !is_stale {
                 cmd = create_sbatch_cmd(
-                    &format!(
-                        "{}/{}.out",
-                        &locations.log_dir[PipelineType::Splicing],
-                        &splicing.id
-                    ),
-                    1,
+                    &format!("{}/{}.out", &locations.log_dir[PipelineType::Splicing], &splicing.id),
+                    cores + 1,
                     &format!("splicing-{}", &splicing.id),
-                    5000,
+                    memory,
                     1440,
-                    &cmd,
+                    &cmd
                 );
             }
 
             run_command(&cmd, &locations.base)?;
 
-            patch_pending(
-                &locations.api_key,
-                format!(
-                    "{}/{}",
-                    &locations.api_url[PipelineType::Splicing],
-                    &splicing.id
-                )
-                .as_str(),
-            )
-            .await?;
+            pipeline.send_receipt().await?;
+            pipeline.patch_pending().await?;
         }
     }
 

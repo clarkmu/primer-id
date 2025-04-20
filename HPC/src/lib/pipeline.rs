@@ -1,18 +1,29 @@
-use std::{ collections::HashMap, fs::OpenOptions };
 use crate::{
     cloud_storage::{ download, get_signed_url, upload },
-    load_locations::{ Locations, PipelineType },
+    email_templates::{
+        generate_ogv_receipt,
+        generate_splicing_receipt,
+        generate_tcs_receipt,
+        receipt_email_template,
+    },
+    get_api::get_api,
+    load_locations::{ load_locations, PipelineType },
     send_email::send_email,
 };
-use serde::{ Deserialize, Serialize };
-use serde_json::Value;
 use chrono::prelude::*;
-use std::path::PathBuf;
-use std::io::Write;
 use reqwest::Client;
+use serde::{ Deserialize, Serialize };
 use serde_json::json;
+use serde_json::Value;
+use std::io::Write;
+use std::path::PathBuf;
+use std::{ collections::HashMap, fs::OpenOptions };
 
 use anyhow::{ Context, Result };
+
+// TODO reorganize this huge file
+//   maybe create ./apis/TCS|OGV|Intact
+//     - include the API struct and impl Pipeline<API> there
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct OgvUpload {
@@ -190,16 +201,20 @@ pub struct Pipeline<ApiData> {
     api_key: String,
 }
 
-impl<ApiData> Pipeline<ApiData> {
-    pub fn new(
-        id: String,
-        data: ApiData,
-        locations: &Locations,
-        pipeline_type: PipelineType
-    ) -> Pipeline<ApiData> {
-        let api_url: String = String::from(&locations.api_url[pipeline_type]);
-        let bucket_url: String = String::from(&locations.bucket_url[pipeline_type]);
+impl<ApiData> Pipeline<ApiData> where ApiData: for<'de> serde::Deserialize<'de> {
+    pub async fn new(id: String, pipeline_type: PipelineType) -> Result<Pipeline<ApiData>> {
+        let locations = load_locations().unwrap();
 
+        let api_url: String = String::from(&locations.api_url[pipeline_type]);
+
+        let url = format!("{}/{}", &api_url, &id);
+        let data: ApiData = get_api(&url).await.unwrap_or_else(|e| {
+            // try again later
+            println!("Error getting API: {:?}", e);
+            std::process::exit(1);
+        });
+
+        let bucket_url: String = String::from(&locations.bucket_url[pipeline_type]);
         let scratch_dir: String = format!("{}/{}", &locations.scratch_space[pipeline_type], id);
 
         let log_file: String = format!("{}/{}.log", &locations.log_dir[pipeline_type], id);
@@ -216,7 +231,7 @@ impl<ApiData> Pipeline<ApiData> {
         let _ = std::fs::create_dir_all(log_file_path.parent().unwrap());
         let _ = std::fs::create_dir_all(log_error_path.parent().unwrap());
 
-        Pipeline {
+        let pipeline: Pipeline<ApiData> = Pipeline {
             id,
             base: locations.base.clone(),
             scratch_dir,
@@ -226,7 +241,9 @@ impl<ApiData> Pipeline<ApiData> {
             bucket_url,
             api_key: locations.api_key.clone(),
             data,
-        }
+        };
+
+        Ok(pipeline)
     }
 
     pub fn add_log(&self, msg: &str) -> Result<()> {
@@ -281,6 +298,21 @@ impl<ApiData> Pipeline<ApiData> {
         Ok(())
     }
 
+    pub async fn patch_pending(&self) -> Result<()> {
+        let data = json!({"pending": true, "submit": false});
+
+        let url = format!("{}/{}", &self.api_url, &self.id);
+
+        Client::new()
+            .patch(url)
+            .json(&data)
+            .header("x-api-key", &self.api_key)
+            .send().await
+            .context("Failed to patch pipeline as pending.")?;
+
+        Ok(())
+    }
+
     pub fn bucket_download(
         &self,
         from: &str,
@@ -308,14 +340,215 @@ impl<ApiData> Pipeline<ApiData> {
     }
 }
 
-pub fn pipeline_is_stale(date: &str) -> Result<bool> {
+impl Pipeline<TcsAPI> {
+    pub fn is_dr(&self) -> bool {
+        let temp_primers = self.data.primers.clone().unwrap_or(vec![]);
+        temp_primers.is_empty()
+    }
+    pub fn pool_name(&self) -> String {
+        let is_dr = self.is_dr();
+        let temp_pool_name = self.data.pool_name.clone().unwrap_or("".to_string());
+        let pool_name = if is_dr { "TCSDR".to_string() } else { temp_pool_name };
+        pool_name
+    }
+    pub fn job_id(&self) -> String {
+        let is_dr = self.is_dr();
+        let pool_name = self.pool_name();
+        let job_id: String = format!("{}-results_{}", if is_dr { "dr" } else { "tcs" }, &pool_name);
+        job_id
+    }
+    pub async fn send_receipt(&self) -> Result<()> {
+        let is_dr = self.is_dr();
+        let job_id = self.job_id();
+        let subject = &format!("{} Submission #{}", if is_dr { "DR" } else { "TCS" }, &job_id);
+        let msg: String = generate_tcs_receipt(&self.data);
+        let _ = send_email(&subject, &msg, &self.data.email, false).await.context(
+            "Failed to send receipt email."
+        )?;
+        Ok(())
+    }
+    pub fn cores_and_memory(&self, upload_count: &Option<u8>) -> (u8, u32) {
+        // run max 10 single-threaded pairs per submission
+        // allocate 25gb memory per pair
+
+        let mut cores = upload_count.unwrap_or(0) / 2;
+        if cores < 1 {
+            cores = 1;
+        }
+        cores = std::cmp::min(cores, 9);
+
+        let memory: u32 = 25000 * (cores as u32);
+
+        (cores, memory)
+    }
+}
+
+impl Pipeline<CoreceptorAPI> {
+    pub fn job_id(&self) -> String {
+        let job_id: String = if self.data.job_id.is_empty() {
+            format!("coreceptor-results_{}", &self.data.id)
+        } else {
+            self.data.job_id.clone()
+        };
+        job_id
+    }
+    pub async fn send_receipt(&self) -> Result<()> {
+        let job_id = self.job_id();
+
+        let sequences_html = format!(
+            "<u>Sequences</u></br>{}",
+            &self.data.sequences
+                .split("\n")
+                .filter(|line| line.starts_with(">"))
+                .map(|l| l.replace(">", ""))
+                .collect::<Vec<String>>()
+                .join("</br>")
+        );
+        let receipt_body = receipt_email_template(&sequences_html);
+
+        send_email(
+            &format!("Coreceptor Submission #{}", &job_id),
+            &receipt_body,
+            &self.data.email,
+            true
+        ).await.context("Failed to send receipt email.")?;
+
+        Ok(())
+    }
+    pub fn cores_and_memory(&self) -> (u8, u32) {
+        // run single-threaded, don't overload g2p
+        // allocate 5gb memory per job
+
+        let cores = 1;
+        let memory: u32 = 5000;
+
+        (cores, memory)
+    }
+}
+
+impl Pipeline<OgvAPI> {
+    pub fn job_id(&self) -> String {
+        let job_id: String = if self.data.job_id.is_empty() {
+            format!("ogv-results_{}", &self.data.id)
+        } else {
+            self.data.job_id.clone()
+        };
+        job_id
+    }
+    pub async fn send_receipt(&self) -> Result<()> {
+        let job_id = self.job_id();
+        let receipt_body = generate_ogv_receipt(&self.data);
+        send_email(
+            &format!("OGV Dating Submission #{}", &job_id),
+            &receipt_body,
+            &self.data.email,
+            true
+        ).await.context("Failed to send receipt email.")?;
+
+        Ok(())
+    }
+    pub fn cores_and_memory(&self) -> (u8, u32) {
+        // cores hardcoded in ogv repo,
+        // allocate 5gb per thread
+
+        let cores = 4;
+        let memory: u32 = 20000;
+
+        (cores, memory)
+    }
+}
+
+impl Pipeline<IntactAPI> {
+    pub fn job_id(&self) -> String {
+        let job_id: String = if self.data.job_id.is_empty() {
+            format!("intact-results_{}", &self.data.id)
+        } else {
+            self.data.job_id.clone()
+        };
+        job_id
+    }
+    pub async fn send_receipt(&self) -> Result<()> {
+        let job_id = self.job_id();
+
+        let sequences_html = format!(
+            "<u>Sequences</u></br>{}",
+            &self.data.sequences
+                .split("\n")
+                .filter(|line| line.starts_with(">"))
+                .map(|l| l.replace(">", ""))
+                .collect::<Vec<String>>()
+                .join("</br>")
+        );
+        let receipt_body = receipt_email_template(&sequences_html);
+
+        send_email(
+            &format!("Intactness Submission #{}", &job_id),
+            &receipt_body,
+            &self.data.email,
+            true
+        ).await.context("Failed to send receipt email.")?;
+
+        Ok(())
+    }
+    pub fn cores_and_memory(&self, upload_count: Option<u8>) -> (u8, u32) {
+        // run up to 9 threads, 20gb per thread
+
+        let paired_jobs = upload_count.unwrap_or(0) / 2;
+
+        let mut cores = paired_jobs;
+        if cores < 1 {
+            cores = 1;
+        }
+        cores = std::cmp::min(cores, 9);
+
+        let memory: u32 = 20000 * (cores as u32);
+
+        (cores, memory)
+    }
+}
+
+impl Pipeline<SplicingAPI> {
+    pub fn job_id(&self) -> String {
+        let pool_name = self.data.pool_name.clone().unwrap_or(self.data.id.clone());
+        let job_id: String = format!("splicing-results_{}", &pool_name);
+        job_id
+    }
+    pub async fn send_receipt(&self) -> Result<()> {
+        let job_id = self.job_id();
+        let receipt_body = generate_splicing_receipt(&self.data);
+        send_email(
+            &format!("Splicing Submission #{}", &job_id),
+            &receipt_body,
+            &self.data.email,
+            true
+        ).await.context("Failed to send receipt email.")?;
+
+        Ok(())
+    }
+    pub fn cores_and_memory(&self) -> (u8, u32) {
+        // TODO: cores and memory are hardcoded in splicing repo
+
+        let cores = 4;
+        let memory: u32 = 20000;
+
+        (cores, memory)
+    }
+}
+
+pub fn pipeline_is_stale<'a>(pending: &bool, date: &'a str) -> (bool, String) {
+    if !pending {
+        return (false, String::from(""));
+    }
+
     // parse date as saved in MongoDB
-    let created_at = NaiveDateTime::parse_from_str(date, "%Y-%m-%dT%H:%M:%S%.fZ").context(
-        "Failed to parse created_at."
-    )?;
+    let created_at = NaiveDateTime::parse_from_str(date, "%Y-%m-%dT%H:%M:%S%.fZ")
+        .context("Failed to parse created_at.")
+        .unwrap();
     let now = Utc::now().naive_utc();
     let diff = now - created_at;
-    Ok(diff.num_hours() > 24)
+    let is_stale = diff.num_hours() > 24;
+    let is_stale_cmd = String::from(if is_stale { " --is_stale" } else { "" });
+    (is_stale, is_stale_cmd)
 }
 
 #[cfg(test)]
@@ -323,6 +556,7 @@ mod tests {
     use crate::load_locations::load_locations;
 
     use super::*;
+    use crate::load_locations::PipelineType;
 
     #[test]
     fn it_implements_ogv() {
@@ -363,8 +597,7 @@ mod tests {
             created_at: "2021-01-01".to_string(),
             job_id: "jobid".to_string(),
             results_format: "zip".to_string(),
-            uploads: vec![Upload {
-                id: "123".to_string(),
+            uploads: vec![OgvUpload {
                 file_name: "file".to_string(),
                 lib_name: "lib".to_string(),
             }],

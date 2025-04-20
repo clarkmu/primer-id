@@ -1,5 +1,4 @@
 use utils::{
-    get_api::get_api,
     load_env_vars::{ EnvVars, load_env_vars },
     load_locations::{ Locations, PipelineType, load_locations },
     pipeline::{ SplicingAPI, Pipeline },
@@ -17,19 +16,15 @@ async fn main() -> () {
         std::process::exit(1);
     });
 
-    let url = format!("{}/{}", &locations.api_url[PipelineType::Splicing], &id);
-    let data: SplicingAPI = get_api(&url).await.unwrap_or_else(|e| {
-        // try again later
-        println!("Error getting API: {:?}", e);
-        std::process::exit(1);
-    });
-
-    let pipeline: Pipeline<SplicingAPI> = Pipeline::new(
-        data.id.clone(),
-        data,
-        &locations,
-        PipelineType::Splicing
-    );
+    let pipeline: Pipeline<SplicingAPI> = match
+        Pipeline::new(id.clone(), PipelineType::Splicing).await
+    {
+        Ok(p) => p,
+        Err(e) => {
+            println!("Error creating pipeline: {:?}", e);
+            std::process::exit(1);
+        }
+    };
 
     // placed process is_stale here because pipeline is already set up , left it out of process_queue.main
     if !is_stale.is_empty() {
