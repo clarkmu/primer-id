@@ -76,7 +76,7 @@ RUN conda create -n coreceptor python=3.10 selenium=4.28.0
 RUN conda run -n coreceptor pip3 install biopython==1.79
 
 # SPLICING dependencies
-RUN conda create -n splicing python=3.10 rust=1.85.0
+# RUN conda create -n splicing python=3.10 rust=1.85.0
 RUN git clone https://github.com/ViralSeq/viRust-splicing /app/splicing
 
 # COPY storage-admin.json /app/storage-admin.json

@@ -85,8 +85,7 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
         let r2_file = rfiles.r2.clone().unwrap_or("".to_string());
 
         let command = format!(
-            "conda run -n splicing --cwd {} cargo run -- {} {} {} {} {}",
-            &locations.splicing_base_path,
+            "cargo run -- -q {} -d {} -a {} -1 {} -2 {}",
             &pipeline.data.strain,
             &pipeline.data.distance,
             &pipeline.data.assay,
@@ -94,7 +93,7 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
             &r2_file
         );
 
-        let process_output = run_command(&command, &pipeline.scratch_dir);
+        let process_output = run_command(&command, &locations.splicing_base_path);
 
         let output_file = Path::new(&r1_file).parent().unwrap().join("output.tsv");
 

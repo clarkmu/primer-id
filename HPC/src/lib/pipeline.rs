@@ -354,7 +354,7 @@ impl Pipeline<TcsAPI> {
     pub fn job_id(&self) -> String {
         let is_dr = self.is_dr();
         let pool_name = self.pool_name();
-        let job_id: String = format!("{}-results_{}", if is_dr { "dr" } else { "tcs" }, &pool_name);
+        let job_id: String = format!("{}_{}", if is_dr { "dr" } else { "tcs" }, &pool_name);
         job_id
     }
     pub async fn send_receipt(&self) -> Result<()> {
@@ -386,7 +386,7 @@ impl Pipeline<TcsAPI> {
 impl Pipeline<CoreceptorAPI> {
     pub fn job_id(&self) -> String {
         let job_id: String = if self.data.job_id.is_empty() {
-            format!("coreceptor-results_{}", &self.data.id)
+            format!("coreceptor_{}", &self.data.id)
         } else {
             self.data.job_id.clone()
         };
@@ -429,7 +429,7 @@ impl Pipeline<CoreceptorAPI> {
 impl Pipeline<OgvAPI> {
     pub fn job_id(&self) -> String {
         let job_id: String = if self.data.job_id.is_empty() {
-            format!("ogv-results_{}", &self.data.id)
+            format!("ogv_{}", &self.data.id)
         } else {
             self.data.job_id.clone()
         };
@@ -461,7 +461,7 @@ impl Pipeline<OgvAPI> {
 impl Pipeline<IntactAPI> {
     pub fn job_id(&self) -> String {
         let job_id: String = if self.data.job_id.is_empty() {
-            format!("intact-results_{}", &self.data.id)
+            format!("intactness_{}", &self.data.id)
         } else {
             self.data.job_id.clone()
         };
@@ -509,8 +509,12 @@ impl Pipeline<IntactAPI> {
 
 impl Pipeline<SplicingAPI> {
     pub fn job_id(&self) -> String {
-        let pool_name = self.data.pool_name.clone().unwrap_or(self.data.id.clone());
-        let job_id: String = format!("splicing-results_{}", &pool_name);
+        let pool_name = self.data.pool_name.clone().unwrap_or("".to_string());
+        let job_id: String = if pool_name.is_empty() {
+            format!("splicing_{}", &self.data.id)
+        } else {
+            pool_name
+        };
         job_id
     }
     pub async fn send_receipt(&self) -> Result<()> {
