@@ -50,8 +50,8 @@ RUN conda config --add channels conda-forge
 RUN conda config --set channel_priority strict
 
 # TCS-DR dependencies
-RUN conda create -n tcsdr python=3.9 ruby=2.7.2 r-base r-essentials r-igraph r-phangorn
-RUN conda run -n tcsdr gem install viral_seq
+RUN conda create -n tcsdr python=3.9 ruby=3.4.2 r-base r-essentials r-igraph r-phangorn
+RUN conda run -n tcsdr gem install viral_seq -v '1.10.0'
 
 # add additional R dependencies if Ruby/R env can't figure it out
 # conda install -n tcsdr r-ggplot2 r-tweenr r-polyclip r-systemfonts r-ggforce r-cowplot
