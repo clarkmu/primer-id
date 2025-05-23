@@ -26,6 +26,7 @@ pub fn generate_tcs_json(data: &TcsAPI, dir: &str, name: &str) -> Result<String>
         p.trim_ref = primer.trim_genome;
         p.trim_ref_start = primer.trim_start;
         p.trim_ref_end = primer.trim_end;
+        p.indel = primer.allow_indels;
 
         primer_pairs.push(p);
     }
