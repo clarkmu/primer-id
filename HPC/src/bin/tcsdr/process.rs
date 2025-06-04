@@ -207,7 +207,18 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
 
     // generate and send receipt
     pipeline.add_log("Emailing results.")?;
-    let results_body = results_email_template(signed_url, &log_link_html);
+
+    let data_pool_name = pipeline.data.pool_name.clone().unwrap_or("".to_string());
+    let pool_name_html = if !data_pool_name.is_empty() {
+        format!("Pool Name: {}\n\n", &data_pool_name)
+    } else {
+        String::from("\n")
+    };
+
+    let results_body =
+        format!("ID: {}\n{}", &pipeline.data.id, pool_name_html) +
+        &results_email_template(signed_url, &log_link_html);
+
     send_email(
         &format!("{} Results #{}", if is_dr { "DR" } else { "TCS" }, &job_id),
         &results_body,

@@ -157,6 +157,7 @@ pub struct Primer {
     pub trim_ref: Option<String>,
     pub trim_ref_start: Option<u16>,
     pub trim_ref_end: Option<u16>,
+    pub indel: Option<bool>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

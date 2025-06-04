@@ -60,8 +60,17 @@ pub fn generate_tcs_receipt(data: &TcsAPI) -> String {
     let uploads = &data.uploads.clone().unwrap_or(vec![]);
     let htsf = &data.htsf.clone().unwrap_or("".to_string());
 
+    content.push_str(format!("ID: {}\n", &data.id).as_str());
+
+    let pool_name = &data.pool_name.clone().unwrap_or("".to_string());
+    if !pool_name.is_empty() {
+        content.push_str(format!("Pool Name: {}\n\n", pool_name).as_str());
+    } else {
+        content.push_str("\n");
+    }
+
     if !uploads.is_empty() {
-        content = String::from("You have uploaded the following sequences:\n\n");
+        content.push_str(&"You have uploaded the following sequences:\n\n");
 
         let filenames: Vec<String> = uploads
             .iter()
@@ -71,7 +80,7 @@ pub fn generate_tcs_receipt(data: &TcsAPI) -> String {
         content.push_str(&filenames_str);
     } else if !htsf.is_empty() {
         let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
-        content = format!("HTSF Location: {}", &htsf);
+        content.push_str(&format!("HTSF Location: {}", &htsf));
     }
 
     let receipt = receipt_email_template(&content);
