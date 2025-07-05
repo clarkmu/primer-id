@@ -9,7 +9,7 @@ import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibility
 import useSequenceFile from "@/hooks/useSequenceFile";
 import PageDescription from "../templates/PageDescription";
 
-const approvedFileTypes = ["fasta", "fasta.gz", "fastq", "fastq.gz"];
+const approvedFileTypes = ["fa", "fasta", "txt"];
 
 export default function IntactnessPage() {
   const [email, setEmail] = useState("");
@@ -51,7 +51,7 @@ export default function IntactnessPage() {
       <Paper className="flex flex-col gap-8">
         <PageDescription
           title="Geno2Pheno Coreceptor Pipeline"
-          description="Upload multiple unaligned sequences to run through Geno2Pheno Coreceptor"
+          description="Upload multiple unaligned sequences to run through Geno2Pheno Coreceptor using a significance level of 15%."
           files={`should be uncompressed and in one of the following formats: ${approvedFileTypesDisplay}. Submissions cannot exceed 16MB.`}
           results="include ID, V3 Loop, Subtype, FPR, Percentage."
           extra={

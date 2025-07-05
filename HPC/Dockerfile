@@ -1,5 +1,5 @@
 # FROM rust:1.78
-FROM redhat/ubi8
+FROM redhat/ubi9
 
 ENV CARGO_TARGET_DIR=/app/target
 
@@ -10,16 +10,23 @@ ARG PATH="/root/miniconda3/bin:${PATH}"
 ENV PORT=8180
 
 # Rust Reqwest OpenSSL
-ENV OPENSSL_LIB_DIR=/bin
+ENV OPENSSL_LIB_DIR=/usr/lib64
+ENV OPENSSL_INCLUDE_DIR=/usr/include
 
 WORKDIR /app
 
-RUN yum update -y
-RUN yum install -y wget curl git vim
-# Rust
-RUN yum install -y rust cargo lldb
+RUN dnf update -y
+
+# tools and lldb for Rust
+RUN dnf install -y wget git vim lldb
+# Install rustup + nightly
+RUN wget -qO- https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
+
 # Rust Reqwest OpenSSL
-RUN yum install -y openssl openssl-devel perl
+RUN dnf install -y openssl openssl-devel perl
+
+
 
 #Install GCP CLI for file transfers
 RUN wget \
@@ -27,7 +34,6 @@ RUN wget \
     && mkdir /root/google-cloud-sdk \
     && tar -xvf google-cloud-cli-linux-x86_64.tar.gz -C /root \
     && rm -f google-cloud-cli-linux-x86_64.tar.gz
-RUN export PATH="$PATH:/root/google-cloud-sdk/bin"
 ENV PATH="$PATH:/root/google-cloud-sdk/bin"
 
 # Anaconda (MiniConda) https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html
@@ -79,7 +85,7 @@ RUN conda run -n coreceptor pip3 install biopython==1.79
 # RUN conda create -n splicing python=3.10 rust=1.85.0
 RUN git clone https://github.com/ViralSeq/viRust-splicing /app/splicing
 
-# COPY storage-admin.json /app/storage-admin.json
+COPY storage-admin.json /app/storage-admin.json
 RUN gcloud auth activate-service-account --key-file /app/storage-admin.json
 
 ENTRYPOINT [ "sleep", "infinity" ]

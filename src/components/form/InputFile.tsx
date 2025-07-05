@@ -1,22 +1,32 @@
 import Button from "./Button";
 import { useDropzone } from "react-dropzone";
+import { useState } from "react";
 
 const InputFile = ({
   onChange = () => null,
   disabled = false,
   multiple = true,
+  allowReuse = true,
   ...inputProps
 }: {
   onChange: () => void;
   disabled?: boolean;
   multiple?: boolean;
+  allowReuse?: boolean;
 }) => {
+  const [inputKey, setInputKey] = useState(0);
+
   const { getRootProps, getInputProps, open } = useDropzone({
-    // Disable click and keydown behavior
     noClick: true,
     noKeyboard: true,
     multiple,
-    onDrop: onChange,
+    onDrop: (acceptedFiles, fileRejections, event) => {
+      onChange(acceptedFiles, fileRejections, event);
+      if (allowReuse) {
+        // Reset input so same file can be selected again
+        setInputKey((prev) => prev + 1);
+      }
+    },
     disabled,
   });
 
@@ -28,13 +38,17 @@ const InputFile = ({
       })}
       data-cy="dropzone"
     >
-      <input {...getInputProps()} {...inputProps} />
+      <input
+        key={allowReuse ? inputKey : undefined}
+        {...getInputProps()}
+        {...inputProps}
+      />
       <p>
         Drag and drop {multiple ? "files and directories" : "a file"} here or
         click the button below to use selector
       </p>
       <Button disabled={disabled} onClick={open}>
-        Choose Files
+        Choose File{multiple ? "s" : ""}
       </Button>
     </div>
   );

@@ -85,6 +85,7 @@ export default function UseJSON() {
       <InputFile
         label="Use a .json file"
         data-cy="use_json_input_file"
+        multiple={false}
         onChange={(files) => {
           const reader = new FileReader();
           reader.onload = (e) => handleChange(e.target.result);
