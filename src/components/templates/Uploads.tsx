@@ -66,14 +66,24 @@ export default function Uploads({
   error,
   fileErrors = [],
   uniqueID = "",
+  showSubject = false,
+  customAddFiles = undefined,
 }: {
   files: File[];
   setFiles: Dispatch<SetStateAction<File[]>>;
   error: string;
   fileErrors?: FileError[];
   uniqueID?: string;
+  showSubject?: boolean;
+  customAddFiles?: (files: File[]) => string | Promise<string>; // return error string if any
 }) {
-  const handleAddFiles = (files: File[]) => setFiles((f) => [...f, ...files]);
+  const handleAddFiles = (files: File[]) => {
+    if (customAddFiles) {
+      customAddFiles(files);
+    } else {
+      setFiles((f) => [...f, ...files]);
+    }
+  };
 
   const removeFile = (name: string) => {
     setFiles((files) => files.filter((f) => f.name !== name));
@@ -103,7 +113,7 @@ export default function Uploads({
             ))}
           </div>
         ) : (
-          files.map((file) => {
+          files.map((file, i) => {
             const fileError =
               fileErrors?.find((u) => u.name === file.name)?.error || "";
 
@@ -111,11 +121,14 @@ export default function Uploads({
               <div
                 className="flex flex-col gap-2 even:bg-slate-100"
                 key={`upload_${file.name}`}
+                data-cy={`uploadedFile_${i}`}
               >
                 <div className="flex items-center justify-center p-2 w-full even:bg-blue-50 hover:bg-blue-100">
                   <div className="flex-1 flex flex-col gap-2">
                     <div>{file.name}</div>
-                    {/* <div>Subject: {file.name.split("_")[0]}</div> */}
+                    {showSubject && (
+                      <div>Subject: {file.name.split("_")[0]}</div>
+                    )}
                   </div>
                   <div
                     className="cursor-pointer w-8 h-8 flex items-center justify-center hover:bg-grey rounded-full"

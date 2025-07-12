@@ -1,5 +1,18 @@
+import { useState } from "react";
 import Input from "../form/Input";
 import RadioGroup from "../form/RadioGroup";
+
+export type SharedSubmissionData = {
+  email: string;
+  jobID: string;
+  resultsFormat: "zip" | "tar";
+};
+
+export const INITIAL_SHARED_SUBMISSION_DATA: SharedSubmissionData = {
+  email: "",
+  jobID: "",
+  resultsFormat: "tar",
+};
 
 export default function SharedSubmissionDataForm({
   state,

@@ -30,6 +30,13 @@ async function createSignedUrls(
     new Date().getTime() + 24 * 60 * 60 * 1000,
   ).getTime();
 
+  if (NODE_ENV === "test") {
+    return files.map((file) => ({
+      signedURL: "http://test-url.com/test-bucket/1",
+      ...file,
+    }));
+  }
+
   try {
     for (const file of files) {
       const signedURL = await bucket

@@ -349,7 +349,11 @@ impl Pipeline<TcsAPI> {
     pub fn pool_name(&self) -> String {
         let is_dr = self.is_dr();
         let temp_pool_name = self.data.pool_name.clone().unwrap_or("".to_string());
-        let pool_name = if is_dr { "TCSDR".to_string() } else { temp_pool_name };
+        let pool_name = if is_dr || temp_pool_name.is_empty() {
+            "TCSDR".to_string()
+        } else {
+            temp_pool_name
+        };
         pool_name
     }
     pub fn job_id(&self) -> String {
@@ -363,7 +367,7 @@ impl Pipeline<TcsAPI> {
         let job_id = self.job_id();
         let subject = &format!("{} Submission #{}", if is_dr { "DR" } else { "TCS" }, &job_id);
         let msg: String = generate_tcs_receipt(&self.data);
-        let _ = send_email(&subject, &msg, &self.data.email, false).await.context(
+        let _ = send_email(&subject, &msg, &self.data.email, true).await.context(
             "Failed to send receipt email."
         )?;
         Ok(())

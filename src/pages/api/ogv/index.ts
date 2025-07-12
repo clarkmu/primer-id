@@ -7,44 +7,30 @@ import createSignedUrls from "@/utils/gcp/createSignedUrls";
 type Data = ogvs | { error: string };
 
 async function post(req, res) {
-  // save job to db then files to bucket
-  const body = JSON.parse(req.body);
+  try {
+    let data = JSON.parse(req.body);
 
-  // whitelist and make frontend names consistent with db names
-  const data = {
-    ...body,
-    uploads: body.uploads.map((u) => ({
-      fileName: u.name,
-      libName: u.libName,
-    })),
-  };
+    let newOGV = await prisma.ogvs.create({
+      data,
+    });
 
-  // remove frontend data
-  delete data.showConversion;
-  delete data.showSubmit;
-  delete data.showConfirm;
+    const { id } = newOGV;
 
-  let newOGV = await prisma.ogvs.create({
-    data,
-  });
+    let signedURLs = await createSignedUrls(
+      "ogv-dating",
+      data.uploads,
+      (upload) => `${id}/${upload.libName}/${upload.name}`,
+    );
 
-  body.id = newOGV.id;
+    if (!signedURLs.length) {
+      return res.status(400).json({ error: "Failed to create Signed URL's." });
+    }
 
-  const { uploads } = body;
-
-  let signedURLs = await createSignedUrls(
-    "ogv-dating",
-    uploads,
-    (upload) => `${newOGV.id}/${upload.libName}/${upload.name}`,
-  );
-
-  if (!signedURLs.length) {
-    return res.status(400).json({ error: "Failed to create Signed URL's." });
+    return res.status(200).json({ id, signedURLs });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Database error. Please try again." });
   }
-
-  body.uploads = body.uploads.filter((f) => !!f.fileName);
-
-  return res.status(200).json({ ...body, signedURLs });
 }
 
 export default async function handler(

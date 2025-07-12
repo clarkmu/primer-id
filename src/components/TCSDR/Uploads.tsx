@@ -99,8 +99,8 @@ const ListFiles = ({ errors }) => {
                   {!!hasError
                     ? `Errors: ${hasError.join(", ")}`
                     : file.poolName
-                    ? `Lib: ${file.poolName}`
-                    : ""}
+                      ? `Lib: ${file.poolName}`
+                      : ""}
                 </div>
               </div>
               <div
@@ -137,7 +137,7 @@ const Upload = () => {
       .filter(
         (f) =>
           f.name.indexOf(".fast") !== -1 &&
-          !state.files.find((fi) => fi.name === f.name)?.name
+          !state.files.find((fi) => fi.name === f.name)?.name,
       )
       .map((file) => ({
         file,
@@ -182,7 +182,7 @@ const Upload = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div data-cy="tcs_uploads" className="flex flex-col gap-4">
       <div className="flex justify-around w-full my-4">
         <InputFile onChange={addFiles} />
       </div>
@@ -258,6 +258,7 @@ export default function Uploads() {
               variant={uploadProcedure === p ? "primary" : "outlined"}
               onClick={() => setProcedure(p)}
               fullWidth
+              data-cy={`upload_procedure_${p}`}
             >
               {p}
             </Button>

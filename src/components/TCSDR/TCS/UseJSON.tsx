@@ -77,14 +77,13 @@ export default function UseJSON() {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div data-cy="use_json_input" className="flex flex-col gap-4">
       <div className="text-lg font-lg mx-auto my-8">
         If you are using the <code>`tcs`</code> CLI, you can also paste your
         output here.
       </div>
       <InputFile
         label="Use a .json file"
-        data-cy="use_json_input_file"
         multiple={false}
         onChange={(files) => {
           const reader = new FileReader();

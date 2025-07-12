@@ -1,76 +1,82 @@
-import { useOGVContext } from "@/contexts/OGVContext";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Button from "@/components/form/Button";
 import Modal from "@/components/form/Modal";
 import Alert from "../form/Alert";
 import { useRouter } from "next/router";
+import { Conversion } from "./OGVPage";
+import usePost from "@/hooks/queries/usePost";
+import useUploadSignedURLs from "@/hooks/useUploadSignedURLs";
 
-export default function ConfirmModal() {
-  const {
-    state: { showConfirm, email, uploads, conversion },
-    setState,
-    filesByLib,
-    submitOGV,
-  } = useOGVContext();
+export default function ConfirmModal({
+  show,
+  body,
+  stepBack,
+}: {
+  show: boolean;
+  body: object & {
+    email: string;
+    files: File[];
+    conversion: Conversion;
+  };
+  stepBack: () => void;
+}) {
+  const { email, files, conversion } = body;
 
   const router = useRouter();
-
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const listedFiles = useMemo(filesByLib, [showConfirm, filesByLib]);
+  const { uploadError, UploadProgress, uploadFilesToSignedURL } =
+    useUploadSignedURLs(files);
+
+  const { mutate, isLoading, isError } = usePost("/api/ogv");
 
   const onClose = () => {
     if (submitted) {
       router.reload();
-    }
-
-    if (!submitting) {
-      setState((s) => ({ ...s, showConfirm: false }));
+    } else {
+      stepBack();
     }
   };
 
   const onSubmit = async () => {
-    setSubmitError("");
-    setSubmitting(true);
-    const error = await submitOGV();
-    setSubmitting(false);
-    if (error) {
-      setSubmitError(error);
-    } else {
-      setSubmitted(true);
-    }
+    const data = { ...body };
+
+    data.uploads = files.map((f) => ({
+      fileName: f.name,
+      libName: f.name.split("_")[0],
+    }));
+
+    delete data.files;
+
+    mutate({
+      body: data,
+      callback: async (data) => {
+        if (!data) {
+          setError("An error has occurred. Please try again.");
+        } else if (data?.error) {
+          setError(data?.error || "An error has occurred. Please try again.");
+        } else {
+          if (data.signedURLs.length) {
+            const isSuccess = await uploadFilesToSignedURL(data.signedURLs);
+            if (isSuccess) {
+              await fetch(`/api/ogv/submit/${data.id}`, {
+                method: "DELETE",
+              });
+              setSubmitted(true);
+            } else {
+              setError("Failed to upload files. Please refresh and try again.");
+            }
+          } else {
+            setSubmitted(true);
+          }
+        }
+      },
+    });
   };
 
-  const DisplaySubject = ({ subject, lib }) => (
-    <div className="flex flex-col gap-1">
-      <div className="font-bold flex gap-1">
-        <span>{lib}</span>
-        <span>-</span>
-        <span>{`${subject.length} sample${
-          subject.length > 1 ? "s" : ""
-        }`}</span>
-        <span>-</span>
-        <span> {`Start ART: ${conversion[lib]} weeks`}</span>
-      </div>
-      <div className="ml-4 flex flex-col gap-1">
-        {subject.map((sample) => (
-          <div className="flex gap-2 justify-between" key={`confirm_${sample}`}>
-            <div>{sample}</div>
-            <div>
-              {submitting
-                ? `${uploads.find((u) => u.name === sample)?.progress}%`
-                : "..."}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
-    <Modal open={showConfirm} onClose={onClose}>
+    <Modal open={show} onClose={onClose}>
       <div className="flex flex-col gap-8 m-8">
         <div className="text-center w-full text-xl font-bold">
           Please review your submission data.
@@ -79,20 +85,29 @@ export default function ConfirmModal() {
           <b>Email:</b>
           <div>{email}</div>
         </div>
-        <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto">
-          {/* <b>Submitted files by sample:</b> */}
-          {Object.keys(listedFiles).map((lib) => (
-            <DisplaySubject
-              subject={listedFiles[lib]}
-              lib={lib}
-              key={`display_${lib}`}
-            />
+        <div className="flex gap-4">
+          {Object.keys(conversion).map((subject) => (
+            <div key={`display_${subject}`} className="">
+              {subject} -{" "}
+              {files.filter((f) => f.name.startsWith(subject)).length} samples -
+              Start ART: {conversion[subject]} weeks.
+            </div>
           ))}
         </div>
-        <Alert msg={submitError} />
+        <UploadProgress />
+        {!!error && <Alert severity="error" msg={error} />}
+        {isError && (
+          <Alert severity="error" msg="Network Error: Failed to submit." />
+        )}
+        {uploadError && (
+          <Alert
+            severity="error"
+            msg="An error occurred while uploading.  Please resubmit."
+          />
+        )}
         <div className="flex justify-end items-end gap-4">
           {submitted ? (
-            <Button onClick={() => router.reload()}>
+            <Button onClick={() => router.reload()} data-cy="uploadedButton">
               Submitted! Click to reload page.
             </Button>
           ) : (
@@ -100,7 +115,11 @@ export default function ConfirmModal() {
               <Button variant="outlined" onClick={onClose}>
                 Back
               </Button>
-              <Button onClick={onSubmit} isLoading={submitting}>
+              <Button
+                onClick={onSubmit}
+                isLoading={isLoading}
+                data-cy="submitButton"
+              >
                 Submit
               </Button>
             </>
