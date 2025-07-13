@@ -1,23 +1,25 @@
 import Alert from "@/components/form/Alert";
-import Button from "@/components/form/Button";
-import Input from "@/components/form/Input";
 import { useState } from "react";
 import Confirmation from "./Confirmation";
-import RadioGroup from "@/components/form/RadioGroup";
 import Paper from "@/components/form/Paper";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
 import useSequenceFile from "@/hooks/useSequenceFile";
 import PageDescription from "../templates/PageDescription";
+import useStepForm from "@/hooks/useStepForm";
+import MyCollapse from "../form/MyCollapse";
+import SharedSubmissionDataForm, {
+  INITIAL_SHARED_SUBMISSION_DATA,
+  SharedSubmissionData,
+} from "../templates/SharedSubmissionData";
 
 const approvedFileTypes = ["fa", "fasta", "txt"];
 
 export default function IntactnessPage() {
-  const [email, setEmail] = useState("");
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [jobID, setJobID] = useState("");
-  const [resultsFormat, setResultsFormat] = useState<"tar" | "zip">("tar");
-  const [continued, setContinued] = useState(false);
+  const [state, setState] = useState<SharedSubmissionData>(
+    INITIAL_SHARED_SUBMISSION_DATA,
+  );
+
+  const { step, stepBack, ContinueButton } = useStepForm();
 
   const {
     SequenceFileInput,
@@ -27,24 +29,7 @@ export default function IntactnessPage() {
     approvedFileTypesDisplay,
   } = useSequenceFile(approvedFileTypes);
 
-  const [scrollToRef] = useScrollToDivOnVisibilityToggle(continued);
-
-  const onSubmit = () => {
-    // check email seqs
-    if (!email) {
-      setError("Email is required.");
-      return;
-    }
-
-    if (!sequences) {
-      setError("Sequences are required.");
-      return;
-    }
-
-    setError("");
-
-    setOpen(true);
-  };
+  const [scrollToRef] = useScrollToDivOnVisibilityToggle(step > 0, "start");
 
   return (
     <div className="flex flex-col gap-4 m-4">
@@ -77,65 +62,33 @@ export default function IntactnessPage() {
         </div>
         <SequenceFileInput />
         {!!parseError ? (
-          <Alert severity="info" msg={parseError} />
+          <Alert severity="info" msg={parseError} data-cy="fileErrorAlert" />
         ) : !!sequences?.result?.length && filename.length ? (
           <div className="flex flex-col gap-2 font-bold my-2">
             <div className="">Files: {filename}</div>
-            <div className="">
+            <div className="" data-cy="num_sequences_parsed">
               {sequences?.result?.length || ""} sequences found.
             </div>
           </div>
         ) : null}
-        <Button disabled={!sequences?.ok} onClick={() => setContinued(true)}>
-          Continue
-        </Button>
+        <ContinueButton level={1} disabled={!sequences?.ok} />
       </Paper>
-      {continued && (
-        <div className="" ref={scrollToRef}>
-          <Paper className="flex flex-col gap-4">
-            <Input
-              label="Email"
-              placeholder="example@uni.edu"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <Input
-              name="jobID"
-              label="Name Output (optional* whitespace is replaced by _)"
-              placeholder=""
-              value={jobID}
-              onChange={(e) => setJobID(e.target.value.replace(/\s/g, "_"))}
-            />
-            <RadioGroup
-              label={`Results Format: Geno2Pheno_${jobID || "{id}"}${
-                resultsFormat === "tar" ? ".tar.gz" : ".zip"
-              }`}
-              value={resultsFormat}
-              radios={[
-                { label: ".tar.gz", value: "tar" },
-                { label: ".zip", value: "zip" },
-              ]}
-              onChange={(e) => setResultsFormat(e.target.value)}
-            />
-            {!!error && <Alert severity="error" msg={error} />}
-            <Button
-              onClick={onSubmit}
-              disabled={!sequences || !email || !sequences?.ok}
-              fullWidth
-            >
-              Submit
-            </Button>
-          </Paper>
-        </div>
-      )}
+      <div ref={scrollToRef} className="w-full">
+        <MyCollapse show={step > 0}>
+          <SharedSubmissionDataForm
+            state={state}
+            setState={setState}
+            defaultJobID="Geno2Pheno"
+          />
+          <ContinueButton level={2} disabled={!state.email || !sequences?.ok} />
+        </MyCollapse>
+      </div>
       <Confirmation
-        open={open}
-        onClose={() => setOpen(false)}
-        email={email}
+        open={step > 1}
+        onClose={stepBack}
+        state={state}
         sequences={sequences}
         filename={filename}
-        resultsFormat={resultsFormat}
-        jobID={jobID}
       />
     </div>
   );

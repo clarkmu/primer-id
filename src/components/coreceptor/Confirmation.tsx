@@ -1,4 +1,3 @@
-import useCoreceptor from "@/hooks/queries/useCoreceptor";
 import Modal from "../form/Modal";
 import Alert from "../form/Alert";
 import Button from "../form/Button";
@@ -7,28 +6,28 @@ import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { fasta } from "bioinformatics-parser";
 import { BioinformaticsParserType } from "@/hooks/useSequenceFile";
+import { SharedSubmissionData } from "../templates/SharedSubmissionData";
+import usePost from "@/hooks/queries/usePost";
 
 export default function Confirmation({
   onClose,
   open,
-  email,
   sequences,
   filename,
-  jobID,
-  resultsFormat,
+  state,
 }: {
   sequences: BioinformaticsParserType;
-  email: string;
-  jobID: string;
-  resultsFormat: string;
   onClose: () => void;
   open: boolean;
   filename: string;
+  state: SharedSubmissionData;
 }) {
+  const { email, jobID, resultsFormat } = state;
+
   const { reload } = useRouter();
   const [error, setError] = useState("");
 
-  const { mutate, isLoading } = useCoreceptor();
+  const { mutate, isLoading } = usePost("/api/coreceptor");
   const [submitted, setSubmitted] = useState(false);
 
   const onSubmit = async () => {
@@ -65,6 +64,7 @@ export default function Confirmation({
           <Alert
             severity="success"
             msg="Submitted. Please check your email for confirmation then results."
+            data-cy="submissionSuccessAlert"
           />
         )}
         <h1 className="text-xl font-bold">Review Submission</h1>
@@ -93,7 +93,12 @@ export default function Confirmation({
         </ol>
         {!!error && <Alert severity="error" msg={error} />}
         <div className="self-end place-self-end justify-self-end flex justify-end items-end gap-4">
-          <Button onClick={onCloseConfirmation} variant="none" color="error">
+          <Button
+            onClick={onCloseConfirmation}
+            variant="none"
+            color="error"
+            data-cy="uploadedButton"
+          >
             {submitted ? "Finish" : "Back"}
           </Button>
           <Button
@@ -101,6 +106,7 @@ export default function Confirmation({
             iconButton={submitted}
             isLoading={isLoading}
             disabled={isLoading || submitted}
+            data-cy="submitButton"
           >
             {submitted ? (
               <CheckCircleIcon className="w-5 h-5 text-green" />
