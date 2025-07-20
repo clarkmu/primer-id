@@ -1,18 +1,15 @@
 import React from "react";
-import { useTCSDRContext } from "@/contexts/TCSDRContext";
 import PLATFORM_FORMATS from "@/utils/constants/PLATFORM_FORMATS";
 import RadioGroup from "@/components/form/RadioGroup";
 import Paper from "@/components/form/Paper";
 import Input from "@/components/form/Input";
-import SavedPrimers from "./SavedPrimers";
+import { useTCS } from "@/contexts/TCSContext";
 
 export default function GlobalSettings() {
   const {
-    state: {
-      pipeline: { errorRate, platformFormat },
-    },
-    editPipeline,
-  } = useTCSDRContext();
+    state: { errorRate, platformFormat },
+    setState,
+  } = useTCS();
 
   return (
     <Paper>
@@ -22,22 +19,26 @@ export default function GlobalSettings() {
           label="MiSeq Format"
           value={platformFormat}
           onChange={(e) =>
-            editPipeline({ platformFormat: parseInt(e.target.value) })
+            setState((s) => ({
+              ...s,
+              platformFormat: parseInt(e.target.value),
+            }))
           }
           radios={PLATFORM_FORMATS}
-          error={false}
           data-cy="miseq-radio-input"
+          uniqueKey="platformFormat"
         />
         <Input
           label="Platform Error Rate"
           tooltip="Estimated raw sequence error rate"
-          name="errorRate"
+          data-cy="errorRate"
           value={errorRate}
-          onChange={(v) => editPipeline({ errorRate: v.target.value })}
+          onChange={(v) =>
+            setState((s) => ({ ...s, errorRate: parseFloat(v.target.value) }))
+          }
           type="number"
           step={0.01}
         />
-        <SavedPrimers />
       </div>
     </Paper>
   );

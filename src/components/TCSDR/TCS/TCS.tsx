@@ -1,27 +1,19 @@
-import React, { useState } from "react";
 import PrimersContainer from "./PrimersContainer";
 import UseJSON from "./UseJSON";
 import MyCollapse from "@/components/form/MyCollapse";
 import Button from "@/components/form/Button";
 import Paper from "@/components/form/Paper";
-import Collapse from "@/components/form/Collapse";
-import { useTCSDRContext } from "@/contexts/TCSDRContext";
-import { ParamTypes } from "@/utils/constants/INITIAL_TCSDR";
+import GlobalSettings from "./GlobalSettings";
+import SavedPrimers from "./SavedPrimers";
+import { ParamTypes, useTCS } from "@/contexts/TCSContext";
 
 export default function TCSContainer() {
-  const {
-    editState,
-    state: { procedure },
-  } = useTCSDRContext();
-
-  const setProcedure = (procedure: ParamTypes) => editState({ procedure });
+  const { procedure, setProcedure } = useTCS();
 
   return (
     <Paper>
       <div className="flex flex-col gap-6">
-        <div className="text-center">
-          <div className="font-xl text-xl">Parameters</div>
-        </div>
+        <div className="font-xl text-xl w-full text-center">Parameters</div>
         <div className="flex justify-around gap-8 mx-8">
           {[ParamTypes.NEW, ParamTypes.JSON].map((p, i) => (
             <Button
@@ -38,18 +30,16 @@ export default function TCSContainer() {
             </Button>
           ))}
         </div>
-        <Collapse open={!!procedure}>
-          <div>
-            <MyCollapse show={procedure === ParamTypes.JSON}>
-              <UseJSON />
-            </MyCollapse>
+        <MyCollapse show={procedure === ParamTypes.JSON}>
+          <UseJSON />
+        </MyCollapse>
+        <MyCollapse show={procedure === ParamTypes.NEW}>
+          <div className="flex flex-col gap-4">
+            <GlobalSettings />
+            <SavedPrimers />
+            <PrimersContainer />
           </div>
-          <MyCollapse show={procedure === ParamTypes.NEW}>
-            <div>
-              <PrimersContainer />
-            </div>
-          </MyCollapse>
-        </Collapse>
+        </MyCollapse>
       </div>
     </Paper>
   );

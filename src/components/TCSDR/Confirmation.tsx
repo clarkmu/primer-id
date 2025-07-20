@@ -1,205 +1,163 @@
 import { useState } from "react";
 import Collapse from "@/components/form/Collapse";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/20/solid";
-import { useTCSDRContext } from "@/contexts/TCSDRContext";
 import Button from "../form/Button";
 import Alert from "../form/Alert";
 import Modal from "../form/Modal";
 import { useRouter } from "next/router";
+import usePost from "@/hooks/queries/usePost";
+import useUploadSignedURLs from "@/hooks/useUploadSignedURLs";
+import { tcsdrs } from "@prisma/client";
+import ConfirmationDisplay from "../form/ConfirmationDisplay";
+import { TCSDRState } from "./Form";
 
-const UploadProgress = () => {
-  const {
-    state: { uploadedFiles },
-  } = useTCSDRContext();
+const Confirmation = ({
+  open,
+  state,
+  files,
+  onClose,
+  isDR,
+  useUploads,
+  DownloadJSONButton,
+}: {
+  open: boolean;
+  state: TCSDRState;
+  files: File[];
+  onClose: () => void;
+  isDR: boolean;
+  useUploads: boolean;
+  DownloadJSONButton: () => JSX.Element;
+}) => {
+  const { primers } = state;
+  const [submitted, setSubmitted] = useState(false);
+  const { mutate, isLoading, isError } = usePost("/api/tcsdr");
 
-  return (
-    <div className="flex flex-col gap-4">
-      <Alert
-        severity="info"
-        msg="FILES ARE UPLOADING. PLEASE DO NOT CLOSE THIS WINDOW YET."
-      />
-      <div className="text-lg">Uploading Files:</div>
-      <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto">
-        {Object.keys(uploadedFiles).map((key, i) => (
-          <div
-            className="flex gap-4 justify-between items-center"
-            key={`upload_progress_${i}`}
-          >
-            <div>{key}</div>
-            <div>
-              {uploadedFiles[key] === false ? (
-                <XCircleIcon />
-              ) : uploadedFiles[key] === true ? (
-                <CheckCircleIcon />
-              ) : (
-                `${uploadedFiles[key]}%`
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+  const [error, setError] = useState("");
 
-const Summary = () => {
-  const {
-    state: {
-      pipeline: { primers, email, dropbox, htsf, drVersion },
-      isDR,
-      files,
-      submitting,
-    },
-  } = useTCSDRContext();
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div>
-        You are using the {isDR ? "DR" : "TCS"} pipeline
-        {isDR ? (
-          <span className="underline ml-1">{`version ${drVersion}`}</span>
-        ) : (
-          ""
-        )}
-        .
-      </div>
-      {!isDR && primers?.length > 0 && (
-        <>
-          <div className="text-lg">Your selected primers:</div>
-          <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto">
-            {primers?.map((primer, i) => (
-              <div
-                className="flex gap-2 justify-start items-center"
-                key={`primer_${i}`}
-              >
-                <div className="flex flex-col gap-1">
-                  <div> {`Region: ${primer.region}`}</div>
-                  <div className="text-sm">{`cDNA: ${primer.cdna}`}</div>
-                  <div className="text-sm">{`Forward: ${primer.forward}`}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-      <div>
-        Email to receive results: <u>{email}</u>
-      </div>
-      {!!dropbox ? (
-        <div>Using DropBox URL: {dropbox}</div>
-      ) : !!htsf ? (
-        <div>Using HTSF location: {htsf}</div>
-      ) : files?.length > 0 && !submitting ? (
-        <div className="flex flex-col gap-4">
-          <div className="text-lg">Files to upload:</div>
-          <div className="flex flex-col gap-2 max-h-[33vh] overfloy-y-auto">
-            {files.map((file, i) => (
-              <div
-                className="flex gap-4 justify-start items-center"
-                key={`file_${i}`}
-              >
-                <div className="flex flex-col gap-1">
-                  <div>{file.file.name}</div>
-                  <div className="text-sm">{`Lib: ${file.poolName}`}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        ""
-      )}
-    </div>
-  );
-};
-
-const Submitted = ({ show }) => {
-  const { downloadJSON } = useTCSDRContext();
-  return (
-    <Collapse open={show}>
-      <div className="flex flex-col gap-8">
-        <Alert
-          severity="success"
-          msg="Submitted. You will receive a confirmation email within 5 minutes."
-        />
-
-        <Button fullWidth href={downloadJSON()} download="params.json">
-          Download params.json
-        </Button>
-      </div>
-    </Collapse>
-  );
-};
-
-const Confirmation = () => {
-  const {
-    state: {
-      submitting,
-      submitted,
-      submitError,
-      submittingError,
-      pipeline: { email },
-    },
-    submitTCSDR,
-  } = useTCSDRContext();
+  const { uploadError, UploadProgress, uploadFilesToSignedURL } =
+    useUploadSignedURLs(files);
 
   const router = useRouter();
 
-  const [open, setOpen] = useState(false);
   const handleClose = () => {
     if (submitted) {
       router.reload();
-    } else if (!submitting) {
-      setOpen(false);
+    } else {
+      onClose();
     }
   };
 
-  const showSubmitted = submitted && !submitError;
+  const onSubmit = async () => {
+    setError("");
+
+    mutate({
+      body: state,
+      callback: async (data: tcsdrs & { error?: string }) => {
+        if (!data) {
+          setError("An error has occurred. Please try again.");
+        } else if (data?.error) {
+          setError(data?.error || "An error has occurred. Please try again.");
+        } else {
+          if (data.signedURLs.length) {
+            const isSuccess = await uploadFilesToSignedURL(data.signedURLs);
+            if (isSuccess) {
+              await fetch(`/api/tcsdr/submit/${data.id}`, {
+                method: "DELETE",
+              });
+              setSubmitted(true);
+            } else {
+              setError("Failed to upload files. Please refresh and try again.");
+            }
+          } else {
+            setSubmitted(true);
+          }
+        }
+      },
+    });
+  };
+
+  const showSubmitted = submitted && !isError;
 
   return (
-    <>
-      <Button fullWidth onClick={() => setOpen(true)} disabled={!email}>
-        Submit
-      </Button>
-      <Modal open={open} onClose={handleClose}>
-        <div className="flex flex-col gap-4 p-4 m-4">
-          <div className="font-lg text-lg">Confirm Submission</div>
-          <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
-            <Submitted show={showSubmitted} />
-            {!showSubmitted && (
-              <>
-                {submittingError !== false && (
-                  <Alert severity="error" msg={submittingError} />
-                )}
-                {submitting ? <UploadProgress /> : <Summary />}
-              </>
-            )}
-          </div>
-          <div className="flex justify-end items-end gap-4">
-            <Button
-              onClick={handleClose}
-              variant="outlined"
-              color="error"
-              disabled={submitting}
-            >
-              {submitted ? "Finish" : "Back"}
-            </Button>
-            <Button
-              onClick={submitTCSDR}
-              iconButton={submitted}
-              isLoading={submitting}
-              disabled={submitting || submitted}
-            >
-              {submitted ? (
-                <CheckCircleIcon className="w-5 h-5 text-green" />
-              ) : (
-                "Submit"
-              )}
-            </Button>
-          </div>
+    <Modal open={open} onClose={handleClose}>
+      <div className="flex flex-col gap-4 p-4 m-4">
+        <div className="font-lg text-lg">Confirm Submission</div>
+        <Alert
+          msg={isError ? "An error has occurred with your submission." : ""}
+        />
+        <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
+          <Collapse open={showSubmitted}>
+            <div className="flex flex-col gap-8">
+              <Alert
+                severity="success"
+                msg="Submitted. You will receive a confirmation email within 5 minutes."
+              />
+              <DownloadJSONButton />
+            </div>
+          </Collapse>
+          <ConfirmationDisplay label="Pipeline" value={isDR ? "DR" : "TCS"} />
+          {isDR && (
+            <ConfirmationDisplay label="DR Version" value={state.drVersion} />
+          )}
+          <ConfirmationDisplay
+            label="Email to receive results"
+            value={state.email}
+          />
+          {!useUploads && (
+            <>
+              <ConfirmationDisplay label="HTSF Location" value={state.htsf} />
+              <ConfirmationDisplay label="Pool Name" value={state.poolName} />
+            </>
+          )}
+          {!isDR && primers?.length > 0 && (
+            <>
+              <div className="text-lg font-semibold mb-2">Primers:</div>
+              <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto ml-6">
+                {primers?.map((primer, i) => (
+                  <div
+                    className="flex gap-2 justify-start items-center"
+                    key={`primer_${i}`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div> {`Region: ${primer.region}`}</div>
+                      <div className="text-sm">{`cDNA: ${primer.cdna}`}</div>
+                      <div className="text-sm">{`Forward: ${primer.forward}`}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          {useUploads && <UploadProgress />}
+          <Alert severity="error" msg={error} />
+          <Alert severity="error" msg={uploadError} />
         </div>
-      </Modal>
-    </>
+        <div className="flex justify-end items-end gap-4">
+          <Button
+            onClick={handleClose}
+            variant="outlined"
+            color="error"
+            disabled={isLoading}
+            data-cy={submitted ? "finishButton" : "backButton"}
+          >
+            {submitted ? "Finish" : "Back"}
+          </Button>
+          <Button
+            onClick={onSubmit}
+            iconButton={submitted}
+            isLoading={isLoading}
+            disabled={isLoading || submitted}
+            data-cy="submitButton"
+          >
+            {submitted ? (
+              <CheckCircleIcon className="w-5 h-5 text-green" />
+            ) : (
+              "Submit"
+            )}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 };
 

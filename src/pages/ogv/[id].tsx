@@ -1,7 +1,6 @@
 import Alert from "@/components/form/Alert";
 import OGVPage from "@/components/OGV/OGVPage";
 import { SEOOGV } from "@/components/SEO";
-import OGVContextProvider from "@/contexts/OGVContext";
 import prisma from "@/utils/prisma";
 import { useRouter } from "next/router";
 
@@ -40,10 +39,8 @@ export default function OGVByID({ error, pipeline }) {
   }
 
   return (
-    <OGVContextProvider pipeline={pipeline}>
-      <SEOOGV>
-        <OGVPage />
-      </SEOOGV>
-    </OGVContextProvider>
+    <SEOOGV>
+      <OGVPage />
+    </SEOOGV>
   );
 }

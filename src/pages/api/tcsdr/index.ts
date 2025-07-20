@@ -2,11 +2,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getPublic } from "@/utils/api";
 import prisma from "@/utils/prisma";
-import createSignedUrls from "@/utils/gcp/createSignedUrls";
+import createSignedUrls, {
+  InputFileWithSignedUrl,
+} from "@/utils/gcp/createSignedUrls";
 import { toPrismaFloat, toPrismaInt } from "@/utils/prismaUtils";
+import { TCSDRState } from "@/components/TCSDR/Form";
 
-async function post(req, res) {
-  const { body } = req;
+async function post(req: NextApiRequest, res: NextApiResponse) {
+  let body: TCSDRState = JSON.parse(req.body);
 
   const data = {
     ...body,
@@ -21,6 +24,8 @@ async function post(req, res) {
       trimStart: toPrismaInt(p.trimStart),
       trimEnd: toPrismaInt(p.trimEnd),
     })),
+    errorRate: toPrismaFloat(body.errorRate),
+    platformFormat: toPrismaInt(body.platformFormat),
     // if there are uploads, don't submit yet
     submit: !body.uploads?.length,
     //whitelist
@@ -30,25 +35,27 @@ async function post(req, res) {
     })),
   };
 
+  const { uploads } = data;
+
   let newPipeline = await prisma.tcsdrs.create({ data });
 
   body.id = newPipeline.id;
 
-  if (body.uploads?.length) {
-    let signedUrls = await createSignedUrls(
+  let signedURLs: InputFileWithSignedUrl[] = [];
+
+  if (uploads?.length) {
+    signedURLs = await createSignedUrls(
       "tcs-dr",
-      body.uploads,
+      uploads,
       (upload) => `${newPipeline.id}/${upload.poolName}/${upload.fileName}`,
     );
 
-    if (!signedUrls.length) {
+    if (!signedURLs.length) {
       return res.status(400).json({ error: "Failed to create Signed URL's." });
     }
-
-    body.uploads = signedUrls;
   }
 
-  return res.status(200).json(body);
+  return res.status(200).json({ ...body, signedURLs });
 }
 
 export default async function handler(

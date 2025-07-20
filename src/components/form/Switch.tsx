@@ -6,6 +6,7 @@ export default function Switch({
   onChange,
   disabled = false,
   tooltip,
+  ...props
 }: {
   title: string;
   checked: boolean;
@@ -19,6 +20,7 @@ export default function Switch({
         "flex items-center cursor-pointer justify-between w-full" +
         (disabled ? " cursor-not-allowed" : "")
       }
+      {...props}
     >
       <div className="font-medium flex gap-2">
         {title}

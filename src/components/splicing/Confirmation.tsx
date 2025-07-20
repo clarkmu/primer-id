@@ -8,14 +8,9 @@ import Button from "../form/Button";
 import useUploadSignedURLs from "@/hooks/useUploadSignedURLs";
 import { splice } from "@prisma/client";
 import spliceConfigValues from "./spliceConfigValues.json";
+import ConfirmationDisplay from "../form/ConfirmationDisplay";
 
 const { assays, strains } = spliceConfigValues;
-
-const ConfirmationDisplay = ({ label, value }) => (
-  <span>
-    {label}: <span className="underline">{value}</span>
-  </span>
-);
 
 export default function Confirmation({ submission, open, onClose }) {
   const { reload } = useRouter();

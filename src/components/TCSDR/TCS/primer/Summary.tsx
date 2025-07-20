@@ -6,7 +6,7 @@ export default function Summary() {
 
   return (
     <PrimerContainerChild>
-      <pre>{JSON.stringify(primer, null, 2)}</pre>
+      <pre data-cy="primerSummary">{JSON.stringify(primer, null, 2)}</pre>
     </PrimerContainerChild>
   );
 }

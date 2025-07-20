@@ -3,7 +3,7 @@
  */
 
 export const variablesToViralSeqCLI = (data) => ({
-  primer_pairs: data.pipeline?.primers?.map((p) => ({
+  primer_pairs: data.primers?.map((p) => ({
     region: p.region,
     forward: p.forward,
     cdna: p.cdna,
@@ -21,9 +21,9 @@ export const variablesToViralSeqCLI = (data) => ({
     trim_ref_start: p.trimStart,
     trim_ref_end: p.trimEnd,
   })),
-  platform_error_rate: data.pipeline.errorRate,
-  platform_format: data.pipeline.platformFormat,
-  email: data.pipeline.email,
+  platform_error_rate: data.errorRate,
+  platform_format: data.platformFormat,
+  email: data.email,
 });
 
 export const variablesFromViralSeqCLI = (data) => ({

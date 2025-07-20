@@ -8,13 +8,14 @@ const Accordion = ({
   expanded,
   onChange,
   children,
+  ...props
 }: {
   title: string;
   expanded: boolean;
   onChange: (b: boolean) => void;
   children: ReactNode;
 }) => (
-  <Paper>
+  <Paper {...props}>
     <div
       className="px-4 flex justify-start items-center gap-4 cursor-pointer border-b border-b-grey"
       onClick={(e) => onChange(!expanded)}

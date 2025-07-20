@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "concurrently \"node ./cypress/support/start-server.js\" \"wait-on http://localhost:3000 && npx cypress open\"",
+    "runtest": "concurrently \"node ./cypress/support/start-server.js\" \"wait-on http://localhost:3000 && npx cypress run\"",
     "deploy": "rm -rf .next && yarn build && gcloud app deploy --no-cache --project phylodynamics-213415",
     "deploy-staging": "rm -rf .next && yarn build && gcloud app deploy --version=test --no-promote --no-cache --project phylodynamics-213415",
     "prismastudio:dev": "dotenv -e .env.development.local -- npx prisma studio"

@@ -24,39 +24,45 @@ export default function useUploadSignedURLs(files: File[]) {
 
   async function uploadFilesToSignedURL(
     signedURLs: { fileName: string; signedURL: string }[],
+    batchSize = 4,
   ): Promise<boolean> {
     try {
-      for (const signedURL of signedURLs) {
-        const file = files.find((f) => f.name === signedURL.fileName);
+      for (let i = 0; i < signedURLs.length; i += batchSize) {
+        const batch = signedURLs.slice(i, i + batchSize);
 
-        if (!file) {
-          setUploadError(`File not found: ${signedURL.fileName}`);
-          return false;
-        }
+        await Promise.all(
+          batch.map(async (signedURL) => {
+            const file = files.find((f) => f.name === signedURL.fileName);
 
-        const config = {
-          onUploadProgress: (p) => {
-            const progress = parseInt((p.loaded / p.total) * 100);
-            setUploads((uploads) =>
-              uploads.map((u) =>
-                u.name === signedURL.fileName ? { ...u, progress } : u,
-              ),
-            );
-          },
-          headers: {
-            "Content-Type": file?.type || "",
-            // "x-goog-resumable": "start",
-          },
-        };
+            if (!file) {
+              throw new Error(`File not found: ${signedURL.fileName}`);
+            }
 
-        await axios.put(signedURL.signedURL, file, config);
+            const config = {
+              onUploadProgress: (p: ProgressEvent) => {
+                const progress = Math.round((p.loaded / p.total) * 100);
+                setUploads((uploads) =>
+                  uploads.map((u) =>
+                    u.name === signedURL.fileName ? { ...u, progress } : u,
+                  ),
+                );
+              },
+              headers: {
+                "Content-Type": file.type || "",
+              },
+            };
+
+            await axios.put(signedURL.signedURL, file, config);
+          }),
+        );
       }
+
+      setIsUploadComplete(true);
+      return true;
     } catch (e) {
       setUploadError(`File upload error: ${e}`);
       return false;
     }
-
-    return true;
   }
 
   const UploadProgress = () => (

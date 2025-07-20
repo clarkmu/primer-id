@@ -14,10 +14,12 @@ export default function EndJoin() {
         onChange={(e) => updatePrimer("endJoin", !!e)}
         tooltip="End-join for TCS."
         title="End-join?"
+        data-cy="endJoin"
       />
       <Collapse open={primer.endJoin}>
         <RadioGroup
           label="End Join"
+          uniqueKey="endJoinOption"
           showLabel={false}
           value={primer.endJoinOption}
           error={errors.endJoinOption}
@@ -44,6 +46,7 @@ export default function EndJoin() {
             updatePrimer("endJoinOverlap", e.target.value.trim())
           }
           error={errors.endJoinOverlap}
+          data-cy="endJoinOverlap"
         />
       </Collapse>
     </div>

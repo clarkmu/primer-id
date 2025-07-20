@@ -13,6 +13,7 @@ export default function Region() {
           value={primer.region}
           onChange={(e) => updatePrimer("region", e.target.value.trim())}
           error={errors.region}
+          data-cy="region"
         />
         <Input
           label="Supermajority Cut Off"
@@ -30,6 +31,7 @@ export default function Region() {
           value={primer.supermajority}
           onChange={(e) => updatePrimer("supermajority", e.target.value.trim())}
           error={errors.supermajority}
+          data-cy="supermajority"
         />
       </div>
       <Input
@@ -41,6 +43,7 @@ export default function Region() {
           updatePrimer("forward", e.target.value.trim().toUpperCase())
         }
         error={errors.forward}
+        data-cy="forward"
       />
       <Input
         textArea={true}
@@ -51,6 +54,7 @@ export default function Region() {
           updatePrimer("cdna", e.target.value.trim().toUpperCase())
         }
         error={errors.cdna}
+        data-cy="cdna"
       />
     </div>
   );

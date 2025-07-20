@@ -10,12 +10,13 @@ export default function QC() {
   const { primer, updatePrimer, errors } = usePrimerContext();
 
   return (
-    <div className="flex flex-col gap-2 p-4">
+    <div className="flex flex-col gap-2 p-4" data-cy="qcContainer">
       <Switch
         checked={primer.qc}
         onChange={(e) => updatePrimer("qc", !!e)}
         tooltip="Use reference coordinates for QC."
         title="Need QC for TCS?(support for HIV-1 and SIV)?"
+        data-cy="qc"
       />
       <Collapse open={primer.qc}>
         <div className="flex flex-col gap-2">
@@ -25,18 +26,21 @@ export default function QC() {
             error={errors.refGenome}
             onChange={(e) => updatePrimer("refGenome", e.target.value)}
             radios={GENOMES}
+            uniqueKey="qc_refGenome"
           />
           <Input
             label="reference 5'end ref position or positon range, 0 if no need to match this end"
             value={primer.refStart}
             onChange={(e) => updatePrimer("refStart", e.target.value.trim())}
             error={errors.refStart}
+            data-cy="refStart"
           />
           <Input
             label="reference 3'end ref position or positon range, 0 if no need to match this end"
             value={primer.refEnd}
             onChange={(e) => updatePrimer("refEnd", e.target.value.trim())}
             error={errors.refEnd}
+            data-cy="refEnd"
           />
           <Checkbox
             id={`primer_${primer.region}`}
@@ -44,6 +48,7 @@ export default function QC() {
             tooltip="If indels are not allowed TCS with indels when aligned with reference genomes will be discarded."
             checked={!!primer.allowIndels}
             onChange={(v) => updatePrimer("allowIndels", v)}
+            data-cy="allowIndels"
           />
         </div>
       </Collapse>

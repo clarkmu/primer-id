@@ -6,11 +6,12 @@ export default function Checkbox({
   onChange,
   tooltip = "",
   id,
+  ...props
 }: {
   label: string;
   checked: boolean;
   onChange: (b: boolean) => void;
-  tooltip: string;
+  tooltip?: string;
   id: string;
 }) {
   return (
@@ -21,6 +22,7 @@ export default function Checkbox({
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         className="bg-primary w-4 h-4 cursor-pointer"
+        {...props}
       />
       <label htmlFor={id} className="cursor-pointer">
         {label}

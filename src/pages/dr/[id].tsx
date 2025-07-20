@@ -1,7 +1,6 @@
 import Alert from "@/components/form/Alert";
 import { SEODR } from "@/components/SEO";
 import Form from "@/components/TCSDR/Form";
-import TCSDRContextProvider from "@/contexts/TCSDRContext";
 import prisma from "@/utils/prisma";
 import { useRouter } from "next/router";
 
@@ -41,10 +40,8 @@ export default function DR({ pipeline, error }) {
   }
 
   return (
-    <TCSDRContextProvider isDR={true} pipeline={pipeline}>
-      <SEODR>
-        <Form />
-      </SEODR>
-    </TCSDRContextProvider>
+    <SEODR>
+      <Form />
+    </SEODR>
   );
 }

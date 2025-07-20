@@ -4,6 +4,7 @@ export default function Modal({
   children,
   open,
   onClose,
+  ...props
 }: {
   children: ReactNode;
   open: boolean;
@@ -13,7 +14,8 @@ export default function Modal({
     <div
       onClick={onClose}
       className={`z-10 absolute inset-0 hidden ${open ? " !block" : ""}`}
-      data-cy="modal"
+      {...props}
+      data-cy={props["data-cy"] || "modal"}
     >
       <div className="z-10 relative h-full w-full">
         <div

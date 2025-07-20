@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useTCSDRContext } from "@/contexts/TCSDRContext";
 import { variablesFromViralSeqCLI } from "@/utils/translateVariablesForCLI";
 import syntaxHighlight from "@/utils/syntaxHighlight";
 import Button from "@/components/form/Button";
@@ -7,16 +6,13 @@ import Paper from "@/components/form/Paper";
 import Alert from "@/components/form/Alert";
 import Input from "@/components/form/Input";
 import InputFile from "@/components/form/InputFile";
-import {
-  INITIAL_TCSDR_PIPELINE,
-  ParamTypes,
-} from "@/utils/constants/INITIAL_TCSDR";
 import parse from "html-react-parser";
+import { ParamTypes, useTCS } from "@/contexts/TCSContext";
 
 const testData = { email: "tester@test.com" };
 
 export default function UseJSON() {
-  const { editState } = useTCSDRContext();
+  const { setState, stepForward, setProcedure } = useTCS();
 
   const [input, setInput] = useState(JSON.stringify(testData));
   const [data, setData] = useState(testData);
@@ -25,11 +21,9 @@ export default function UseJSON() {
   const finishJSON = () => {
     const pipeline = variablesFromViralSeqCLI(data);
 
-    editState({
-      pipeline: { ...INITIAL_TCSDR_PIPELINE, ...pipeline },
-      procedure: ParamTypes.NEW,
-      showUploads: true,
-    });
+    setState((s) => ({ ...s, ...pipeline }));
+    setProcedure(ParamTypes.NEW);
+    stepForward();
   };
 
   const addError = (e) => setErrors((a) => [...a, e]);
@@ -117,7 +111,7 @@ export default function UseJSON() {
           </pre>
         </Paper>
       )}
-      <Button name="submit-json-button" fullWidth onClick={finishJSON}>
+      <Button data-cy="nextStepButton" fullWidth onClick={finishJSON}>
         Continue
       </Button>
     </div>

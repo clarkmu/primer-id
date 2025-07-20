@@ -4,6 +4,19 @@ import { useState } from "react";
 export default function useStepForm() {
   const [step, setStep] = useState(0);
 
+  const stepForward = (limit: number | false = false) => {
+    setStep((s) => {
+      const nextStep = s + 1;
+      if (limit === false) {
+        return nextStep;
+      }
+      if (nextStep > limit) {
+        return s; // Do not exceed the limit
+      }
+      return nextStep;
+    });
+  };
+
   const stepBack = () => setStep((s) => s - 1);
 
   const ContinueButton = ({
@@ -29,5 +42,5 @@ export default function useStepForm() {
     </Button>
   );
 
-  return { step, stepBack, ContinueButton };
+  return { step, stepBack, stepForward, ContinueButton };
 }

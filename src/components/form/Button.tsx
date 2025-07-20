@@ -1,3 +1,6 @@
+import { useIsLoadingAnimation } from "@/hooks/useIsLoadingAnimation";
+import { ReactNode } from "react";
+
 export default function Button({
   children,
   variant = "primary",
@@ -10,17 +13,19 @@ export default function Button({
   iconButton = false,
   ...props
 }: {
-  children: string | any;
+  children: ReactNode;
   variant?: "primary" | "outlined" | "none";
   disabled?: boolean;
   fullWidth?: boolean;
   className?: string;
   isLoading?: boolean;
-  href?: any;
+  href?: string;
   download?: string;
   iconButton?: boolean;
-}) {
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const isDisabled = disabled || isLoading;
+
+  const animation = useIsLoadingAnimation(isLoading);
 
   const StyledButton = () => (
     <button
@@ -29,6 +34,7 @@ export default function Button({
       className={
         `${className} ` +
         "flex items-center justify-center py-2 px-4 rounded text-white " +
+        (isLoading ? "font-mono whitespace-pre" : "") +
         (fullWidth ? "w-full " : "") +
         (isDisabled
           ? " bg-grey !text-gray-500 border border-primary cursor-not-allowed "
@@ -41,14 +47,7 @@ export default function Button({
                 : `bg-primary hover:bg-secondary text-white font-bold shadow`)
       }
     >
-      {isLoading ? (
-        <>
-          <div className="animate-spin rounded-full mr-2 h-4 w-4 bg-gradient-to-r from-grey to-primary"></div>
-          Loading...
-        </>
-      ) : (
-        children
-      )}
+      {isLoading ? animation : children}
     </button>
   );
 

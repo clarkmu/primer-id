@@ -60,6 +60,17 @@ export function validateMatchingFiles(files: File[]): FileError[] {
   return errors;
 }
 
+const FilesSkeleton = () => (
+  <div className="flex flex-col gap-4">
+    {[...Array(5).keys()].map((i) => (
+      <div
+        className="w-full h-4 animate-pulse bg-grey rounded"
+        key={`loading_file_${i}`}
+      ></div>
+    ))}
+  </div>
+);
+
 export default function Uploads({
   files,
   setFiles,
@@ -104,14 +115,7 @@ export default function Uploads({
       </div>
       <div className="max-h-[33vh] overflow-y-auto flex flex-col">
         {files.length < 1 ? (
-          <div className="flex flex-col gap-4">
-            {[...Array(5).keys()].map((i) => (
-              <div
-                className="w-full h-4 animate-pulse bg-grey rounded"
-                key={`loading_file_${i}`}
-              ></div>
-            ))}
-          </div>
+          <FilesSkeleton />
         ) : (
           files.map((file, i) => {
             const fileError =
@@ -137,13 +141,16 @@ export default function Uploads({
                     <XCircleIcon className="w-6 h-6 text-red" />
                   </div>
                 </div>
-                <Alert msg={fileError} />
+                <Alert
+                  msg={fileError}
+                  data-cy={`upload-file-error-${file.name}`}
+                />
               </div>
             );
           })
         )}
       </div>
-      <Alert msg={error} />
+      <Alert msg={error} data-cy="upload-file-error" />
     </div>
   );
 }

@@ -1,26 +1,21 @@
 import useDRParams from "@/hooks/queries/useDRParams";
 import Paper from "../form/Paper";
 import Button from "../form/Button";
-import { useTCSDRContext } from "@/contexts/TCSDRContext";
-import { drVersionType } from "@/utils/constants/INITIAL_TCSDR";
 import dynamic from "next/dynamic";
+
+export type drVersionType = "v1" | "v2" | "v3" | "v4";
 
 const ReactJson = dynamic(() => import("react-json-view"), {
   ssr: false,
 });
 
-export default function DRVersion() {
+export default function DRVersion({ ContinueButton, state, setState }) {
   const { params } = useDRParams();
 
-  const {
-    state: {
-      pipeline: { drVersion },
-    },
-    setState,
-    editPipeline,
-  } = useTCSDRContext();
+  const onChange = (drVersion: drVersionType) =>
+    setState((s) => ({ ...s, drVersion }));
 
-  const onChange = (drVersion: drVersionType) => editPipeline({ drVersion });
+  const { drVersion } = state;
 
   const versionKeys = Object.keys(params);
 
@@ -31,6 +26,7 @@ export default function DRVersion() {
           <Button
             key={`button_drv${v}`}
             onClick={() => onChange(v)}
+            data-cy={`dr_version_${v}`}
             variant={drVersion === v ? "primary" : "outlined"}
             fullWidth
           >
@@ -53,16 +49,7 @@ export default function DRVersion() {
           />
         )}
       </div>
-      <div className="">
-        <Button
-          fullWidth
-          onClick={() => {
-            setState((s) => ({ ...s, showUploads: true }));
-          }}
-        >
-          Continue
-        </Button>
-      </div>
+      {ContinueButton}
     </Paper>
   );
 }
