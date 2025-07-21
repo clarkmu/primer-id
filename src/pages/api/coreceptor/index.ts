@@ -19,7 +19,7 @@ async function post(req, res) {
   if (!email) return res.status(500).json({ error: "Email is required." });
 
   try {
-    await prisma.coreceptors.create({
+    const data = await prisma.coreceptors.create({
       data: {
         sequences: sequences.trim(),
         email,
@@ -28,7 +28,9 @@ async function post(req, res) {
       },
     });
 
-    return res.status(200).json({ success: true });
+    const { id } = data;
+
+    return res.status(200).json({ success: true, id });
   } catch (e) {
     return res.status(500).json({ error: `Failed to save submission: ${e}` });
   }

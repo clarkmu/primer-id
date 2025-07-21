@@ -18,16 +18,20 @@ async function post(req, res) {
 
   if (!email) return res.status(500).json({ error: "Email is required." });
 
+  let id = null;
+
   try {
-    await prisma.intacts.create({
+    const data = await prisma.intacts.create({
       data: { sequences: sequences.trim(), email, resultsFormat, jobID },
     });
+
+    id = data.id;
   } catch (e) {
     console.log(e);
     return res.status(500).json({ error: `Failed to save submisison: ${e}` });
   }
 
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ success: true, id });
 }
 
 export default async function handler(
