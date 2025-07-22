@@ -6,6 +6,9 @@ describe("DR", () => {
 
     cy.visit("/dr");
 
+    cy.intercept("GET", "**/list_drm_params").as("dr_params");
+    cy.wait("@dr_params");
+
     cy.get('[data-cy="dr_version_v2"]').click();
 
     cy.get('[data-cy="nextStepButton"]').last().click();
@@ -36,9 +39,16 @@ describe("DR", () => {
 
     cy.visit("/dr");
 
+    cy.intercept("GET", "**/list_drm_params").as("dr_params");
+    cy.wait("@dr_params");
+
     cy.get('[data-cy="dr_version_v2"]').click();
 
     cy.get('[data-cy="nextStepButton"]').last().click();
+
+    cy.intercept("POST", "/api/tcsdr/validateFiles").as(
+      "fileValidationRequest",
+    );
 
     cy.get("[data-cy='uploadsContainer'] .dropzone", {
       timeout: 5000,
@@ -53,9 +63,6 @@ describe("DR", () => {
       },
     );
 
-    cy.intercept("POST", "/api/tcsdr/validateFiles").as(
-      "fileValidationRequest",
-    );
     cy.wait("@fileValidationRequest");
 
     cy.get('[data-cy="nextStepButton"]').last().should("be.enabled").click();

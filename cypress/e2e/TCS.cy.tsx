@@ -191,6 +191,10 @@ describe("TCS Pipeline", () => {
 
     const fileName = "dr_r1.fastq.gz";
 
+    cy.intercept("POST", "/api/tcsdr/validateFiles").as(
+      "fileValidationRequest",
+    );
+
     cy.get("[data-cy='uploadsContainer'] [data-cy='dropzone']").selectFile(
       [`cypress/fixtures/tcsdr/${fileName}`],
       {
@@ -198,9 +202,6 @@ describe("TCS Pipeline", () => {
       },
     );
 
-    cy.intercept("POST", "/api/tcsdr/validateFiles").as(
-      "fileValidationRequest",
-    );
     cy.wait("@fileValidationRequest");
 
     cy.get('[data-cy="upload-file-error"]')
