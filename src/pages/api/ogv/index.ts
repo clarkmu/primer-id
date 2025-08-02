@@ -19,7 +19,7 @@ async function post(req, res) {
     let signedURLs = await createSignedUrls(
       "ogv-dating",
       data.uploads,
-      (upload) => `${id}/${upload.libName}/${upload.name}`,
+      (upload) => `${id}/${upload.libName}/${upload.fileName}`,
     );
 
     if (!signedURLs.length) {

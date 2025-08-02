@@ -20,7 +20,7 @@ export default function DRVersion({ ContinueButton, state, setState }) {
   const versionKeys = Object.keys(params);
 
   return (
-    <Paper className="flex flex-col gap-4">
+    <Paper className="flex flex-col gap-8">
       <div className="flex justify-around gap-8 mx-8">
         {versionKeys.map((v) => (
           <Button

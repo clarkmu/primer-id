@@ -1,4 +1,4 @@
-import ConfirmModal from "@/components/OGV/ConfirmModal";
+import ConfirmModal from "@/components/OGV/Confirmation";
 import Conversion from "@/components/OGV/Conversion";
 import Uploads from "@/components/templates/Uploads";
 import Paper from "@/components/form/Paper";
@@ -120,8 +120,8 @@ export default function OGVPage() {
   }, [conversion, subjects]);
 
   return (
-    <div className="flex flex-col gap-4 items-center justify-center">
-      <Paper className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8 items-center justify-center">
+      <Paper className="flex flex-col gap-8">
         <PageDescription
           title="Outgrowth Virus Dating Pipeline"
           description="This pipeline times outgrowth virus (OGV) strains from a single host using serially sampled RNA data. Four different approaches are used to assign dates to unobserved strains. First, each tree is rooted to maximize the root-to-tip to sampling time correlation coefficient."
@@ -159,7 +159,7 @@ export default function OGVPage() {
           }
         />
       </Paper>
-      <Paper className="flex flex-col gap-4">
+      <Paper className="flex flex-col gap-8">
         <Uploads
           files={files}
           setFiles={setFiles}
@@ -172,7 +172,7 @@ export default function OGVPage() {
         <ContinueButton level={1} disabled={files.length < 1 || step > 0} />
       </Paper>
       <div ref={scrollToConversion} className="w-full">
-        <MyCollapse show={step > 0} className="flex flex-col gap-4">
+        <MyCollapse show={step > 0} className="flex flex-col gap-8">
           <Conversion
             conversion={conversion}
             setConversion={setConversion}
@@ -182,8 +182,8 @@ export default function OGVPage() {
           <ContinueButton level={2} disabled={isMissingStart2ART || step > 1} />
         </MyCollapse>
       </div>
-      <MyCollapse show={step > 1} className="flex flex-col gap-4">
-        <div ref={scrollToShared}>
+      <MyCollapse show={step > 1}>
+        <div ref={scrollToShared} className="flex flex-col gap-8">
           <SharedSubmissionDataForm
             state={state}
             setState={setState}

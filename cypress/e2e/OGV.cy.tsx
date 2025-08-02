@@ -1,4 +1,5 @@
 import { createPipelineVerifier } from "cypress/support/createPipelineVerifier";
+import { waitForRequests } from "cypress/support/waitForRequests";
 
 describe("OGV", () => {
   it("Submits with 2 subjects", () => {
@@ -6,7 +7,7 @@ describe("OGV", () => {
 
     cy.visit("/ogv");
 
-    [
+    const files = [
       "CAP188/CAP188_ENV_2_all_hap.fasta",
       "CAP188/CAP188_ENV_3_all_hap.fasta",
       "CAP188/CAP188_ENV_4_all_hap.fasta",
@@ -14,7 +15,9 @@ describe("OGV", () => {
       "CAP206/CAP206_ENV_2_all_hap.fasta",
       "CAP206/CAP206_ENV_4_all_hap.fasta",
       "CAP206/CAP206_GAG_1_all_hap.fasta",
-    ].forEach((file) => {
+    ];
+
+    files.forEach((file) => {
       cy.get('[data-cy="uploadsContainer"] .dropzone').selectFile(
         `cypress/fixtures/ogv/${file}`,
         {
@@ -35,11 +38,13 @@ describe("OGV", () => {
 
     cy.get('[data-cy="nextStepButton"]').last().click();
 
+    cy.get('[data-cy="confirmationModal"]').should("be.visible");
+
     cy.get("[data-cy='submitButton']").click();
 
-    cy.wait("@uploadRequest", { timeout: 20000 });
+    waitForRequests("@uploadRequest", files.length);
 
-    cy.get("[data-cy='uploadedButton']").should("exist");
+    cy.get("[data-cy='finishButton']").should("exist");
 
     verifySubmission();
   });

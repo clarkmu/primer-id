@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Input from "../form/Input";
 import RadioGroup from "../form/RadioGroup";
 
@@ -36,6 +35,7 @@ export default function SharedSubmissionDataForm({
         onChange={(e) => updateField({ email: e.target.value.trim() })}
       />
       <Input
+        data-cy="jobIDInput"
         name="jobID"
         label="Name output (optional* whitespace is replaced by _)"
         placeholder=""
@@ -45,6 +45,7 @@ export default function SharedSubmissionDataForm({
         }
       />
       <RadioGroup
+        data-cy="resultsFormatInput"
         label={`${defaultJobID}_${jobID || "{id}"}${resultsFormat === "tar" ? ".tar.gz" : ".zip"}`}
         value={resultsFormat}
         radios={[

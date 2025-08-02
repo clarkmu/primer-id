@@ -26,6 +26,7 @@ export default function useUploadSignedURLs(files: File[]) {
     signedURLs: { fileName: string; signedURL: string }[],
     batchSize = 4,
   ): Promise<boolean> {
+    setIsUploading(true);
     try {
       for (let i = 0; i < signedURLs.length; i += batchSize) {
         const batch = signedURLs.slice(i, i + batchSize);
@@ -57,10 +58,12 @@ export default function useUploadSignedURLs(files: File[]) {
         );
       }
 
+      setIsUploading(false);
       setIsUploadComplete(true);
       return true;
     } catch (e) {
       setUploadError(`File upload error: ${e}`);
+      setIsUploading(false);
       return false;
     }
   }

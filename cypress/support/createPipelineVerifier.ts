@@ -1,5 +1,9 @@
-export function createPipelineVerifier(route: string, listEndpoint: string) {
-  const alias = "pipelineSubmit";
+export function createPipelineVerifier(
+  route: string,
+  listEndpoint: string,
+  verifyData?: object,
+) {
+  const alias = "pipelineSubmitRequest";
 
   cy.intercept("POST", route).as(alias);
 
@@ -15,6 +19,12 @@ export function createPipelineVerifier(route: string, listEndpoint: string) {
         cy.log("RESPONSE", response.body);
         const match = response.body.find((obj) => obj.id === id);
         expect(match).to.not.be.undefined;
+
+        if (verifyData) {
+          Object.entries(verifyData).forEach(([key, value]) => {
+            expect(match[key]).to.deep.equal(value);
+          });
+        }
       });
     });
   };

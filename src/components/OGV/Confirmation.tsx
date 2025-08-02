@@ -1,13 +1,11 @@
 import { useState } from "react";
-import Button from "@/components/form/Button";
-import Modal from "@/components/form/Modal";
-import Alert from "../form/Alert";
-import { useRouter } from "next/router";
 import { Conversion } from "./OGVPage";
 import usePost from "@/hooks/queries/usePost";
 import useUploadSignedURLs from "@/hooks/useUploadSignedURLs";
+import ConfirmationModal from "../templates/ConfirmationModal";
+import ConfirmationDisplay from "../form/ConfirmationDisplay";
 
-export default function ConfirmModal({
+export default function Confirmation({
   show,
   body,
   stepBack,
@@ -22,22 +20,18 @@ export default function ConfirmModal({
 }) {
   const { email, files, conversion } = body;
 
-  const router = useRouter();
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const { uploadError, UploadProgress, uploadFilesToSignedURL } =
-    useUploadSignedURLs(files);
+  const {
+    uploadError,
+    UploadProgress,
+    uploadFilesToSignedURL,
+    isUploading,
+    isUploadComplete,
+  } = useUploadSignedURLs(files);
 
   const { mutate, isLoading, isError } = usePost("/api/ogv");
-
-  const onClose = () => {
-    if (submitted) {
-      router.reload();
-    } else {
-      stepBack();
-    }
-  };
 
   const onSubmit = async () => {
     const data = { ...body };
@@ -75,16 +69,23 @@ export default function ConfirmModal({
     });
   };
 
+  const errorMessage = uploadError
+    ? "An error occurred while uploading.  Please resubmit."
+    : isError
+      ? "Network Error: Failed to submit."
+      : error || "";
+
   return (
-    <Modal open={show} onClose={onClose}>
-      <div className="flex flex-col gap-8 m-8">
-        <div className="text-center w-full text-xl font-bold">
-          Please review your submission data.
-        </div>
-        <div className="flex gap-4">
-          <b>Email:</b>
-          <div>{email}</div>
-        </div>
+    <ConfirmationModal
+      open={show}
+      onBack={() => stepBack()}
+      onSubmit={onSubmit}
+      isLoading={isLoading || isUploading}
+      submitted={submitted && isUploadComplete}
+      errorMessage={errorMessage}
+    >
+      <div className="flex flex-col gap-4">
+        <ConfirmationDisplay label="Email to receive results" value={email} />
         <div className="flex gap-4">
           {Object.keys(conversion).map((subject) => (
             <div key={`display_${subject}`} className="">
@@ -94,38 +95,8 @@ export default function ConfirmModal({
             </div>
           ))}
         </div>
-        <UploadProgress />
-        {!!error && <Alert severity="error" msg={error} />}
-        {isError && (
-          <Alert severity="error" msg="Network Error: Failed to submit." />
-        )}
-        {uploadError && (
-          <Alert
-            severity="error"
-            msg="An error occurred while uploading.  Please resubmit."
-          />
-        )}
-        <div className="flex justify-end items-end gap-4">
-          {submitted ? (
-            <Button onClick={() => router.reload()} data-cy="uploadedButton">
-              Submitted! Click to reload page.
-            </Button>
-          ) : (
-            <>
-              <Button variant="outlined" onClick={onClose}>
-                Back
-              </Button>
-              <Button
-                onClick={onSubmit}
-                isLoading={isLoading}
-                data-cy="submitButton"
-              >
-                Submit
-              </Button>
-            </>
-          )}
-        </div>
       </div>
-    </Modal>
+      <UploadProgress />
+    </ConfirmationModal>
   );
 }

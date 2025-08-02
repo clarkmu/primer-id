@@ -24,13 +24,10 @@ export default function SavedPrimers() {
     const localUseSaved = localStorage.getItem(USE_SAVED_PRIMERS_KEY);
     const localPrimers = localStorage.getItem(STORAGE_SAVED_PRIMERS_KEY);
 
-    console.log({ localUseSaved, useSaved });
-
     if (localUseSaved !== null) {
       let parsedUseSaved: unknown;
       try {
         parsedUseSaved = JSON.parse(localUseSaved);
-        console.log({ parsedUseSaved });
         setUseSaved(parsedUseSaved);
       } catch (e) {
         console.error("Failed to parse useSaved from localStorage", e);

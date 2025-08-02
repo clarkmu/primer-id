@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
-const { API_KEY } = process.env;
+const { API_KEY, NODE_ENV } = process.env;
 
 // 'middleware' to ensure API Key or return id
 export const validateIdRequest = (req: NextApiRequest) => {
@@ -42,15 +42,17 @@ export const getPublic = async (
       },
     });
 
-    const filtered_results = all.map(
-      ({ id, submit, pending, createdAt, ...item }) => ({
-        id,
-        submit,
-        pending,
-        createdAt,
-        uploadCount: calcUploadCount(item),
-      }),
-    );
+    // allow all data in test env, otherwise filter out sensitive fields
+    const filtered_results =
+      NODE_ENV === "test"
+        ? all
+        : all.map(({ id, submit, pending, createdAt, ...item }) => ({
+            id,
+            submit,
+            pending,
+            createdAt,
+            uploadCount: calcUploadCount(item),
+          }));
 
     return res.status(200).json(filtered_results);
   } catch (e) {

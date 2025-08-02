@@ -74,7 +74,7 @@ export default function IntactnessPage() {
         <ContinueButton level={1} disabled={!sequences?.ok} />
       </Paper>
       <div ref={scrollToRef} className="w-full">
-        <MyCollapse show={step > 0}>
+        <MyCollapse show={step > 0} className="flex flex-col gap-4">
           <SharedSubmissionDataForm
             state={state}
             setState={setState}

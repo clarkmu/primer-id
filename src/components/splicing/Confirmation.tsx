@@ -9,6 +9,8 @@ import useUploadSignedURLs from "@/hooks/useUploadSignedURLs";
 import { splice } from "@prisma/client";
 import spliceConfigValues from "./spliceConfigValues.json";
 import ConfirmationDisplay from "../form/ConfirmationDisplay";
+import ConfirmationModal from "../templates/ConfirmationModal";
+import { upload } from "@google-cloud/storage/build/cjs/src/resumable-upload";
 
 const { assays, strains } = spliceConfigValues;
 
@@ -62,10 +64,19 @@ export default function Confirmation({ submission, open, onClose }) {
   };
 
   return (
-    <Modal open={open} onClose={onCloseConfirmation}>
-      <div className="flex flex-col gap-4 overflow-y-auto max-h-[75vh] p-4">
-        <h1 className="text-xl font-bold">HIV-Splicing Submission</h1>
-        {uploadError && <Alert severity="error" msg={uploadError} />}
+    <ConfirmationModal
+      open={open}
+      onBack={onCloseConfirmation}
+      onSubmit={onSubmit}
+      isLoading={isLoading}
+      submitted={submitted}
+      errorMessage={
+        error || uploadError || isError
+          ? "An error has occurred with your submission."
+          : ""
+      }
+    >
+      <div className="flex flex-col gap-4">
         <ConfirmationDisplay label="Email" value={submission.email} />
         {!!submission.jobID && (
           <ConfirmationDisplay label="Job ID" value={submission.jobID} />
@@ -110,33 +121,6 @@ export default function Confirmation({ submission, open, onClose }) {
         )}
         {submission.uploads?.length > 0 && <UploadProgress />}
       </div>
-      {!!error && <Alert severity="error" msg={error} />}
-      {isError && (
-        <Alert severity="error" msg="Network Error: Failed to submit." />
-      )}
-      <div className="self-end place-self-end justify-self-end flex justify-end items-end gap-4 p-4">
-        <Button
-          data-cy="finishButton"
-          onClick={onCloseConfirmation}
-          variant="none"
-          color="error"
-        >
-          {submitted ? "Finish" : "Back"}
-        </Button>
-        <Button
-          data-cy="submitButton"
-          onClick={onSubmit}
-          iconButton={submitted}
-          isLoading={isLoading}
-          disabled={isLoading || submitted}
-        >
-          {submitted ? (
-            <CheckCircleIcon className="w-5 h-5 text-green" />
-          ) : (
-            "Submit"
-          )}
-        </Button>
-      </div>
-    </Modal>
+    </ConfirmationModal>
   );
 }

@@ -32,6 +32,12 @@ beforeEach(() => {
     statusCode: 200,
     body: "",
   }).as("uploadRequest");
+
+  cy.intercept("POST", "/api/tcsdr/validateFiles").as(
+    "tcsFileValidationRequest",
+  );
+
+  cy.intercept("GET", "**/list_drm_params").as("dr_params");
 });
 
 // after(() => {

@@ -30,15 +30,11 @@ describe("Intactness", () => {
 
     cy.get('[data-cy="nextStepButton"]').last().click();
 
-    cy.get("[data-cy='submitButton']")
-      .scrollIntoView()
-      .should("be.visible")
-      .and("not.be.disabled")
-      .click();
+    cy.get('[data-cy="confirmationModal"]').should("be.visible");
 
-    cy.get("[data-cy='submissionSuccessAlert']", { timeout: 20000 }).should(
-      "be.visible",
-    );
+    cy.get('[data-cy="submitButton"]').click();
+
+    cy.get("[data-cy='finishButton']").should("exist").and("be.visible");
 
     verifySubmission();
   });

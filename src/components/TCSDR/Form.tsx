@@ -14,14 +14,13 @@ import SharedSubmissionDataForm from "../templates/SharedSubmissionData";
 import { useRouter } from "next/router";
 import useUploadsOrHTSF from "@/hooks/useUploadsOrHTSF";
 import Uploads from "../templates/Uploads";
-import defaultSharedSubmissionData from "@/hooks/useSharedSubmissionData";
+import { defaultSharedSubmissionData } from "@/hooks/useSharedSubmissionData";
 import HTSF from "../templates/HTSF";
 import { tcsdrs } from "@prisma/client";
 import INITIAL_PRIMER from "@/utils/constants/INITIAL_PRIMER";
 import { variablesToViralSeqCLI } from "@/utils/translateVariablesForCLI";
 import { useIsLoadingAnimation } from "@/hooks/useIsLoadingAnimation";
 import TCSContextProvider from "@/contexts/TCSContext";
-import usePost from "@/hooks/queries/usePost";
 const TCSContainer = dynamic(() => import("./TCS/TCS"), {
   loading: () => null,
 });
@@ -36,12 +35,12 @@ export enum ParamTypes {
 export type TCSDRState = Omit<tcsdrs, "id" | "createdAt"> & { id?: string };
 
 const initialState: TCSDRState = {
-  ...defaultSharedSubmissionData,
   primers: [INITIAL_PRIMER],
   drVersion: "v1",
   errorRate: 0.02,
   platformFormat: 300,
   uploads: [],
+  ...defaultSharedSubmissionData,
 };
 
 export default function Form() {
@@ -62,6 +61,15 @@ export default function Form() {
 
   const [scrollToUploads] = useScrollToDivOnVisibilityToggle(step > 0, "end");
   const [scrollToSubmit] = useScrollToDivOnVisibilityToggle(step > 1, "end");
+
+  useEffect(() => {
+    if (isDR) {
+      setState((prev) => ({
+        ...prev,
+        primers: [],
+      }));
+    }
+  }, []);
 
   const customAddFiles = (files: File[]) => asyncCustomAddFiles(files);
   const asyncCustomAddFiles = async (files: File[]) => {
@@ -180,7 +188,7 @@ export default function Form() {
   const loadingString = useIsLoadingAnimation(fileValidationLoading);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       <Paper>
         <PageDescription
           title={
@@ -196,7 +204,7 @@ export default function Form() {
           // files="should be uncompressed and in one of the following formats: fastq, fastq.gz, fq, fq.gz. Submissions cannot exceed 16MB."
           // results="include alignment views, Gene Cutter results, and a summary of large deletions, internal inversions, and inferred intactness."
           extra={
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-8">
               <div>
                 <a
                   href={LINKS.prepProtocol}
@@ -239,7 +247,7 @@ export default function Form() {
         </TCSContextProvider>
       )}
       <div ref={scrollToUploads}>
-        <MyCollapse show={step > 0} className="flex flex-col gap-4">
+        <MyCollapse show={step > 0} className="flex flex-col gap-8">
           <UploadOrHTSFButtons />
           {useUploads && (
             <>
@@ -281,15 +289,17 @@ export default function Form() {
       </div>
       <div ref={scrollToSubmit}>
         <MyCollapse show={step > 1}>
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             <SharedSubmissionDataForm
               state={state}
               setState={setState}
               defaultJobID={`${isDR ? "dr" : "tcs"}-results`}
             />
-            <div className="flex gap-4">
-              <DownloadJSONButton />
-            </div>
+            {!isDR && (
+              <div className="flex gap-8">
+                <DownloadJSONButton />
+              </div>
+            )}
             <ContinueButton level={3} disabled={!state.email} />
           </div>
         </MyCollapse>

@@ -1,8 +1,14 @@
 import { createPipelineVerifier } from "cypress/support/createPipelineVerifier";
+import { waitForRequests } from "cypress/support/waitForRequests";
 
 describe("TCS Pipeline", () => {
   it("JSON input + file uploads", () => {
     const verifySubmission = createPipelineVerifier("/api/tcsdr", "/api/tcsdr");
+
+    const files = [
+      "cypress/fixtures/tcsdr/dr_r1.fastq.gz",
+      "cypress/fixtures/tcsdr/dr_r2.fastq.gz",
+    ];
 
     cy.visit("/tcs");
 
@@ -21,14 +27,13 @@ describe("TCS Pipeline", () => {
     cy.get('[data-cy="nextStepButton"]').last().click();
 
     cy.get("[data-cy='uploadsContainer'] [data-cy='dropzone']").selectFile(
-      [
-        "cypress/fixtures/tcsdr/dr_r1.fastq.gz",
-        "cypress/fixtures/tcsdr/dr_r2.fastq.gz",
-      ],
+      files,
       {
         action: "drag-drop",
       },
     );
+
+    cy.wait("@tcsFileValidationRequest");
 
     cy.get('[data-cy="nextStepButton"]').last().click();
 
@@ -40,13 +45,14 @@ describe("TCS Pipeline", () => {
 
     cy.get('[data-cy="submitButton"]').click();
 
-    cy.wait("@uploadRequest", { timeout: 20000 });
+    waitForRequests("@uploadRequest", files.length);
 
     cy.get("[data-cy='finishButton']").should("exist");
 
     verifySubmission();
   });
 
+  // TODO - read tcs_params.json to fill out primers forms, verify at createPipelineVerifier
   it("Manually enter 2 primers + HTSF", () => {
     const verifySubmission = createPipelineVerifier("/api/tcsdr", "/api/tcsdr");
 
@@ -163,11 +169,11 @@ describe("TCS Pipeline", () => {
 
     cy.get('[data-cy="nextStepButton"]').last().click();
 
-    cy.get('[data-cy="modal"]').should("be.visible");
+    cy.get('[data-cy="confirmationModal"]').should("be.visible");
 
     cy.get('[data-cy="submitButton"]').click();
 
-    cy.get('[data-cy="finishButton"]', { timeout: 20000 }).should("exist");
+    cy.get('[data-cy="finishButton"]').should("exist");
 
     verifySubmission();
   });
@@ -191,10 +197,6 @@ describe("TCS Pipeline", () => {
 
     const fileName = "dr_r1.fastq.gz";
 
-    cy.intercept("POST", "/api/tcsdr/validateFiles").as(
-      "fileValidationRequest",
-    );
-
     cy.get("[data-cy='uploadsContainer'] [data-cy='dropzone']").selectFile(
       [`cypress/fixtures/tcsdr/${fileName}`],
       {
@@ -202,7 +204,7 @@ describe("TCS Pipeline", () => {
       },
     );
 
-    cy.wait("@fileValidationRequest");
+    cy.wait("@tcsFileValidationRequest");
 
     cy.get('[data-cy="upload-file-error"]')
       .scrollIntoView()
