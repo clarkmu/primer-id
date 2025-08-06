@@ -1,9 +1,7 @@
-import Alert from "@/components/form/Alert";
 import { useState } from "react";
 import Confirmation from "./Confirmation";
 import Paper from "@/components/form/Paper";
 import useScrollToDivOnVisibilityToggle from "@/hooks/useScrollToDivOnVisibilityToggle";
-import useSequenceFile from "@/hooks/useSequenceFile";
 import PageDescription from "../templates/PageDescription";
 import useStepForm from "@/hooks/useStepForm";
 import MyCollapse from "../form/MyCollapse";
@@ -11,25 +9,58 @@ import SharedSubmissionDataForm, {
   INITIAL_SHARED_SUBMISSION_DATA,
   SharedSubmissionData,
 } from "../templates/SharedSubmissionData";
+import Uploads, { FileError } from "../templates/Uploads";
+import { fasta } from "bioinformatics-parser";
 
 const approvedFileTypes = ["fa", "fasta", "txt"];
+
+const approvedFileTypesDisplay = approvedFileTypes
+  .map((type) => `.${type}`)
+  .join(", ");
 
 export default function IntactnessPage() {
   const [state, setState] = useState<SharedSubmissionData>(
     INITIAL_SHARED_SUBMISSION_DATA,
   );
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileErrors, setFileErrors] = useState<FileError[]>([]);
+
+  // Let user keep error files, should be filtered out on coreceptor server
+  const isFileSelectionValid = files.length > 0;
 
   const { step, stepBack, ContinueButton } = useStepForm();
 
-  const {
-    SequenceFileInput,
-    sequences,
-    parseError,
-    filename,
-    approvedFileTypesDisplay,
-  } = useSequenceFile(approvedFileTypes);
-
   const [scrollToRef] = useScrollToDivOnVisibilityToggle(step > 0, "start");
+
+  const customAddFiles = (files: File[]) => asyncCustomAddFiles(files);
+  const asyncCustomAddFiles = async (files: File[]) => {
+    for (const file of files) {
+      const name = file.name || "Unnamed file";
+
+      const addToFileErrors = (error: string) =>
+        setFileErrors((prev) => [...prev, { name, error }]);
+
+      if (!approvedFileTypes.includes(name.split(".").pop() || "")) {
+        addToFileErrors(`File type not supported`);
+        // return;
+      }
+
+      const text = await file.text();
+      const parsed = fasta.parse(text);
+
+      if (parsed?.error?.message) {
+        addToFileErrors(`Error parsing file: ${parsed.error?.message}`);
+        // return;
+      }
+
+      if (!parsed?.ok || !parsed?.result || parsed.result.length === 0) {
+        addToFileErrors(`No valid sequences found in "${file.name}".`);
+        // return;
+      }
+    }
+
+    setFiles((prev) => [...prev, ...files]);
+  };
 
   return (
     <div className="flex flex-col gap-4 m-4">
@@ -57,38 +88,37 @@ export default function IntactnessPage() {
       </Paper>
       <Paper className="flex flex-col gap-4">
         <div className="text-center text-lg">
-          Upload an uncompressed file with an extension of{" "}
+          Upload uncompressed files with an extension of{" "}
           {approvedFileTypesDisplay}
         </div>
-        <SequenceFileInput />
-        {!!parseError ? (
-          <Alert severity="info" msg={parseError} data-cy="fileErrorAlert" />
-        ) : !!sequences?.result?.length && filename.length ? (
-          <div className="flex flex-col gap-2 font-bold my-2">
-            <div className="">Files: {filename}</div>
-            <div className="" data-cy="num_sequences_parsed">
-              {sequences?.result?.length || ""} sequences found.
-            </div>
-          </div>
-        ) : null}
-        <ContinueButton level={1} disabled={!sequences?.ok} />
+        <Uploads
+          files={files}
+          setFiles={setFiles}
+          uniqueID="coreceptor"
+          error=""
+          fileErrors={fileErrors}
+          customAddFiles={customAddFiles}
+        />
+        <ContinueButton level={1} disabled={!isFileSelectionValid} />
       </Paper>
       <div ref={scrollToRef} className="w-full">
         <MyCollapse show={step > 0} className="flex flex-col gap-4">
           <SharedSubmissionDataForm
             state={state}
             setState={setState}
-            defaultJobID="Geno2Pheno"
+            defaultJobID="coreceptor"
           />
-          <ContinueButton level={2} disabled={!state.email || !sequences?.ok} />
+          <ContinueButton
+            level={2}
+            disabled={!state.email || !isFileSelectionValid}
+          />
         </MyCollapse>
       </div>
       <Confirmation
         open={step > 1}
         onClose={stepBack}
         state={state}
-        sequences={sequences}
-        filename={filename}
+        files={files}
       />
     </div>
   );

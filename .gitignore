@@ -6,6 +6,8 @@ HPC/locations.php
 storage-admin.json
 .env*
 
+/cypress/screenshots
+
 errors.log
 *.fasta
 .snakemake

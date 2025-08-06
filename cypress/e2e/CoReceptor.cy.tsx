@@ -1,11 +1,17 @@
-import { createPipelineVerifier } from "cypress/support/createPipelineVerifier";
-
 describe("CoReceptor", () => {
   it("Submits a sample fasta", () => {
-    const verifySubmission = createPipelineVerifier(
-      "/api/coreceptor",
-      "/api/coreceptor",
-    );
+    cy.intercept("POST", "**/submit", (req) => {
+      req.reply((res) => {
+        res.send({
+          statusCode: 200,
+          body: {
+            success: true,
+            message: "Submission received",
+            submission_id: "test-submission-id",
+          },
+        });
+      });
+    }).as("submitCoreceptor");
 
     cy.visit("/coreceptor");
 
@@ -15,11 +21,6 @@ describe("CoReceptor", () => {
         action: "drag-drop",
       },
     );
-
-    cy.get('[data-cy="num_sequences_parsed"]', { timeout: 10000 })
-      .scrollIntoView()
-      .should("be.visible")
-      .and("contain.text", "5 sequences found.");
 
     cy.get('[data-cy="nextStepButton"]').last().click();
 
@@ -34,13 +35,13 @@ describe("CoReceptor", () => {
 
     cy.get('[data-cy="submitButton"]').click();
 
+    cy.wait("@submitCoreceptor");
+
     cy.get("[data-cy='finishButton']").should("exist").and("be.visible");
 
     cy.get('[data-cy="submissionSuccessAlert"]')
       .should("exist")
       .and("be.visible");
-
-    verifySubmission();
   });
 
   it("Shows error on invalid file type", () => {
@@ -53,8 +54,27 @@ describe("CoReceptor", () => {
       },
     );
 
-    cy.get('[data-cy="fileErrorAlert"]', { timeout: 2000 })
+    cy.get(`[data-cy="upload-file-error-invalid.fastq"]`, { timeout: 2000 })
       .scrollIntoView()
       .should("be.visible");
+
+    cy.get(".dropzone").selectFile("cypress/fixtures/coreceptor/empty.fasta", {
+      action: "drag-drop",
+    });
+
+    cy.get(`[data-cy="upload-file-error-empty.fasta"]`, { timeout: 2000 })
+      .scrollIntoView()
+      .should("be.visible");
+
+    cy.get(".dropzone").selectFile(
+      "cypress/fixtures/coreceptor/unaligned_input.fasta",
+      {
+        action: "drag-drop",
+      },
+    );
+
+    cy.get(`[data-cy="upload-file-error-unaligned_input.fasta"]`, {
+      timeout: 2000,
+    }).should("not.exist");
   });
 });
