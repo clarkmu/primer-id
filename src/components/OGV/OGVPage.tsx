@@ -125,36 +125,84 @@ export default function OGVPage() {
         <PageDescription
           title="Outgrowth Virus Dating Pipeline"
           description="This pipeline times outgrowth virus (OGV) strains from a single host using serially sampled RNA data. Four different approaches are used to assign dates to unobserved strains. First, each tree is rooted to maximize the root-to-tip to sampling time correlation coefficient."
-          files="File names should be formatted as {subject}_{sample}.fasta. Special characters (-/*) in filename will be filtered out."
+          files="File names should be formatted as <subject>_<gene>.fasta. Example: CAP188_ENV.fasta , CAP188_ENV_2.fasta"
           extra={
-            <div>
-              <a
-                href="https://github.com/clarkmu/ogv-dating"
-                target="_BLANK"
-                rel="noreferrer"
-                className="underline"
-              >
-                This pipeline
-              </a>{" "}
-              was adapted from the{" "}
-              <a
-                href="https://github.com/veg/ogv-dating"
-                target="_BLANK"
-                rel="noreferrer"
-                className="underline"
-              >
-                Outgrowth Virus Dating pipeline
-              </a>{" "}
-              created by{" "}
-              <a
-                href="http://sdcsb.ucsd.edu/igem/"
-                target="_BLANK"
-                rel="noreferrer"
-                className="underline"
-              >
-                iGEM/UCSD evolutionary biology and bioinformatics group
-              </a>
-              .
+            <div className="flex flex-col gap-4">
+              <span>
+                <b>SEQUENCE HEADERS</b> should be formatted as{" "}
+                <code>
+                  &lt;subject&gt;_&lt;gene&gt;_&lt;timepoint&gt;[_QVOA][_OGV][_DNA][_BAR###]
+                </code>
+                . Example: <code>subject1_env_000WPI</code>
+              </span>
+              <ol className="list-decimal list-inside space-y-2 ml-6">
+                <li>
+                  <b>Timepoints</b> should be labeled as <code>###WPI</code>{" "}
+                  (Weeks Post Infection). Example: <code>001WPI</code>
+                </li>
+                <li>
+                  <b>Gene/Region</b>: <code>ENV</code>, <code>GAG</code>,{" "}
+                  <code>NEF</code>, etc. Subregions unused.
+                </li>
+                <li>
+                  Optional labels to indicate sequence origin:
+                  <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                    <li>
+                      <code>
+                        <b>_QVOA</b>
+                      </code>
+                      : Outgrowth-derived (latent reservoir)
+                    </li>
+                    <li>
+                      <code>
+                        <b>OGV_</b>
+                      </code>
+                      : Alternative outgrowth virus marker
+                    </li>
+                    <li>
+                      <code>
+                        <b>_DNA</b>
+                      </code>
+                      : DNA-derived sequences (e.g., proviral DNA)
+                    </li>
+                    <li>
+                      <code>
+                        <b>BAR###</b>
+                      </code>
+                      : Barcoded sequence (e.g., <code>BAR23</code>)
+                    </li>
+                  </ul>
+                </li>
+              </ol>
+              <div>
+                <a
+                  href="https://github.com/clarkmu/ogv-dating"
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  This pipeline
+                </a>{" "}
+                was adapted from the{" "}
+                <a
+                  href="https://github.com/veg/ogv-dating"
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  Outgrowth Virus Dating pipeline
+                </a>{" "}
+                created by{" "}
+                <a
+                  href="http://sdcsb.ucsd.edu/igem/"
+                  target="_BLANK"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  iGEM/UCSD evolutionary biology and bioinformatics group
+                </a>
+                .
+              </div>
             </div>
           }
         />
