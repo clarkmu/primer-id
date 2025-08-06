@@ -1,15 +1,13 @@
 describe("CoReceptor", () => {
   it("Submits a sample fasta", () => {
     cy.intercept("POST", "**/submit", (req) => {
-      req.reply((res) => {
-        res.send({
-          statusCode: 200,
-          body: {
-            success: true,
-            message: "Submission received",
-            submission_id: "test-submission-id",
-          },
-        });
+      req.reply({
+        statusCode: 200,
+        body: {
+          success: true,
+          message: "Submission received",
+          submission_id: "test-submission-id",
+        },
       });
     }).as("submitCoreceptor");
 

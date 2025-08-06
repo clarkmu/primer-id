@@ -49,7 +49,7 @@ describe("Intactness", () => {
       },
     );
 
-    cy.get('[data-cy="fileErrorAlert"]', { timeout: 2000 })
+    cy.get('[data-cy="upload-file-error-invalid.fastq"]', { timeout: 2000 })
       .scrollIntoView()
       .should("be.visible");
   });
