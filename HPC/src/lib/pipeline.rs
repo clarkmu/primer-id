@@ -453,11 +453,10 @@ impl Pipeline<OgvAPI> {
         Ok(())
     }
     pub fn cores_and_memory(&self) -> (u8, u32) {
-        // cores hardcoded in ogv repo,
-        // allocate 5gb per thread
+        // allocate 5 GiB per core, capped at 20 cores
+        let cores = std::cmp::min(self.data.uploads.len() as u8, 20);
 
-        let cores = 4;
-        let memory: u32 = 20000;
+        let memory: u32 = (cores as u32) * 5000;
 
         (cores, memory)
     }
@@ -544,7 +543,11 @@ impl Pipeline<SplicingAPI> {
     }
 }
 
-pub fn pipeline_is_stale<'a>(pending: &bool, date: &'a str) -> (bool, String) {
+pub fn pipeline_is_stale<'a>(
+    pending: &bool,
+    date: &'a str,
+    time_limit_in_hours: i64
+) -> (bool, String) {
     if !pending {
         return (false, String::from(""));
     }
@@ -555,7 +558,7 @@ pub fn pipeline_is_stale<'a>(pending: &bool, date: &'a str) -> (bool, String) {
         .unwrap();
     let now = Utc::now().naive_utc();
     let diff = now - created_at;
-    let is_stale = diff.num_hours() > 24;
+    let is_stale = diff.num_hours() > time_limit_in_hours;
     let is_stale_cmd = String::from(if is_stale { " --is_stale" } else { "" });
     (is_stale, is_stale_cmd)
 }

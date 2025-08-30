@@ -25,8 +25,12 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
         &conversion_location,
         &summary_location
     );
+
+    let (cores, memory) = pipeline.cores_and_memory();
     let run_pipeline_command: String = format!(
-        "conda run -n ogv snakemake --cores 4 --config job_dir='{}/' --configfile {} --directory {}/ --keep-going --snakefile {}/Snakefile",
+        "conda run -n ogv snakemake --cores {} --resources mem_mb={} --config job_dir='{}/' --configfile {} --directory {}/ --keep-going --snakefile {}/Snakefile",
+        &cores,
+        &memory,
         &pipeline.scratch_dir,
         samples_file_location,
         &locations.ogv_base_path,

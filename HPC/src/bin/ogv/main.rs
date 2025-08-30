@@ -30,7 +30,7 @@ async fn main() -> () {
         pipeline
             .add_error(
                 &format!("OGV Stale Job: {}", &id),
-                "Pipeline has been pending for over 24 hours and has been cancelled.",
+                "Pipeline has been pending for over 36 hours and has been cancelled.",
                 &pipeline.data.email
             ).await
             .unwrap_or_else(|e| {

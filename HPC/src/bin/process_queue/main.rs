@@ -109,7 +109,7 @@ async fn main() -> Result<()> {
     );
 
     for ogv in ogvs {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&ogv.pending, &ogv.created_at);
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&ogv.pending, &ogv.created_at, 36);
 
         if ogv.submit || is_stale {
             let pipeline: Pipeline<OgvAPI> = match
@@ -138,7 +138,7 @@ async fn main() -> Result<()> {
                     cores + 1,
                     &format!("ogv-{}", &ogv.id),
                     memory,
-                    1440,
+                    2160,
                     &cmd
                 );
             }
@@ -155,7 +155,7 @@ async fn main() -> Result<()> {
     ).await.unwrap_or(vec![]);
 
     for intact in intacts {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&intact.pending, &intact.created_at);
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&intact.pending, &intact.created_at, 24);
 
         if intact.submit || is_stale {
             let pipeline: Pipeline<IntactAPI> = match
@@ -202,7 +202,7 @@ async fn main() -> Result<()> {
     );
 
     for tcs in tcss {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&tcs.pending, &tcs.created_at);
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&tcs.pending, &tcs.created_at, 24);
 
         if tcs.submit || is_stale {
             let pipeline: Pipeline<TcsAPI> = match
@@ -252,7 +252,8 @@ async fn main() -> Result<()> {
     for coreceptor in coreceptors {
         let (is_stale, is_stale_cmd) = pipeline_is_stale(
             &coreceptor.pending,
-            &coreceptor.created_at
+            &coreceptor.created_at,
+            24
         );
 
         if coreceptor.submit || is_stale {
@@ -303,7 +304,11 @@ async fn main() -> Result<()> {
     ).await.unwrap_or(vec![]);
 
     for splicing in splicings {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&splicing.pending, &splicing.created_at);
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(
+            &splicing.pending,
+            &splicing.created_at,
+            24
+        );
 
         if splicing.submit || is_stale {
             let pipeline: Pipeline<SplicingAPI> = match
