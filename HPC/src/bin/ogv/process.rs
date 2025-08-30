@@ -4,7 +4,7 @@ use std::io::{ BufWriter, Write };
 use anyhow::{ Result, Context };
 use utils::compress::compress_dir;
 use utils::email_templates::results_email_template;
-use utils::pipeline::OgvUpload;
+use utils::pipeline::{ OgvConversion, OgvUpload };
 use utils::run_command::run_command;
 use utils::{ pipeline::{ OgvAPI, Pipeline }, send_email::send_email, load_locations::Locations };
 
@@ -160,25 +160,20 @@ fn generate_samples_file(uploads: &Vec<OgvUpload>, samples_file_location: &str) 
     Ok(())
 }
 
-fn write_conversion_to_file(
-    conversion: HashMap<String, String>,
-    conversion_location: &str
-) -> Result<bool> {
+fn write_conversion_to_file(conversion: OgvConversion, conversion_location: &str) -> Result<bool> {
     #[derive(serde::Serialize)]
     #[allow(non_snake_case)]
-    struct Conversion {
-        Start2ART: i32,
+    struct ConversionJSON {
+        Start2ART: u16,
         colors: Vec<i32>,
     }
+    type ConversionFile = HashMap<String, ConversionJSON>;
 
-    let conversion_json: HashMap<String, Conversion> = HashMap::from(
+    let conversion_json: ConversionFile = HashMap::from(
         conversion
             .into_iter()
-            .map(|(k, v)| {
-                let value: i32 = v.parse().unwrap_or(0);
-                (k, Conversion { Start2ART: value, colors: Vec::new() })
-            })
-            .collect::<HashMap<String, Conversion>>()
+            .map(|(k, v)| { (k, ConversionJSON { Start2ART: v, colors: Vec::new() }) })
+            .collect::<ConversionFile>()
     );
 
     //write conversion to file

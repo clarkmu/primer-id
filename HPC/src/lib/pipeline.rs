@@ -34,6 +34,8 @@ pub struct OgvUpload {
     pub lib_name: String,
 }
 
+pub type OgvConversion = HashMap<String, u16>;
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct OgvAPI {
     pub id: String,
@@ -44,7 +46,7 @@ pub struct OgvAPI {
     #[serde(rename = "resultsFormat")]
     pub results_format: String,
     pub uploads: Vec<OgvUpload>,
-    pub conversion: HashMap<String, String>,
+    pub conversion: OgvConversion,
     pub email: String,
     pub submit: bool,
     pub pending: bool,
