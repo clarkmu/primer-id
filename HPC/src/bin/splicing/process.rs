@@ -8,7 +8,7 @@ use utils::{
     run_command::run_command,
     send_email::send_email,
 };
-use rayon::prelude::*;
+// use rayon::prelude::*;
 use crate::sort_files::{ sort_files, RFiles };
 
 /*
@@ -76,7 +76,8 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
     // run Splicing
     let errors = Arc::new(Mutex::new(Vec::<String>::new()));
 
-    jobs.into_par_iter().for_each(|(lib_name, rfiles)| {
+    // jobs.into_par_iter().for_each(|(lib_name, rfiles)| {
+    jobs.into_iter().for_each(|(lib_name, rfiles)| {
         let date_now = chrono::Utc::now().to_rfc2822();
 
         let _ = pipeline.add_log(&format!("Initializing job #{}: at [{}]", lib_name, &date_now));

@@ -109,7 +109,7 @@ async fn main() -> Result<()> {
     );
 
     for ogv in ogvs {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&ogv.pending, &ogv.created_at, 36);
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&ogv.pending, &ogv.created_at, 48);
 
         if ogv.submit || is_stale {
             let pipeline: Pipeline<OgvAPI> = match

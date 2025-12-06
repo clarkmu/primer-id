@@ -536,9 +536,11 @@ impl Pipeline<SplicingAPI> {
         Ok(())
     }
     pub fn cores_and_memory(&self) -> (u8, u32) {
-        // TODO: cores and memory are hardcoded in splicing repo
+        // removed splicing.par_iter, each library will run sequentially
+        // allocated cores are given to virust-splicing
+        // TODO: memory not calculated from max file size.  Can still error OoM
 
-        let cores = 4;
+        let cores = 50;
         let memory: u32 = 20000;
 
         (cores, memory)

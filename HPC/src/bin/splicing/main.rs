@@ -9,7 +9,7 @@ mod sort_files;
 
 #[tokio::main]
 async fn main() -> () {
-    let EnvVars { id, is_stale, cores, .. } = load_env_vars();
+    let EnvVars { id, is_stale, .. } = load_env_vars();
 
     let locations: Locations = load_locations().unwrap_or_else(|e| {
         println!("Error loading environment: {:?}", e);
@@ -30,7 +30,7 @@ async fn main() -> () {
     if !is_stale.is_empty() {
         pipeline
             .add_error(
-                &format!("TCS/DR Stale Job: {}", &id),
+                &format!("Splicing Stale Job: {}", &id),
                 "Pipeline has been pending for over 24 hours and has been cancelled.",
                 &pipeline.data.email
             ).await
@@ -41,18 +41,11 @@ async fn main() -> () {
         return ();
     }
 
-    if cores == 1 {
-        // handle error
-    }
-
-    // set thread count for thread pool in processing
-    rayon::ThreadPoolBuilder::new().num_threads(cores).build_global().unwrap();
-
     if let Err(e) = process::process(&pipeline, locations).await {
         pipeline
             .add_error(
-                &format!("TCS/DR Error {}", &pipeline.data.id),
-                &format!("Failed to process TCS/DR pipeline #{}.\n\n{:?}", &pipeline.id, e),
+                &format!("Splicing Processing Error"),
+                &format!("Failed to process Splicing pipeline #{}.\n\n{:?}", &pipeline.id, e),
                 &pipeline.data.email
             ).await
             .unwrap_or_else(|e| {

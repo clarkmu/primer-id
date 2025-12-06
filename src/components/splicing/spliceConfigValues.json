@@ -1,12 +1,12 @@
 {
   "strains": [
-    { "value": "NL43", "label": "NL4-3" },
-    { "value": "B", "label": "Consensus B" }
+    { "value": "nl43", "label": "NL4-3" },
+    { "value": "b", "label": "Consensus B" }
   ],
   "assays": [
-    { "value": "random_reverse", "label": "Random Reverse" },
+    { "value": "random-reverse", "label": "Random Reverse" },
     { "value": "kmer", "label": "K-mer" },
-    { "value": "size_specific", "label": "Size Specific Primer" }
+    { "value": "size-specific", "label": "Size Specific Primer" }
   ],
   "distance": 2,
   "sequence": ""
