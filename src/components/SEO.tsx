@@ -1,7 +1,7 @@
 import Head from "next/head";
 
 const url = "https://primer-id.org";
-const favicon = `${url}/favicon.ico`;
+const favicon = `${url}/icons/favicon.ico`;
 const logo = `${url}/logo.png`;
 const title = "Primer-ID";
 const description = "NGS TCS-DR OGV Intactness Pipelines";

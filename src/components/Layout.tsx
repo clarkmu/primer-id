@@ -1,6 +1,20 @@
 import { ReactNode } from "react";
 import Nav from "./Nav";
 
+export const metadata = {
+  title: "Primer ID",
+  description: "UNC Primer-ID analysis and reporting toolkit",
+  themeColor: "#4B9CD3",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/logo_192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/logo_512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/logo_192.png",
+  },
+};
+
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="h-screen flex flex-col">

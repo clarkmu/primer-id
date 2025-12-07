@@ -24,7 +24,6 @@
     "bioinformatics-parser": "^1.1.2",
     "html-react-parser": "^5.1.1",
     "next": "16.0.7",
-    "next-pwa": "^5.5.2",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-dropzone": "^14.2.3",
