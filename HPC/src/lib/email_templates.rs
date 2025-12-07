@@ -69,6 +69,10 @@ pub fn generate_tcs_receipt(data: &TcsAPI) -> String {
         content.push_str("\n");
     }
 
+    if !&data.dr_version.is_empty() {
+        content.push_str(format!("DR Verrsion: {}\n\n", &data.dr_version.clone()).as_str());
+    }
+
     if !uploads.is_empty() {
         content.push_str(&"You have uploaded the following sequences:\n\n");
 
