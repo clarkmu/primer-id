@@ -202,7 +202,7 @@ async fn main() -> Result<()> {
     );
 
     for tcs in tcss {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&tcs.pending, &tcs.created_at, 24);
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&tcs.pending, &tcs.created_at, 48);
 
         if tcs.submit || is_stale {
             let pipeline: Pipeline<TcsAPI> = match

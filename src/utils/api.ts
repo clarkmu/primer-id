@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
-const { API_KEY, NODE_ENV } = process.env;
+const { API_KEY, TEST_ENV } = process.env;
 
 // 'middleware' to ensure API Key or return id
 export const validateIdRequest = (req: NextApiRequest) => {
@@ -24,7 +24,7 @@ export const validateIdRequest = (req: NextApiRequest) => {
 export const getPublic = async (
   prismaFindManyFunction: (query: any) => Promise<any>,
   res: NextApiResponse,
-  calcUploadCount: (item: any) => number,
+  calcUploadCount: (item: any) => number
 ) => {
   try {
     const all: any[] = await prismaFindManyFunction({
@@ -43,16 +43,15 @@ export const getPublic = async (
     });
 
     // allow all data in test env, otherwise filter out sensitive fields
-    const filtered_results =
-      NODE_ENV === "test"
-        ? all
-        : all.map(({ id, submit, pending, createdAt, ...item }) => ({
-            id,
-            submit,
-            pending,
-            createdAt,
-            uploadCount: calcUploadCount(item),
-          }));
+    const filtered_results = !!TEST_ENV
+      ? all
+      : all.map(({ id, submit, pending, createdAt, ...item }) => ({
+          id,
+          submit,
+          pending,
+          createdAt,
+          uploadCount: calcUploadCount(item),
+        }));
 
     return res.status(200).json(filtered_results);
   } catch (e) {
@@ -64,7 +63,7 @@ export const getPublic = async (
 export const getById = async (
   id: String,
   res: NextApiResponse,
-  prismaFindUniqueFunction: (query: any) => Promise<void>,
+  prismaFindUniqueFunction: (query: any) => Promise<void>
 ) => {
   try {
     const item = await prismaFindUniqueFunction({ where: { id } });
@@ -79,7 +78,7 @@ export const getById = async (
 export const patchSubmit = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  prismaUpdateFunction: (query: any) => Promise<void>,
+  prismaUpdateFunction: (query: any) => Promise<void>
 ) => {
   const { id } = req.query;
 
@@ -105,7 +104,7 @@ export const patchItem = async (
   req: NextApiRequest,
   res: NextApiResponse,
   id: String,
-  prismaUpdateFunction: (query: any) => Promise<void>,
+  prismaUpdateFunction: (query: any) => Promise<void>
 ) => {
   let data;
 

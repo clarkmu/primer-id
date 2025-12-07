@@ -10,7 +10,6 @@ const { spawn } = require("child_process");
     env: {
       ...process.env,
       DATABASE_URL: uri,
-      NODE_ENV: "test",
     },
     stdio: "inherit",
     shell: true,

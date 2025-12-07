@@ -1,7 +1,7 @@
 import GCP_CREDENTIALS from "@/utils/gcp/GCP_CREDENTIALS";
 import { Storage } from "@google-cloud/storage";
 
-const { NODE_ENV } = process.env;
+const { NODE_ENV, TEST_ENV } = process.env;
 
 const storage = new Storage({
   projectId: GCP_CREDENTIALS.project_id,
@@ -20,17 +20,17 @@ export interface InputFileWithSignedUrl extends InputFile {
 async function createSignedUrls(
   bucketName: string,
   files: InputFile[],
-  createPath: (file: InputFile) => String,
+  createPath: (file: InputFile) => String
 ) {
   const bucket = storage.bucket(bucketName);
 
   let signedUrls: InputFileWithSignedUrl[] = [];
 
   const expires = new Date(
-    new Date().getTime() + 24 * 60 * 60 * 1000,
+    new Date().getTime() + 24 * 60 * 60 * 1000
   ).getTime();
 
-  if (NODE_ENV === "test") {
+  if (!!TEST_ENV) {
     return files.map((file) => ({
       signedURL: "http://test-url.com/test-bucket/1",
       ...file,
