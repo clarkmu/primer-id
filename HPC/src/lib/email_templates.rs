@@ -70,7 +70,7 @@ pub fn generate_tcs_receipt(data: &TcsAPI) -> String {
     }
 
     if !&data.dr_version.is_empty() {
-        content.push_str(format!("DR Verrsion: {}\n\n", &data.dr_version.clone()).as_str());
+        content.push_str(format!("DR Version: {}\n\n", &data.dr_version.clone()).as_str());
     }
 
     if !uploads.is_empty() {

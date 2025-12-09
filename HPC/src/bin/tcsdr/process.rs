@@ -80,7 +80,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
                 );
                 let _ = pipeline.add_log(&format!("Running DR command: {}", &dr_command));
                 if let Err(_e) = run_command(&dr_command, &pipeline.scratch_dir) {
-                    //
+                    // pipeline creates a .error file that we check for, don't handle anything here
                 }
             } else {
                 let json_location = generate_tcs_json(
@@ -102,7 +102,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
 
                 let tcs_command = format!("conda run -n tcsdr tcs -p {}", &json_location);
                 if let Err(_e) = run_command(&tcs_command, &pipeline.scratch_dir) {
-                    //
+                    // pipeline creates a .error file that we check for, don't handle anything here
                 }
             }
         });
@@ -163,12 +163,20 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     }
 
     // add log to email as link
-    upload(&log_local_location, &log_upload_location).context("")?;
-    let log_signed_url = get_signed_url(&log_upload_location).context("")?;
-    let log_link_html = format!(
-        "<br><a href='{}' style='font-size: 18px;'>View Report</a><br>",
-        &log_signed_url
+    let log_path = Path::new(&log_local_location);
+    // default to failed to generate log message
+    let mut log_link_html = String::from(
+        "<div style='background-color:#d9534f;color:white;padding:12px 16px;border-radius:4px;font-weight:bold;font-size:14px;margin:12px 0;'>⚠️ Failed to generate log file.</div>"
     );
+
+    if log_path.exists() {
+        upload(&log_local_location, &log_upload_location).context("")?;
+        let log_signed_url = get_signed_url(&log_upload_location).context("")?;
+        log_link_html = format!(
+            "<br><a href='{}' style='font-size: 18px;'>View Report</a><br>",
+            &log_signed_url
+        );
+    }
 
     // compress results
     let results_location = format!("{}/{}", &pipeline.scratch_dir, &job_id);
