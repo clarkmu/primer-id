@@ -1,7 +1,7 @@
 # FROM rust:1.78
 FROM redhat/ubi9
 
-ENV CARGO_TARGET_DIR=/app/target
+ENV CARGO_TARGET_DIR=/tmp/target
 
 # add MiniConda to PATH
 ENV PATH="/root/miniconda3/bin:${PATH}"
@@ -50,10 +50,15 @@ RUN conda init bash
 RUN conda config --env --set always_yes true
 
 # add channels
-RUN conda config --add channels defaults
-RUN conda config --add channels bioconda
-RUN conda config --add channels conda-forge
-RUN conda config --set channel_priority strict
+RUN conda config --add channels defaults \
+ && conda config --add channels bioconda \
+ && conda config --add channels conda-forge \
+ && conda config --set channel_priority strict
+
+# accept Conda Terms of Service (do this BEFORE any conda create/install)
+RUN conda tos accept --channel defaults \
+ && conda tos accept --channel conda-forge \
+ && conda tos accept --channel bioconda
 
 # TCS-DR dependencies
 RUN conda create -n tcsdr python=3.9 ruby=3.4.2 r-base r-essentials r-igraph r-phangorn

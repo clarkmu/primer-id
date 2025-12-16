@@ -69,15 +69,16 @@ pub async fn validate_file_names(files: Vec<PathBuf>) -> Result<Vec<FilesResults
     if !result.all_pass {
         let error_msg = result.files
             .iter()
-            .filter(|f| !f.errors.is_none())
-            .map(|f|
+            .filter_map(|f| f.errors.as_ref().map(|errors| (f.file_name.as_str(), errors)))
+            .map(|(file_name, errors)|
                 format!(
                     "File: {}\n{}",
-                    f.file_name,
-                    f.errors
-                        .clone()
-                        .unwrap_or(vec!["Undefined error message?".to_string()])
-                        .join("\n")
+                    file_name,
+                    if errors.is_empty() {
+                        "Undefined error message?".to_string()
+                    } else {
+                        errors.join("\n")
+                    }
                 )
             )
             .collect::<Vec<String>>()
@@ -91,8 +92,8 @@ pub async fn validate_file_names(files: Vec<PathBuf>) -> Result<Vec<FilesResults
     let files_results: Vec<FilesResults> = result.files
         .into_iter()
         .map(|f| {
-            let file_name = f.file_name.clone();
-            let lib_name = f.lib_name.unwrap_or("".to_string());
+            let file_name = f.file_name;
+            let lib_name = f.lib_name.unwrap_or_default();
             let file_path = files
                 .iter()
                 .find(|p| {

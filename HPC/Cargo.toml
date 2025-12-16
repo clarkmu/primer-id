@@ -3,6 +3,8 @@ name = "primer_id"
 version = "0.1.0"
 edition = "2021"
 
+# cargo run --bin tcsdr -- --id=69405e7c7c6100327e7f00cb --is_dev --cores=5
+
 [lib]
 name="utils"
 path="src/lib/mod.rs"

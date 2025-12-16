@@ -17,7 +17,7 @@ async fn main() -> () {
         std::process::exit(1);
     });
 
-    let pipeline: Pipeline<OgvAPI> = match Pipeline::new(id.clone(), PipelineType::Ogv).await {
+    let pipeline: Pipeline<OgvAPI> = match Pipeline::new(&id, PipelineType::Ogv).await {
         Ok(p) => p,
         Err(e) => {
             println!("Error creating pipeline: {:?}", e);

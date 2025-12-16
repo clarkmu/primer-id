@@ -14,10 +14,9 @@ pub async fn get_api<State: for<'de> serde::Deserialize<'de>>(url: &str) -> Resu
         .context("Failed to get API.")?;
 
     let json = response.json::<serde_json::Value>().await?;
+    let json_pretty = serde_json::to_string_pretty(&json).unwrap_or_default();
     let data: State = serde_json
-        ::from_value(json.clone())
-        .with_context(||
-            format!("Invalid JSON: {}", serde_json::to_string_pretty(&json).unwrap_or_default())
-        )?;
+        ::from_value(json)
+        .with_context(|| format!("Invalid JSON: {}", json_pretty))?;
     Ok(data)
 }

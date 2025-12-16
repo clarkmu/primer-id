@@ -25,8 +25,7 @@ pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Re
     let seq_paths = split_sequences(&pipeline.data.sequences, &pipeline.scratch_dir)?;
 
     seq_paths
-        .clone()
-        .into_par_iter()
+        .par_iter()
         .enumerate()
         .for_each(|(i, pathbuf)| {
             let date_now = chrono::Utc::now().to_rfc2822();

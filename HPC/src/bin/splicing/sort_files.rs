@@ -1,7 +1,7 @@
-use anyhow::{Context, Result};
+use anyhow::{ Context, Result };
 use glob::glob;
 use std::path::PathBuf;
-use std::{collections::HashMap, path::Path};
+use std::{ collections::HashMap, path::Path };
 
 /**
  * @brief: sort_files
@@ -35,7 +35,8 @@ pub fn sort_files(dir: &str, destination: &str) -> Result<HashMap<String, RFiles
     let mut results: HashMap<String, RFiles> = HashMap::new();
 
     if !Path::new(destination).exists() {
-        std::fs::create_dir(destination)
+        std::fs
+            ::create_dir(destination)
             .context("Failed to create destination directory at file sorting.")?;
     }
 
@@ -55,10 +56,12 @@ pub fn sort_files(dir: &str, destination: &str) -> Result<HashMap<String, RFiles
             let decompressed_file_name = file_name.trim_end_matches(".gz").to_string();
             let decompressed_path = file.with_file_name(&decompressed_file_name);
 
-            let mut decompressed_file = std::fs::File::create(&decompressed_path)
+            let mut decompressed_file = std::fs::File
+                ::create(&decompressed_path)
                 .context("Failed to create decompressed file.")?;
             let mut gz_decoder = flate2::read::GzDecoder::new(std::fs::File::open(&file)?);
-            std::io::copy(&mut gz_decoder, &mut decompressed_file)
+            std::io
+                ::copy(&mut gz_decoder, &mut decompressed_file)
                 .context("Failed to decompress file.")?;
 
             decompressed_file_name
@@ -78,35 +81,31 @@ pub fn sort_files(dir: &str, destination: &str) -> Result<HashMap<String, RFiles
         //     .to_string();
 
         if lib_name.is_empty() {
-            return Err(anyhow::anyhow!(
-                "Failed to get lib name from file name: {}",
-                file_name
-            ));
+            return Err(anyhow::anyhow!("Failed to get lib name from file name: {}", file_name));
         }
 
         let destination_dir = Path::new(destination).join(&lib_name);
         let destination = destination_dir.join(&file_name);
 
         if !destination_dir.exists() {
-            std::fs::create_dir(&destination_dir).context(format!(
-                "Failed to create destination directory for file: {}",
-                &file_name
-            ))?;
+            std::fs
+                ::create_dir(&destination_dir)
+                .context(
+                    format!("Failed to create destination directory for file: {}", &file_name)
+                )?;
         }
 
         std::fs::copy(file, &destination).context("Failed to copy file while sorting.")?;
 
         // add r file to results object
         if is_r1 {
-            results
-                .entry(lib_name.clone())
-                .or_insert_with(|| RFiles { r1: None, r2: None })
-                .r1 = Some(destination.display().to_string());
+            results.entry(lib_name).or_insert_with(|| RFiles { r1: None, r2: None }).r1 = Some(
+                destination.display().to_string()
+            );
         } else if is_r2 {
-            results
-                .entry(lib_name.clone())
-                .or_insert_with(|| RFiles { r1: None, r2: None })
-                .r2 = Some(destination.display().to_string());
+            results.entry(lib_name).or_insert_with(|| RFiles { r1: None, r2: None }).r2 = Some(
+                destination.display().to_string()
+            );
         }
     }
 
@@ -137,8 +136,8 @@ mod tests {
         let results = results.unwrap();
         assert!(results.contains_key("splicing"));
 
-        let r1_file = results.get("splicing").unwrap().r1.clone();
-        let r2_file = results.get("splicing").unwrap().r2.clone();
+        let r1_file = results.get("splicing").unwrap().r1.to_owned();
+        let r2_file = results.get("splicing").unwrap().r2.to_owned();
         assert!(r1_file.is_some());
         assert!(r2_file.is_some());
 
@@ -153,8 +152,8 @@ mod tests {
         println!("r2_file: {:?}", r2_file);
 
         // ensure that the files under results['tar'] are uncompressed
-        let r1_file = results.get("tar").unwrap().r1.clone();
-        let r2_file = results.get("tar").unwrap().r2.clone();
+        let r1_file = results.get("tar").unwrap().r1.to_owned();
+        let r2_file = results.get("tar").unwrap().r2.to_owned();
         assert!(r1_file.is_some());
         assert!(r2_file.is_some());
 
@@ -174,30 +173,19 @@ mod tests {
     fn test_parse_rfiles() {
         // Test the filename extraction logic
         let test_cases = vec![
-            (
-                "A_468d23_CAGATCA_S1_L001_R1_001.fasta",
-                "A_468d23_CAGATCA_S1_L001",
-            ),
-            (
-                "A_468d23_CAGATCA_S1_L001_r1_001.fasta",
-                "A_468d23_CAGATCA_S1_L001",
-            ),
+            ("A_468d23_CAGATCA_S1_L001_R1_001.fasta", "A_468d23_CAGATCA_S1_L001"),
+            ("A_468d23_CAGATCA_S1_L001_r1_001.fasta", "A_468d23_CAGATCA_S1_L001"),
             ("sample_r1.fastq.gz", "sample"),
             ("sample_r2.fastq.gz", "sample"),
             ("another_sample_R1.fastq", "another_sample"),
             ("no_read_number.txt", ""),
             ("_r1.fastq", ""),
-            ("r2.fastq", ""),
+            ("r2.fastq", "")
         ];
 
         for (input, expected) in test_cases {
             let (lib_name, _, _) = parse_rfile(input);
-            assert_eq!(
-                lib_name,
-                expected.to_lowercase(),
-                "Failed for input: {}",
-                input
-            );
+            assert_eq!(lib_name, expected.to_lowercase(), "Failed for input: {}", input);
         }
     }
 }

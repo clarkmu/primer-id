@@ -30,7 +30,7 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
 
     // set up variables
     let job_id = pipeline.job_id();
-    let htsf_location = pipeline.data.htsf.clone().unwrap_or("".to_string());
+    let htsf_location = pipeline.data.htsf.as_deref().unwrap_or("").to_owned();
     let samples_dir = format!("{}/libs", &pipeline.scratch_dir);
     let results_location = format!("{}/{}", &pipeline.scratch_dir, &job_id);
 
@@ -82,8 +82,8 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
 
         let _ = pipeline.add_log(&format!("Initializing job #{}: at [{}]", lib_name, &date_now));
 
-        let r1_file = rfiles.r1.clone().unwrap_or("".to_string());
-        let r2_file = rfiles.r2.clone().unwrap_or("".to_string());
+        let r1_file = rfiles.r1.unwrap_or_default();
+        let r2_file = rfiles.r2.unwrap_or_default();
 
         let command = format!(
             "cargo run -- -q {} -d {} -a {} -1 {} -2 {}",

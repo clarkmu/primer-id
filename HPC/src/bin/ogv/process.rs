@@ -59,7 +59,7 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
 
     // create conversion file
     pipeline.add_log(&format!("Creating conversion file: {}", &conversion_location))?;
-    write_conversion_to_file(pipeline.data.conversion.clone(), &conversion_location).context(
+    write_conversion_to_file(&pipeline.data.conversion, &conversion_location).context(
         "Failed to create conversion file."
     )?;
 
@@ -135,7 +135,7 @@ pub async fn process(pipeline: &Pipeline<OgvAPI>, locations: Locations) -> Resul
     Ok(())
 }
 
-fn generate_samples_file(uploads: &Vec<OgvUpload>, samples_file_location: &str) -> Result<()> {
+fn generate_samples_file(uploads: &[OgvUpload], samples_file_location: &str) -> Result<()> {
     #[derive(serde::Serialize)]
     struct Samples {
         samples: Vec<String>,
@@ -143,7 +143,7 @@ fn generate_samples_file(uploads: &Vec<OgvUpload>, samples_file_location: &str) 
 
     let mut samples_json: Samples = Samples { samples: Vec::new() };
 
-    for upload in &uploads.to_vec() {
+    for upload in uploads {
         samples_json.samples.push(format!("{}/{}", &upload.lib_name, &upload.file_name));
     }
 
@@ -160,7 +160,7 @@ fn generate_samples_file(uploads: &Vec<OgvUpload>, samples_file_location: &str) 
     Ok(())
 }
 
-fn write_conversion_to_file(conversion: OgvConversion, conversion_location: &str) -> Result<bool> {
+fn write_conversion_to_file(conversion: &OgvConversion, conversion_location: &str) -> Result<bool> {
     #[derive(serde::Serialize)]
     #[allow(non_snake_case)]
     struct ConversionJSON {
@@ -171,8 +171,8 @@ fn write_conversion_to_file(conversion: OgvConversion, conversion_location: &str
 
     let conversion_json: ConversionFile = HashMap::from(
         conversion
-            .into_iter()
-            .map(|(k, v)| { (k, ConversionJSON { Start2ART: v, colors: Vec::new() }) })
+            .iter()
+            .map(|(k, v)| { (k.clone(), ConversionJSON { Start2ART: *v, colors: Vec::new() }) })
             .collect::<ConversionFile>()
     );
 

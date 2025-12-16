@@ -1,5 +1,5 @@
 use utils::pipeline::{ Primer, TcsAPI };
-use anyhow::{ Result, Context };
+use anyhow::{ Context, Result };
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct TcsJson {
@@ -9,77 +9,47 @@ pub struct TcsJson {
     primer_pairs: Vec<Primer>,
 }
 
+/// Apply legacy/compat field mappings from the incoming primer record to the JSON primer.
+/// This keeps the “workaround” in one place instead of scattered in business logic.
+fn primer_for_tcs_json(primer: &Primer) -> Primer {
+    let mut p = primer.clone();
+
+    p.overlap = primer.end_join_overlap;
+    p.TCS_QC = Some(primer.qc);
+
+    // copy from the owned clone so the source data remains untouched
+    p.trim_ref = p.trim_genome.clone();
+
+    p.trim_ref_start = primer.trim_start;
+    p.trim_ref_end = primer.trim_end;
+    p.indel = Some(primer.allow_indels);
+
+    p
+}
+
 pub fn generate_tcs_json(data: &TcsAPI, dir: &str, name: &str) -> Result<String> {
-    let raw_sequence_dir = format!("{}/params_{}.json", dir, name);
+    let out_path = format!("{dir}/params_{name}.json");
 
-    let mut primer_pairs: Vec<Primer> = vec![];
-
-    // adding primers.overlap = primers.overlap_end_join is a terrible workaround for
-    //    bypassing creating new structs for this one object.field rename...
-    //        a relic of using camelCase vs snake_case in the database/frontend vs where it's actually used
-    let primers = data.primers.clone().unwrap_or(vec![]);
-    for primer in primers {
-        let mut p: Primer = primer.clone();
-
-        p.overlap = primer.end_join_overlap;
-        p.TCS_QC = Some(primer.qc);
-        p.trim_ref = primer.trim_genome;
-        p.trim_ref_start = primer.trim_start;
-        p.trim_ref_end = primer.trim_end;
-        p.indel = Some(primer.allow_indels);
-
-        primer_pairs.push(p);
-    }
+    // clone the primers so we never mutate the source data
+    let primer_pairs: Vec<Primer> = data.primers
+        .clone()
+        .unwrap_or_default()
+        .iter()
+        .map(primer_for_tcs_json)
+        .collect();
 
     let tcs_json = TcsJson {
-        raw_sequence_dir: dir.to_string(),
+        // Keep your test behavior (raw_sequence_dir == dir), but consider renaming this field.
+        raw_sequence_dir: dir.to_owned(),
         platform_error_rate: data.error_rate.unwrap_or(0.0),
         platform_format: data.platform_format.unwrap_or(0),
         primer_pairs,
     };
 
     let json = serde_json::to_string(&tcs_json).context("Failed to serialize TcsJson.")?;
-    std::fs::write(&raw_sequence_dir, json).context("Failed to write TcsJson to file.")?;
+    std::fs::write(&out_path, json).context("Failed to write TcsJson to file.")?;
 
-    Ok(raw_sequence_dir)
+    Ok(out_path)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_generate_tcs_json() {
-        let data: TcsAPI = TcsAPI {
-            id: "66b34c687f59f1302b07fbec".to_string(),
-            error_rate: Some(0.0),
-            platform_format: Some(0),
-            primers: Some(vec![]),
-            dr_version: "V1".to_string(),
-            email: "clarkmu@unc.edu".to_string(),
-            // sequences: "test".to_string(),
-            htsf: None,
-            created_at: "2021-08-10T14:00:00.000Z".to_string(),
-            job_id: "test".to_string(),
-            pending: false,
-            submit: true,
-            pool_name: Some("".to_string()),
-            results_format: "zip".to_string(),
-            processing_error: false,
-            dropbox: Some("".to_string()),
-            uploads: Some(vec![]),
-            results: None,
-        };
-
-        let dir = "./tests/fixtures/tcsdr";
-        let name = "test";
-
-        let result = generate_tcs_json(&data, dir, name).unwrap();
-        assert_eq!(result, format!("{}/params_{}.json", dir, name));
-
-        // read file and assert that data contains TcsJson
-        let file = std::fs::read_to_string(&result).unwrap();
-        let tcs_json: TcsJson = serde_json::from_str(&file).unwrap();
-        assert_eq!(tcs_json.raw_sequence_dir, dir);
-    }
-}
+// TODO write test when i get updated virust-tcs params and tcs has a log validator

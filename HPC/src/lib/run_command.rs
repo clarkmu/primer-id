@@ -3,11 +3,11 @@ use anyhow::{ Result, Context };
 use crate::load_locations::{ load_locations, Locations };
 
 pub fn run_command(cmd: &str, current_dir: &str) -> Result<String> {
-    let mut dir: String = current_dir.to_string().clone();
+    let mut dir = current_dir.to_owned();
 
     if dir.is_empty() {
         let locations: Locations = load_locations().context("Failed to load locations")?;
-        dir = locations.base.clone();
+        dir = locations.base;
     }
 
     println!("Command directory: {}\nCommand: {}", dir, cmd);

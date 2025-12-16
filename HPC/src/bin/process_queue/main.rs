@@ -3,8 +3,10 @@
 // RUST_BACKTRACE=1 cargo watch -c -w src -x 'run --bin main -- --is_dev' --poll 2>/dev/null
 
 use anyhow::Result;
+use chrono::Local;
 use serde::Deserialize;
 use std::process::exit;
+use std::path::Path;
 use utils::{
     get_api::get_api,
     load_env_vars::{ load_env_vars, EnvVars },
@@ -71,7 +73,47 @@ fn create_sbatch_cmd(
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
+    // write errors to ~/process_queue_{month}_{day}.error
+    // if error happens here in process_queue, submissions will likely not happen and queue will appear running but not initializing jobs
+
+    if let Err(err) = run().await {
+        eprintln!("process_queue failed: {:?}", err);
+
+        match std::env::var("HOME") {
+            Ok(home) => {
+                let date_suffix = Local::now().format("%m_%d");
+                let mut path = format!("{}/process_queue_{}.error", home, date_suffix);
+
+                if Path::new(&path).exists() {
+                    for idx in 1.. {
+                        let candidate = format!(
+                            "{}/process_queue_{}_{}.error",
+                            home,
+                            date_suffix,
+                            idx
+                        );
+                        if !Path::new(&candidate).exists() {
+                            path = candidate;
+                            break;
+                        }
+                    }
+                }
+
+                if let Err(write_err) = std::fs::write(&path, format!("{:?}\n", err)) {
+                    eprintln!("Failed to write error log to {}: {:?}", path, write_err);
+                }
+            }
+            Err(env_err) => {
+                eprintln!("Unable to resolve HOME for error logging: {:?}", env_err);
+            }
+        }
+
+        exit(1);
+    }
+}
+
+async fn run() -> Result<()> {
     let EnvVars { is_dev, .. } = load_env_vars();
 
     let locations = load_locations().unwrap_or_else(|e| {
@@ -112,9 +154,7 @@ async fn main() -> Result<()> {
         let (is_stale, is_stale_cmd) = pipeline_is_stale(&ogv.pending, &ogv.created_at, 48);
 
         if ogv.submit || is_stale {
-            let pipeline: Pipeline<OgvAPI> = match
-                Pipeline::new(ogv.id.clone(), PipelineType::Ogv).await
-            {
+            let pipeline: Pipeline<OgvAPI> = match Pipeline::new(&ogv.id, PipelineType::Ogv).await {
                 Ok(p) => p,
                 Err(e) => {
                     println!("Error creating pipeline: {:?}", e);
@@ -159,7 +199,7 @@ async fn main() -> Result<()> {
 
         if intact.submit || is_stale {
             let pipeline: Pipeline<IntactAPI> = match
-                Pipeline::new(intact.id.clone(), PipelineType::Intact).await
+                Pipeline::new(&intact.id, PipelineType::Intact).await
             {
                 Ok(p) => p,
                 Err(e) => {
@@ -205,9 +245,7 @@ async fn main() -> Result<()> {
         let (is_stale, is_stale_cmd) = pipeline_is_stale(&tcs.pending, &tcs.created_at, 48);
 
         if tcs.submit || is_stale {
-            let pipeline: Pipeline<TcsAPI> = match
-                Pipeline::new(tcs.id.clone(), PipelineType::Tcs).await
-            {
+            let pipeline: Pipeline<TcsAPI> = match Pipeline::new(&tcs.id, PipelineType::Tcs).await {
                 Ok(p) => p,
                 Err(e) => {
                     println!("Error creating pipeline: {:?}", e);
@@ -258,7 +296,7 @@ async fn main() -> Result<()> {
 
         if coreceptor.submit || is_stale {
             let pipeline: Pipeline<CoreceptorAPI> = match
-                Pipeline::new(coreceptor.id.clone(), PipelineType::Coreceptor).await
+                Pipeline::new(&coreceptor.id, PipelineType::Coreceptor).await
             {
                 Ok(p) => p,
                 Err(e) => {
@@ -312,7 +350,7 @@ async fn main() -> Result<()> {
 
         if splicing.submit || is_stale {
             let pipeline: Pipeline<SplicingAPI> = match
-                Pipeline::new(splicing.id.clone(), PipelineType::Splicing).await
+                Pipeline::new(&splicing.id, PipelineType::Splicing).await
             {
                 Ok(p) => p,
                 Err(e) => {

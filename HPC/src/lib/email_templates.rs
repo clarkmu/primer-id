@@ -1,8 +1,11 @@
 use chrono::{ Utc, Duration };
 
+use std::fmt::Write;
+
 use crate::{
     load_locations::{ load_locations, Locations, PipelineType },
     pipeline::{ OgvAPI, SplicingAPI, TcsAPI },
+    string_map_to_string::string_map_to_string,
 };
 
 // contact us and outro
@@ -55,36 +58,34 @@ pub fn results_email_template(signed_url: String, extra_notes: &str) -> String {
 }
 
 pub fn generate_tcs_receipt(data: &TcsAPI) -> String {
-    let mut content: String = String::from("");
+    let mut content = String::new();
 
-    let uploads = &data.uploads.clone().unwrap_or(vec![]);
-    let htsf = &data.htsf.clone().unwrap_or("".to_string());
+    let uploads = data.uploads.as_deref().unwrap_or(&[]);
+    let htsf = data.htsf.as_deref().unwrap_or("");
 
-    content.push_str(format!("ID: {}\n", &data.id).as_str());
+    write!(content, "ID: {}<br>", data.id).unwrap();
 
-    let pool_name = &data.pool_name.clone().unwrap_or("".to_string());
-    if !pool_name.is_empty() {
-        content.push_str(format!("Pool Name: {}\n\n", pool_name).as_str());
-    } else {
-        content.push_str("\n");
+    match data.pool_name.as_deref() {
+        Some(pool_name) if !pool_name.is_empty() => {
+            write!(content, "Pool Name: {}<br><br>", pool_name).unwrap();
+        }
+        _ => content.push_str("<br>"),
     }
 
-    if !&data.dr_version.is_empty() {
-        content.push_str(format!("DR Version: {}\n\n", &data.dr_version.clone()).as_str());
+    if !data.dr_version.is_empty() {
+        write!(content, "DR Version: {}<br><br>", data.dr_version).unwrap();
     }
 
     if !uploads.is_empty() {
-        content.push_str(&"You have uploaded the following sequences:\n\n");
-
-        let filenames: Vec<String> = uploads
-            .iter()
-            .map(|upload| upload.file_name.clone())
-            .collect();
-        let filenames_str = filenames.join("\n");
-        content.push_str(&filenames_str);
+        content.push_str("You have uploaded the following sequences:<br><br>");
+        content.push_str(
+            &string_map_to_string(uploads.iter(), |s, upload| {
+                s.push_str(upload.file_name.as_str());
+            })
+        );
     } else if !htsf.is_empty() {
-        let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
-        content.push_str(&format!("HTSF Location: {}", &htsf));
+        let htsf = data.htsf.as_deref().unwrap_or("undefined");
+        write!(content, "HTSF Location: {}", htsf).unwrap();
     }
 
     let receipt = receipt_email_template(&content);
@@ -93,21 +94,33 @@ pub fn generate_tcs_receipt(data: &TcsAPI) -> String {
 }
 
 pub fn generate_ogv_receipt(data: &OgvAPI) -> String {
+    // let conversion_html =
+    //     "<u>Start2Art</u>:<br>".to_string() +
+    //     &data.conversion
+    //         .iter()
+    //         .map(|(k, v)| format!("{}: {}", k, v))
+    //         .collect::<Vec<String>>()
+    //         .join("<br>");
+
     let conversion_html =
         "<u>Start2Art</u>:<br>".to_string() +
-        &data.conversion
-            .iter()
-            .map(|(k, v)| format!("{}: {}", k, v))
-            .collect::<Vec<String>>()
-            .join("<br>");
+        &string_map_to_string(data.conversion.iter(), |s, (k, v)| {
+            write!(s, "{}: {}", k, v).unwrap();
+        });
+
+    // let uploads_html =
+    //     "<u>Uploads</u>:<br>".to_string() +
+    //     &data.uploads
+    //         .iter()
+    //         .map(|u| format!("{}: {}", u.lib_name, u.file_name))
+    //         .collect::<Vec<String>>()
+    //         .join("<br>");
 
     let uploads_html =
         "<u>Uploads</u>:<br>".to_string() +
-        &data.uploads
-            .iter()
-            .map(|u| format!("{}: {}", u.lib_name, u.file_name))
-            .collect::<Vec<String>>()
-            .join("<br>");
+        &string_map_to_string(data.uploads.iter(), |s, u| {
+            write!(s, "{}: {}", u.lib_name, u.file_name).unwrap();
+        });
 
     let receipt = receipt_email_template(&format!("{}</br></br>{}", conversion_html, uploads_html));
 
@@ -115,23 +128,21 @@ pub fn generate_ogv_receipt(data: &OgvAPI) -> String {
 }
 
 pub fn generate_splicing_receipt(data: &SplicingAPI) -> String {
-    let mut content: String = String::from("");
+    let mut content = String::new();
 
-    let uploads = &data.uploads.clone().unwrap_or(vec![]);
-    let htsf = &data.htsf.clone().unwrap_or("".to_string());
+    let uploads = data.uploads.as_deref().unwrap_or(&[]);
+    let htsf = data.htsf.as_deref().unwrap_or("");
 
     if !uploads.is_empty() {
-        content = String::from("You have uploaded the following sequences:\n\n");
-
-        let filenames: Vec<String> = uploads
-            .iter()
-            .map(|upload| upload.file_name.clone())
-            .collect();
-        let filenames_str = filenames.join("\n");
-        content.push_str(&filenames_str);
+        content.push_str("You have uploaded the following sequences:<br><br>");
+        content.push_str(
+            &string_map_to_string(uploads.iter(), |s, upload| {
+                s.push_str(upload.file_name.as_str());
+            })
+        );
     } else if !htsf.is_empty() {
-        let htsf = &data.htsf.clone().unwrap_or("undefined".to_string());
-        content = format!("HTSF Location: {}", &htsf);
+        let htsf = data.htsf.as_deref().unwrap_or("undefined");
+        write!(content, "HTSF Location: {}", htsf).unwrap();
     }
 
     let receipt = receipt_email_template(&content);

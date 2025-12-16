@@ -31,7 +31,7 @@ pub async fn send_email(
     let body_html: &str = &body.replace("\n", "<br>");
 
     let message = MessageBuilder::new()
-        .from(admin_email.clone())
+        .from(admin_email.as_str())
         .to(to)
         .subject(subject)
         .html_body(body_html);

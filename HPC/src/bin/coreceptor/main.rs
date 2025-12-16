@@ -18,7 +18,7 @@ async fn main() -> () {
     });
 
     let pipeline: Pipeline<CoreceptorAPI> = match
-        Pipeline::new(id.clone(), PipelineType::Coreceptor).await
+        Pipeline::new(&id, PipelineType::Coreceptor).await
     {
         Ok(p) => p,
         Err(e) => {

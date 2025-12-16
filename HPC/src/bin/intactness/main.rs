@@ -18,7 +18,7 @@ async fn main() -> () {
         std::process::exit(1);
     });
 
-    let pipeline: Pipeline<IntactAPI> = match Pipeline::new(id.clone(), PipelineType::Intact).await {
+    let pipeline: Pipeline<IntactAPI> = match Pipeline::new(&id, PipelineType::Intact).await {
         Ok(p) => p,
         Err(e) => {
             println!("Error creating pipeline: {:?}", e);

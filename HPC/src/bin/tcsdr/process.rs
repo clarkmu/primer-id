@@ -26,7 +26,7 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     // set up variables
     let is_dr: bool = pipeline.is_dr();
     let pool_name = pipeline.pool_name();
-    let htsf_location = pipeline.data.htsf.clone().unwrap_or("".to_string());
+    let htsf_location = pipeline.data.htsf.as_deref().unwrap_or("").to_owned();
     let job_id: String = pipeline.job_id();
     let samples_dir = format!("{}/{}", &pipeline.scratch_dir, pool_name);
     let log_upload_location = format!(
@@ -216,9 +216,9 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     // generate and send receipt
     pipeline.add_log("Emailing results.")?;
 
-    let data_pool_name = pipeline.data.pool_name.clone().unwrap_or("".to_string());
+    let data_pool_name = pipeline.data.pool_name.as_deref().unwrap_or("");
     let pool_name_html = if !data_pool_name.is_empty() {
-        format!("Pool Name: {}\n\n", &data_pool_name)
+        format!("Pool Name: {}\n\n", data_pool_name)
     } else {
         String::from("\n")
     };

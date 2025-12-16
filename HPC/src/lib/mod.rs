@@ -8,3 +8,4 @@ pub mod compress;
 pub mod run_command;
 pub mod email_templates;
 pub mod cloud_storage;
+pub mod string_map_to_string;

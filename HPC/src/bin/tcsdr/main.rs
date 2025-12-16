@@ -20,7 +20,7 @@ async fn main() -> () {
         std::process::exit(1);
     });
 
-    let pipeline: Pipeline<TcsAPI> = match Pipeline::new(id.clone(), PipelineType::Tcs).await {
+    let pipeline: Pipeline<TcsAPI> = match Pipeline::new(&id, PipelineType::Tcs).await {
         Ok(p) => p,
         Err(e) => {
             println!("Error creating pipeline: {:?}", e);
