@@ -15,6 +15,8 @@ use utils::{
 
 use crate::{ generate_tcs_json::generate_tcs_json, sort_files::sort_files };
 
+// TODO replace cargo run with tcs bin after virust-tcs update
+
 pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing TCS/DR pipeline #{}", &pipeline.id))?;
 
@@ -56,9 +58,11 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     }
 
     // thread TCS/DR jobs
+    // filter is_dir to skip compressed results when rerunning jobs
     let jobs: Vec<PathBuf> = glob(&format!("{}/*", &samples_dir))
-        .unwrap()
-        .map(|f| f.unwrap())
+        .expect("failed to glob samples_dir")
+        .filter_map(Result::ok)
+        .filter(|path| path.is_dir())
         .collect();
 
     jobs.into_par_iter()

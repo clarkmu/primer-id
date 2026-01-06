@@ -19,6 +19,8 @@ path = "src/bin/process_queue/main.rs"
 name = "ogv"
 path = "src/bin/ogv/main.rs"
 
+
+# cargo run --bin tcsdr -- --id=695d3996b07157ea34e66be5 --is_dev --cores=3
 # cargo run --bin tcsdr -- --id=1 --is_dev --is_stale --cores=3
 [[bin]]
 name = "tcsdr"

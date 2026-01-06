@@ -1,0 +1,14 @@
+name: tcsdr
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.9
+  - ruby=3.4.2
+
+  # R stack
+  - r-base
+  - r-essentials
+  - r-igraph
+  - r-phangorn

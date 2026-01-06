@@ -9,4 +9,14 @@ locations.json
 locations.dev.json
 locations.test.json
 
+locations.json
+locations.dev.json
+locations.test.json
+
+legacy/locations*.php
+
 tests/
+
+tcs
+virust-tcs
+virust-splicing

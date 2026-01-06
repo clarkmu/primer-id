@@ -1,0 +1,18 @@
+name: intactness
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+channel_priority: strict
+dependencies:
+  - python=3.8
+  - blast=2.12.0
+  - muscle=5.1
+  - pip
+  - pip:
+      - requests
+      - biopython==1.79
+      - reportlab==4.1.0
+      - lxml==5.1.0
+      - PyPDF2==1.26.0
+      - scipy==1.10.1

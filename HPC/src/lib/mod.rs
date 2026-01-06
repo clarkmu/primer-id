@@ -1,3 +1,4 @@
+pub mod bin_locations;
 pub mod get_api;
 pub mod pipeline;
 pub mod load_env_vars;

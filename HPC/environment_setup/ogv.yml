@@ -1,0 +1,17 @@
+name: ogv
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+channel_priority: strict
+dependencies:
+  - python=3.9
+  - snakemake
+  - raxml-ng
+  - hyphy
+  - mafft
+  - nodejs
+  - pip
+  - pip:
+      - requests
+      - biopython

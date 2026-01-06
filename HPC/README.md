@@ -1,25 +1,22 @@
 # Project Setup
 
-### initial run also builds image
+### Run script to initialize environment, download repos, build targets, install packages
 
-`docker-compose build`
+```bash
+./bootstrap_and_verify.sh
+```
 
-`docker-compose up -d`
+# Update repositories and rebuild target files
 
-### use image CLI
+```bash
+./bootstrap_and_verify.sh --refresh-repos
+```
 
-`docker exec -it primerid bash`
-
-### Run Rust with Cargo Watch
-
-`RUST_BACKTRACE=1 cargo watch -c -w src -x 'run -- --is_dev' --poll`
+<small>Used to use Docker to keep everything organized and environments repeatable. Rust had too many issues with virtualization and Docker was scrapped.</small>
 
 ### Edit ogv-dating/Snakefile
 
-./ogv-dating/Snakefile::callables - 'fasttree' : '/app/ogv-dating/FastTree', 'classifier' : '/app/ogv-dating/scripts/compute-distance.js'
+./ogv-dating/Snakefile::callables - need to update callables object for executable locations
 
-# Debugging
-
-Use VSCode's Remote Explorer tab to attach to Docker container `primer-id`. In the new VSCode window, the debugging tab is now usable.
-
-LLDB is also installed in this container for running test debugs.
+Ex)
+'fasttree' : './ogv-dating/FastTree', 'classifier' : './ogv-dating/scripts/compute-distance.js'

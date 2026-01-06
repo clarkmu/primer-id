@@ -1,6 +1,7 @@
 use std::{ collections::HashMap, path::Path, sync::{ Arc, Mutex } };
 use anyhow::{ Result, Context };
 use utils::{
+    bin_locations::{ ProjectBinNames, project_root_bin_location },
     compress::compress_dir,
     email_templates::results_email_template,
     load_locations::Locations,
@@ -27,6 +28,8 @@ results
 
 pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing Splicing pipeline #{}", &pipeline.id))?;
+
+    let splicing_bin_location = project_root_bin_location(ProjectBinNames::SPLICING).unwrap();
 
     // set up variables
     let job_id = pipeline.job_id();
@@ -85,13 +88,16 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
         let r1_file = rfiles.r1.unwrap_or_default();
         let r2_file = rfiles.r2.unwrap_or_default();
 
+        let assay = pipeline.data.assay.replace('-', "_");
+
         let command = format!(
-            "cargo run -- -q {} -d {} -a {} -1 {} -2 {}",
-            &pipeline.data.strain,
-            &pipeline.data.distance,
-            &pipeline.data.assay,
-            &r1_file,
-            &r2_file
+            "{} {} {} {} {} {}",
+            splicing_bin_location,
+            pipeline.data.strain,
+            pipeline.data.distance,
+            assay,
+            r1_file,
+            r2_file
         );
 
         let process_output = run_command(&command, &locations.splicing_base_path);
@@ -108,7 +114,7 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
         } else if !output_file.exists() {
             let s = &process_output.unwrap_or("default".to_string());
 
-            println!("ERROR LOG EXIST: {:?}", &s);
+            println!("FAILED TO CREATE OUTPUT: {:?}", &s);
 
             errors.lock().unwrap().push(format!("Failed to process lib#{}:\n{}", lib_name, &s));
         } else {

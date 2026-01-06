@@ -1,25 +1,22 @@
-// --poll for Linux
-// 2>/dev/null  silence MADV_DONTNEED in Docker container
-// RUST_BACKTRACE=1 cargo watch -c -w src -x 'run --bin main -- --is_dev' --poll 2>/dev/null
-
 use anyhow::Result;
 use chrono::Local;
 use serde::Deserialize;
 use std::process::exit;
 use std::path::Path;
 use utils::{
+    bin_locations::{ BinNames, bin_location },
     get_api::get_api,
-    load_env_vars::{ load_env_vars, EnvVars },
-    load_locations::{ load_locations, Locations, PipelineType },
+    load_env_vars::{ EnvVars, load_env_vars },
+    load_locations::{ Locations, PipelineType, load_locations },
     lock_file,
     pipeline::{
-        pipeline_is_stale,
         CoreceptorAPI,
         IntactAPI,
         OgvAPI,
         Pipeline,
         SplicingAPI,
         TcsAPI,
+        pipeline_is_stale,
     },
     run_command::run_command,
 };
@@ -121,6 +118,11 @@ async fn run() -> Result<()> {
         exit(1);
     });
 
+    let tcsdr_bin_location = bin_location(BinNames::TCSDR).unwrap();
+    let ogv_bin_location = bin_location(BinNames::OGV).unwrap();
+    let intactness_bin_location = bin_location(BinNames::INTACTNESS).unwrap();
+    let splicing_bin_location = bin_location(BinNames::SPLICING).unwrap();
+
     if is_dev {
         std::env::var("PORT").unwrap_or_else(|_| {
             println!("Dev not running in the docker shell. Exiting.");
@@ -165,7 +167,8 @@ async fn run() -> Result<()> {
             let (cores, memory) = pipeline.cores_and_memory();
 
             let mut cmd = format!(
-                "cargo run --release --bin ogv -- --id={}{}{}",
+                "{} --id={}{}{}",
+                ogv_bin_location,
                 &ogv.id,
                 &is_dev_cmd,
                 is_stale_cmd
@@ -211,7 +214,8 @@ async fn run() -> Result<()> {
             let (cores, memory) = pipeline.cores_and_memory(intact.upload_count);
 
             let mut cmd = format!(
-                "cargo run --release --bin intactness -- --id={} --cores={}{}{}",
+                "{} --id={} --cores={}{}{}",
+                intactness_bin_location,
                 &intact.id,
                 cores + 1,
                 &is_dev_cmd,
@@ -256,7 +260,8 @@ async fn run() -> Result<()> {
             let (cores, memory) = pipeline.cores_and_memory(&tcs.upload_count);
 
             let mut cmd = format!(
-                "cargo run --release --bin tcsdr -- --id={} --cores={}{}{}",
+                "{} --id={} --cores={}{}{}",
+                tcsdr_bin_location,
                 &tcs.id,
                 cores + 1,
                 &is_dev_cmd,
@@ -362,7 +367,8 @@ async fn run() -> Result<()> {
             let (cores, memory) = pipeline.cores_and_memory();
 
             let mut cmd = format!(
-                "cargo run --release --bin splicing -- --id={} {}{}",
+                "{} --id={} {}{}",
+                splicing_bin_location,
                 &splicing.id,
                 &is_dev_cmd,
                 is_stale_cmd
