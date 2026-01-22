@@ -135,3 +135,17 @@ export const SEOSplicing = ({ children }) => (
     {children}
   </>
 );
+
+export const SEOLocator = ({ children }) => (
+  <>
+    <Head>
+      <title>UNC Sequence Locator HIV/SIV</title>
+      <meta
+        name="description"
+        content="The UNC Sequence Locator provides accurate HIV-1 sequence location and coordinate mapping against established reference genomes. It is designed for researchers who need reliable region localization (e.g., env, V3, gag, pol) to keep existing analysis and co-receptor prediction workflows running without interruption."
+      />
+      <AllPageSEO />
+    </Head>
+    {children}
+  </>
+);

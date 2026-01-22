@@ -6,6 +6,7 @@ let replSet;
 async function startMongoMemoryServer() {
   replSet = await MongoMemoryReplSet.create({
     replSet: { storageEngine: "wiredTiger" },
+    binary: { version: "6.0.13" },
   });
 
   // Wait for it to fully initialize
@@ -20,7 +21,9 @@ async function startMongoMemoryServer() {
   await new Promise((r) => setTimeout(r, 1000));
 
   // Now Prisma should succeed
-  execSync("npx prisma db push", { stdio: "inherit" });
+  execSync("npx prisma db push --force-reset --skip-generate --schema prisma/schema.test.prisma", {
+    stdio: "inherit",
+  });
 
   return uri;
 }

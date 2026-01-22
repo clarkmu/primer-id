@@ -34,6 +34,9 @@ export default function Button({
       className={
         `${className} ` +
         "flex items-center justify-center py-2 px-4 rounded text-white " +
+        (!disabled && !isLoading && !iconButton
+          ? " hover:cursor-pointer  "
+          : "") +
         (isLoading ? "font-mono whitespace-pre" : "") +
         (fullWidth ? "w-full " : "") +
         (isDisabled
