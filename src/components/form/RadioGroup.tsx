@@ -8,6 +8,7 @@ export default function RadioGroup({
   value,
   error = "",
   row = false,
+  direction = "column",
   showLabel = true,
   uniqueKey = "",
   ...props
@@ -18,6 +19,7 @@ export default function RadioGroup({
   value: any;
   error?: string;
   row?: boolean;
+  direction?: "column" | "row";
   showLabel?: boolean;
   uniqueKey?: string;
 }) {
@@ -27,7 +29,9 @@ export default function RadioGroup({
     <div className={`flex flex-col gap-4 w-full relative`} {...props}>
       {showLabel && <div className="font-lg text-lg">{label}</div>}
       <div
-        className={`flex gap-2 ${row !== true ? "flex-col" : "justify-around"}`}
+        className={`flex gap-2 ${
+          direction === "row" ? "flex-row justify-around" : "flex-col"
+        }`}
       >
         {radios.map((radio, i) => {
           const uniqueRadioId = `${uniqueId}${i}`;

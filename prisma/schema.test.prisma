@@ -94,9 +94,6 @@ model locators {
   submit          Boolean       @default(true)
   refGenome       String
   uploads         FileUploads[]
-
-  @@index([submit, processingError])
-  @@index([pending, processingError])
 }
 
 type TcsdrsPrimers {

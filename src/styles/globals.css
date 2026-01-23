@@ -5,8 +5,20 @@ html,
 body {
   padding: 0;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    Segoe UI,
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    Fira Sans,
+    Droid Sans,
+    Helvetica Neue,
+    sans-serif;
+  position: fixed;
+  inset: 0;
 }
 
 a {
@@ -21,7 +33,10 @@ a {
 .animated_rainbow_1 {
   font-size: 42px;
   font-weight: bold !important;
-  font-family: Arial Black, Gadget, sans-serif;
+  font-family:
+    Arial Black,
+    Gadget,
+    sans-serif;
   background-image: -webkit-linear-gradient(
     left,
     #f00,

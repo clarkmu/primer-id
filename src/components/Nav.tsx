@@ -26,6 +26,10 @@ const pipelineLinks = [
     value: "/splicing",
     label: "HIV-1 Splicing",
   },
+  {
+    value: "/locator",
+    label: "Sequence Locator for HIV/SIV",
+  },
 ];
 
 const MyLink = ({

@@ -16,6 +16,7 @@ pub struct PipelineKeys {
     pub intact: String,
     pub coreceptor: String,
     pub splicing: String,
+    pub locator: String,
 }
 
 #[derive(Clone, Copy)]
@@ -26,6 +27,7 @@ pub enum PipelineType {
     Intact,
     Coreceptor,
     Splicing,
+    Locator,
 }
 
 impl Index<PipelineType> for PipelineKeys {
@@ -38,6 +40,7 @@ impl Index<PipelineType> for PipelineKeys {
             PipelineType::Intact => &self.intact,
             PipelineType::Coreceptor => &self.coreceptor,
             PipelineType::Splicing => &self.splicing,
+            PipelineType::Locator => &self.locator,
         }
     }
 }
@@ -94,5 +97,6 @@ mod tests {
         assert!(locations.api_url[PipelineType::Intact].contains("api"));
         assert!(locations.api_url[PipelineType::Coreceptor].contains("api"));
         assert!(locations.api_url[PipelineType::Splicing].contains("api"));
+        assert!(locations.api_url[PipelineType::Locator].contains("api"));
     }
 }
