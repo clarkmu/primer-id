@@ -403,7 +403,7 @@ async fn run() -> Result<()> {
 
         if locator.submit || is_stale {
             let pipeline: Pipeline<LocatorAPI> = match
-                Pipeline::new(locator.id.clone(), PipelineType::Locator).await
+                Pipeline::new(&locator.id, PipelineType::Locator).await
             {
                 Ok(p) => p,
                 Err(e) => {
