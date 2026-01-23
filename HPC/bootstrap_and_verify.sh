@@ -155,6 +155,7 @@ ensure_env() {
 ensure_env ogv        "${ENVS_DIR}/ogv.yml"
 ensure_env intactness "${ENVS_DIR}/intactness.yml"
 ensure_env tcsdr "${ENVS_DIR}/tcsdr.yml"
+ensure_env locator "${ENVS_DIR}/locator.yml"
 
 # ============================================================
 # 5) Post-install verification
@@ -174,6 +175,10 @@ log "Verifying tools..."
 conda run -n tcsdr ruby --version >/dev/null || fail "tcsdr ruby"
 conda run -n tcsdr R --version >/dev/null || fail "tcsdr R"
 conda run -n tcsdr gem install viral_seq -v '1.10.0'
+
+# locator
+conda run -n locator ruby --version >/dev/null || fail "locator ruby"
+conda run -n locator gem install viral_seq -v '1.10.4'
 
 # ogv
 conda run -n ogv snakemake --version >/dev/null || fail "snakemake"

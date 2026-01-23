@@ -1,0 +1,6 @@
+name: locator
+channels:
+  - conda-forge
+
+dependencies:
+  - ruby=3.3
