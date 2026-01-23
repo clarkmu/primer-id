@@ -1,8 +1,8 @@
 use chrono::{ Utc, Duration };
 
 use crate::{
-    load_locations::{ load_locations, Locations, PipelineType },
-    pipeline::{ OgvAPI, SplicingAPI, TcsAPI },
+    load_locations::{ Locations, PipelineType, load_locations },
+    pipeline::{ LocatorAPI, OgvAPI, SplicingAPI, TcsAPI },
 };
 
 // contact us and outro
@@ -135,6 +135,22 @@ pub fn generate_splicing_receipt(data: &SplicingAPI) -> String {
     }
 
     let receipt = receipt_email_template(&content);
+
+    receipt
+}
+
+pub fn generate_locator_receipt(data: &LocatorAPI) -> String {
+    let uploads_html =
+        "<u>Uploads</u>:<br>".to_string() +
+        &data.uploads
+            .iter()
+            .map(|u| format!("{}", u.file_name))
+            .collect::<Vec<String>>()
+            .join("<br>");
+
+    let receipt = receipt_email_template(
+        &format!("Ref Genome: {}</br></br>{}", data.ref_genome, uploads_html)
+    );
 
     receipt
 }

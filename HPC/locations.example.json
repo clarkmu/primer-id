@@ -15,7 +15,8 @@
     "ogv": "gs://bucket/ogv-dating",
     "intact": "gs://bucket/intactness",
     "coreceptor": "gs://bucket/coreceptor",
-    "splicing": "gs://bucket/splicing"
+    "splicing": "gs://bucket/splicing",
+    "locator": "gs://bucket/locator"
   },
   "log_dir": {
     "base": "/app/work/log",
@@ -23,7 +24,8 @@
     "ogv": "/app/work/log/ogv",
     "intact": "/app/work/log/intact",
     "coreceptor": "/app/work/log/coreceptor",
-    "splicing": "/app/work/log/splicing"
+    "splicing": "/app/work/log/splicing",
+    "locator": "/app/work/log/locator"
   },
   "scratch_space": {
     "base": "/app/work/scratch",
@@ -31,7 +33,8 @@
     "ogv": "/app/work/scratch/ogv",
     "intact": "/app/work/scratch/intact",
     "coreceptor": "/app/work/scratch/coreceptor",
-    "splicing": "/app/work/scratch/splicing"
+    "splicing": "/app/work/scratch/splicing",
+    "locator": "/app/work/scratch/locator"
   },
   "api_url": {
     "base": "http://host.docker.internal:3000/api",
@@ -39,7 +42,8 @@
     "ogv": "http://host.docker.internal:3000/api/ogv",
     "intact": "http://host.docker.internal:3000/api/intactness",
     "coreceptor": "http://host.docker.internal:3000/api/coreceptor",
-    "splicing": "http://host.docker.internal:3000/api/splicing"
+    "splicing": "http://host.docker.internal:3000/api/splicing",
+    "locator": "http://host.docker.internal:3000/api/locator"
   },
   "conda_location": "/root/miniconda3/condabin/conda",
   "ogv_base_path": "/app/ogv-dating",

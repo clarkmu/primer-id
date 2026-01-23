@@ -37,6 +37,11 @@ path = "src/bin/coreceptor/main.rs"
 name = "splicing"
 path = "src/bin/splicing/main.rs"
 
+# cargo run --bin locator -- --id=1 --is_dev --cores=3
+[[bin]]
+name = "locator"
+path = "src/bin/locator/main.rs"
+
 [dependencies]
 exitfailure = "0.5.1"
 serde_json = "1.0.85"

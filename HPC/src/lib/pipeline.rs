@@ -1,13 +1,14 @@
 use crate::{
     cloud_storage::{ download, get_signed_url, upload },
     email_templates::{
+        generate_locator_receipt,
         generate_ogv_receipt,
         generate_splicing_receipt,
         generate_tcs_receipt,
         receipt_email_template,
     },
     get_api::get_api,
-    load_locations::{ load_locations, PipelineType },
+    load_locations::{ PipelineType, load_locations },
     send_email::send_email,
 };
 use chrono::prelude::*;
@@ -32,6 +33,13 @@ pub struct OgvUpload {
     pub file_name: String,
     #[serde(rename = "libName")]
     pub lib_name: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct FileUpload {
+    // pub id: String,
+    #[serde(rename = "fileName")]
+    pub file_name: String,
 }
 
 pub type OgvConversion = HashMap<String, u16>;
@@ -120,6 +128,27 @@ pub struct SplicingAPI {
     #[serde(rename = "poolName")]
     pub pool_name: Option<String>,
     pub uploads: Option<Vec<TcsUpload>>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct LocatorAPI {
+    pub id: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "jobID")]
+    pub job_id: String,
+    #[serde(rename = "resultsFormat")]
+    pub results_format: String,
+    pub email: String,
+    pub submit: bool,
+    pub pending: bool,
+    #[serde(rename = "processingError")]
+    pub processing_error: bool,
+
+    #[serde(rename = "refGenome")]
+    pub ref_genome: String,
+
+    pub uploads: Vec<FileUpload>,
 }
 
 // rename on deserialize only so that ViralSeq can pick up snake_case in params.json files
@@ -542,6 +571,36 @@ impl Pipeline<SplicingAPI> {
 
         let cores = 50;
         let memory: u32 = 20000;
+
+        (cores, memory)
+    }
+}
+
+impl Pipeline<LocatorAPI> {
+    pub fn job_id(&self) -> String {
+        let tmp_job_id = self.data.job_id.clone();
+        let job_id: String = if tmp_job_id.is_empty() {
+            format!("locator_{}", &self.data.id)
+        } else {
+            tmp_job_id
+        };
+        job_id
+    }
+    pub async fn send_receipt(&self) -> Result<()> {
+        let job_id = self.job_id();
+        let receipt_body = generate_locator_receipt(&self.data);
+        send_email(
+            &format!("Locator Submission #{}", &job_id),
+            &receipt_body,
+            &self.data.email,
+            true
+        ).await.context("Failed to send receipt email.")?;
+
+        Ok(())
+    }
+    pub fn cores_and_memory(&self) -> (u8, u32) {
+        let cores = 10;
+        let memory: u32 = 10000;
 
         (cores, memory)
     }

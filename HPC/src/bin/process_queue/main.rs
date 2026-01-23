@@ -7,17 +7,18 @@ use serde::Deserialize;
 use std::process::exit;
 use utils::{
     get_api::get_api,
-    load_env_vars::{ load_env_vars, EnvVars },
-    load_locations::{ load_locations, Locations, PipelineType },
+    load_env_vars::{ EnvVars, load_env_vars },
+    load_locations::{ Locations, PipelineType, load_locations },
     lock_file,
     pipeline::{
-        pipeline_is_stale,
         CoreceptorAPI,
         IntactAPI,
+        LocatorAPI,
         OgvAPI,
         Pipeline,
         SplicingAPI,
         TcsAPI,
+        pipeline_is_stale,
     },
     run_command::run_command,
 };
@@ -336,6 +337,52 @@ async fn main() -> Result<()> {
                     &format!("{}/{}.out", &locations.log_dir[PipelineType::Splicing], &splicing.id),
                     cores + 1,
                     &format!("splicing-{}", &splicing.id),
+                    memory,
+                    1440,
+                    &cmd
+                );
+            }
+
+            run_command(&cmd, &locations.base)?;
+
+            pipeline.send_receipt().await?;
+            pipeline.patch_pending().await?;
+        }
+    }
+
+    let locators: Vec<SharedAPIData> = get_api(
+        &locations.api_url[PipelineType::Locator]
+    ).await.unwrap_or(vec![]);
+
+    for locator in locators {
+        let (is_stale, is_stale_cmd) = pipeline_is_stale(&locator.pending, &locator.created_at, 24);
+
+        if locator.submit || is_stale {
+            let pipeline: Pipeline<LocatorAPI> = match
+                Pipeline::new(locator.id.clone(), PipelineType::Locator).await
+            {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("Error creating pipeline: {:?}", e);
+                    continue; // skip this iteration if pipeline creation fails
+                }
+            };
+
+            let (cores, memory) = pipeline.cores_and_memory();
+
+            let mut cmd = format!(
+                "cargo run --release --bin locator -- --id={} {}{}",
+                &locator.id,
+                &is_dev_cmd,
+                is_stale_cmd
+            );
+
+            // no need to sbatch for is_stale , no heavy processing
+            if !is_dev && !is_stale {
+                cmd = create_sbatch_cmd(
+                    &format!("{}/{}.out", &locations.log_dir[PipelineType::Locator], &locator.id),
+                    cores + 1,
+                    &format!("locator-{}", &locator.id),
                     memory,
                     1440,
                     &cmd

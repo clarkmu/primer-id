@@ -17,6 +17,8 @@ const Confirmation = dynamic(() => import("./Confirmation"));
 
 export type refGenomeType = "HXB2" | "SIVmm239";
 
+const maxFileSize = 10 * 1024 * 1024 * 1024;
+
 export default function Page() {
   const [state, setState] = useState<SharedSubmissionData>(
     INITIAL_SHARED_SUBMISSION_DATA,
@@ -33,21 +35,44 @@ export default function Page() {
   const [scrollToShared] = useScrollToDivOnVisibilityToggle(step > 1, "end");
 
   const handleAddFiles = (f: File[]) => {
-    const whitelistedFiles = Array.from(f).filter(
-      (f) =>
-        f.name.indexOf(".fasta") !== -1 &&
-        !files.find((fi) => fi.name === f.name)?.name,
+    const incomingFiles = Array.from(f);
+    const duplicates = incomingFiles.filter((file) =>
+      files.some((existing) => existing.name === file.name),
     );
+    const invalidFormat = incomingFiles.filter(
+      (file) => file.name.indexOf(".fasta") === -1,
+    );
+    const oversizedFiles = incomingFiles.filter(
+      (file) => file.size >= maxFileSize,
+    );
+    const whitelistedFiles = incomingFiles.filter(
+      (file) =>
+        file.name.indexOf(".fasta") !== -1 &&
+        !files.find((fi) => fi.name === file.name)?.name &&
+        file.size < maxFileSize,
+    );
+    const maxFiles = 255;
+    const availableSlots = Math.max(0, maxFiles - files.length);
+    const acceptedFiles = whitelistedFiles.slice(0, availableSlots);
 
     let msg = "";
 
-    if (f.length !== whitelistedFiles.length) {
-      msg = "Some files were removed (duplicates or not in .fasta format). ";
+    if (acceptedFiles.length < whitelistedFiles.length) {
+      msg = "Maximum 255 files per submission. ";
+    }
+    if (duplicates.length > 0) {
+      msg += `${duplicates.length} file name duplicates were not added. `;
+    }
+    if (invalidFormat.length > 0) {
+      msg += `${invalidFormat.length} file(s) not in .fasta format. `;
+    }
+    if (oversizedFiles.length > 0) {
+      msg += `${oversizedFiles.length} file(s) over 10GB. `;
     }
 
     setFileError(msg);
 
-    setFiles((f) => [...f, ...whitelistedFiles]);
+    setFiles((f) => [...f, ...acceptedFiles]);
   };
 
   return (
@@ -56,7 +81,23 @@ export default function Page() {
         <PageDescription
           title="Sequence Locator for HIV/SIV"
           description="The UNC Sequence Locator maps HIV-1 and SIV sequences to reference genomes HXB2 and SIVmm239."
-          files="Accepts up to 255 FASTA format files per submission."
+          files="Format .fasta only, uncompressed.  Max file size 10Gb each. Accepts up to 255 files per submission."
+          extra={
+            <div className="">
+              <div className=""></div>
+              <div className="">
+                Link to{" "}
+                <a
+                  className="underline!"
+                  href="https://www.hiv.lanl.gov/content/sequence/LOCATE/locate.html"
+                  target="_blank"
+                >
+                  LANL Sequence Locator
+                </a>
+                .
+              </div>
+            </div>
+          }
         />
       </Paper>
       <Paper className="flex flex-col gap-8">
