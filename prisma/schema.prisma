@@ -17,6 +17,9 @@ model coreceptors {
   submit          Boolean  @default(true)
   pending         Boolean  @default(false)
   processingError Boolean  @default(false)
+
+  @@index([submit, processingError])
+  @@index([pending, processingError])
 }
 
 model intacts {
@@ -29,6 +32,9 @@ model intacts {
   submit          Boolean  @default(true)
   pending         Boolean  @default(false)
   processingError Boolean  @default(false)
+
+  @@index([submit, processingError])
+  @@index([pending, processingError])
 }
 
 model ogvs {
@@ -42,6 +48,9 @@ model ogvs {
   processingError Boolean       @default(false)
   submit          Boolean       @default(true)
   uploads         OgvsUploads[]
+
+  @@index([submit, processingError])
+  @@index([pending, processingError])
 }
 
 model tcsdrs {
@@ -61,6 +70,9 @@ model tcsdrs {
   processingError Boolean         @default(false)
   uploads         TcsdrsUploads[]
   primers         TcsdrsPrimers[]
+
+  @@index([submit, processingError])
+  @@index([pending, processingError])
 }
 
 model splice {
@@ -81,6 +93,9 @@ model splice {
   uploads TcsdrsUploads[]
   htsf String?
   poolName String?
+
+  @@index([submit, processingError])
+  @@index([pending, processingError])
 }
 
 model locators {

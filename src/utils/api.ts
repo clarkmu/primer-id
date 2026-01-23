@@ -27,18 +27,11 @@ export const getPublic = async (
   calcUploadCount: (item: any) => number
 ) => {
   try {
+    // get all objects that are ready for or already processing on server
     const all: any[] = await prismaFindManyFunction({
       where: {
-        AND: [
-          {
-            OR: [{ submit: true }, { pending: true }],
-          },
-          {
-            processingError: {
-              not: true,
-            },
-          },
-        ],
+        processingError: { not: true },
+        OR: [{ submit: true }, { pending: true }],
       },
     });
 

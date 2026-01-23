@@ -21,9 +21,12 @@ async function startMongoMemoryServer() {
   await new Promise((r) => setTimeout(r, 1000));
 
   // Now Prisma should succeed
-  execSync("npx prisma db push --force-reset --skip-generate --schema prisma/schema.test.prisma", {
-    stdio: "inherit",
-  });
+  execSync(
+    "npx prisma db push --force-reset --skip-generate --schema prisma/schema.test.prisma",
+    {
+      stdio: "inherit",
+    },
+  );
 
   return uri;
 }
