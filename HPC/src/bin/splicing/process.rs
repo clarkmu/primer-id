@@ -26,7 +26,7 @@ results
 
 */
 
-pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> Result<()> {
+pub async fn process(pipeline: &Pipeline<SplicingAPI>, _locations: Locations) -> Result<()> {
     pipeline.add_log(&format!("Initializing Splicing pipeline #{}", &pipeline.id))?;
 
     let splicing_bin_location = project_root_bin_location(ProjectBinNames::SPLICING).unwrap();
@@ -91,7 +91,7 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
         // let assay = pipeline.data.assay.replace('-', "_");
 
         let command = format!(
-            "{} --strain {} --distance {} --assay {} --file1 {} --file2 {}",
+            "{} --query {} --distance {} --assay {} --file1 {} --file2 {}",
             splicing_bin_location,
             pipeline.data.strain,
             pipeline.data.distance,
