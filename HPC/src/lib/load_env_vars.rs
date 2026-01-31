@@ -1,38 +1,20 @@
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about = "PrimerID CLI options", long_about = None)]
 pub struct EnvVars {
+    #[arg(long)]
     pub is_dev: bool,
+    #[arg(long)]
     pub is_test: bool,
+    #[arg(long, default_value = "")]
     pub id: String,
+    #[arg(long, default_value = "")]
     pub is_stale: String,
+    #[arg(long, default_value_t = 1)]
     pub cores: usize,
 }
 
 pub fn load_env_vars() -> EnvVars {
-    let args: Vec<String> = std::env::args().collect();
-    let is_dev = args.iter().any(|e| e.contains("is_dev"));
-    let is_test = args.iter().any(|e| e.contains("is_test"));
-
-    // todo probably a better way to retrieve this
-    let id: String = args
-        .iter()
-        .find(|e| e.contains("id"))
-        .unwrap_or(&String::from(""))
-        .to_string()
-        .replace("--id=", "");
-
-    let cores: usize = args
-        .iter()
-        .find(|e| e.contains("cores"))
-        .unwrap_or(&String::from(""))
-        .to_string()
-        .replace("--cores=", "")
-        .parse()
-        .unwrap_or(1);
-
-    let is_stale: String = args
-        .iter()
-        .find(|e| e.contains("is_stale"))
-        .map(|e| e.to_string())
-        .unwrap_or(String::from(""));
-
-    EnvVars { is_dev, is_test, id, is_stale, cores }
+    EnvVars::parse()
 }

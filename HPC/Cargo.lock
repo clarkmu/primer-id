@@ -2017,6 +2017,7 @@ dependencies = [
  "bio",
  "cargo-zigbuild",
  "chrono",
+ "clap",
  "exitfailure",
  "flate2",
  "glob",

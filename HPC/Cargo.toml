@@ -47,6 +47,7 @@ name = "locator"
 path = "src/bin/locator/main.rs"
 
 [dependencies]
+clap = { version = "4.5.4", features = ["derive"] }
 exitfailure = "0.5.1"
 serde_json = "1.0.85"
 serde = {version = "1.0.194", features = ["derive"]}
