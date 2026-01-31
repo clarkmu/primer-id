@@ -83,8 +83,14 @@ export default function Page() {
           description="The UNC Sequence Locator maps HIV-1 and SIV sequences to reference genomes HXB2 and SIVmm239."
           files="Format .fasta only, uncompressed.  Max file size 10Gb each. Accepts up to 255 files per submission."
           extra={
-            <div className="">
-              <div className=""></div>
+            <div className="flex flex-col gap-2">
+              <div className="">
+                <b>Output: </b> includes a CSV summary per input sequence and a
+                sense-oriented FASTA file (*.direction.fasta).
+              </div>
+              <div className="">
+                <b>Sequences with length less than 20&nbsp;bp are excluded.</b>
+              </div>
               <div className="">
                 Link to{" "}
                 <a
