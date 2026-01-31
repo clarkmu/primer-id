@@ -89,7 +89,7 @@ export default function Page() {
                 sense-oriented FASTA file (*.direction.fasta).
               </div>
               <div className="">
-                <b>Sequences with length less than 20&nbsp;bp are excluded.</b>
+                <b>Sequences with length less than 10&nbsp;bp are excluded.</b>
               </div>
               <div className="">
                 Link to{" "}
