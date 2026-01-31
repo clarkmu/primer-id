@@ -15,7 +15,7 @@ export default function GlobalSettings() {
     <Paper>
       <div className="flex flex-col gap-8 text-center items-center mb-4 my-2">
         <RadioGroup
-          row={true}
+          direction="row"
           label="MiSeq Format"
           value={platformFormat}
           onChange={(e) =>
