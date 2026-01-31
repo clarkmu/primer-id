@@ -4,8 +4,6 @@ use utils::{
     pipeline::{ OgvAPI, Pipeline },
 };
 
-// cargo run --bin ogv -- --id=667af1f0fe90441ac2375c50 --is_dev --is_stale
-
 mod process;
 
 #[tokio::main]

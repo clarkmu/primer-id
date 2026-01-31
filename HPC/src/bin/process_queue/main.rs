@@ -123,6 +123,7 @@ async fn run() -> Result<()> {
     let ogv_bin_location = bin_location(BinNames::OGV).unwrap();
     let intactness_bin_location = bin_location(BinNames::INTACTNESS).unwrap();
     let splicing_bin_location = bin_location(BinNames::SPLICING).unwrap();
+    let locator_bin_location = bin_location(BinNames::LOCATOR).unwrap();
 
     if is_dev {
         std::env::var("PORT").unwrap_or_else(|_| {
@@ -415,7 +416,8 @@ async fn run() -> Result<()> {
             let (cores, memory) = pipeline.cores_and_memory();
 
             let mut cmd = format!(
-                "cargo run --release --bin locator -- --id={} {}{}",
+                "{} --id={} {}{}",
+                locator_bin_location,
                 &locator.id,
                 &is_dev_cmd,
                 is_stale_cmd

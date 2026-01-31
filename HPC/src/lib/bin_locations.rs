@@ -11,6 +11,7 @@ impl BinNames {
     pub const TCSDR: &str = "tcsdr";
     pub const INTACTNESS: &str = "intactness";
     pub const SPLICING: &str = "splicing";
+    pub const LOCATOR: &str = "locator";
 }
 
 pub fn bin_location(name: &str) -> anyhow::Result<String> {

@@ -4,8 +4,6 @@ use utils::{
     pipeline::{ CoreceptorAPI, Pipeline },
 };
 
-// cargo run --bin coreceptor -- --id=667af1f0fe90441ac2375c50 --is_dev --is_stale
-
 mod process;
 
 #[tokio::main]

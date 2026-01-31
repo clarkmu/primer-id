@@ -4,8 +4,6 @@ use utils::{
     pipeline::{ TcsAPI, Pipeline },
 };
 
-// cargo run --bin tcsdr -- --id=667af1f0fe90441ac2375c50 --is_dev --is_stale
-
 mod process;
 mod validate_file_names;
 mod generate_tcs_json;
