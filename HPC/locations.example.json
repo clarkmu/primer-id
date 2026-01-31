@@ -49,7 +49,6 @@
   "ogv_base_path": "/app/ogv-dating",
   "intactness_base_path": "/app/intactness",
   "coreceptor_base_path": "/app/g2p/coreceptor",
-  "splicing_base_path": "/app/splicing",
   "api_key": "replace this key with something more secure than 'secret-phrase'",
   "tcs_log_bucket_url": "gs://bucket"
 }

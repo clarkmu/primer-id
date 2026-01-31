@@ -59,7 +59,6 @@ pub struct Locations {
     pub ogv_base_path: String,
     pub coreceptor_base_path: String,
     pub intactness_base_path: String,
-    pub splicing_base_path: String,
     pub api_key: String,
     pub smtp_address: String,
     pub smtp_port: u16,

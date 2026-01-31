@@ -88,19 +88,20 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, locations: Locations) -> 
         let r1_file = rfiles.r1.unwrap_or_default();
         let r2_file = rfiles.r2.unwrap_or_default();
 
-        let assay = pipeline.data.assay.replace('-', "_");
+        // let assay = pipeline.data.assay.replace('-', "_");
 
         let command = format!(
-            "{} {} {} {} {} {}",
+            "{} --strain {} --distance {} --assay {} --file1 {} --file2 {}",
             splicing_bin_location,
             pipeline.data.strain,
             pipeline.data.distance,
-            assay,
+            // assay,
+            &pipeline.data.assay,
             r1_file,
             r2_file
         );
 
-        let process_output = run_command(&command, &locations.splicing_base_path);
+        let process_output = run_command(&command, "");
 
         let output_file = Path::new(&r1_file).parent().unwrap().join("output.tsv");
 
