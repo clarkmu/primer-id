@@ -597,6 +597,8 @@ impl Pipeline<LocatorAPI> {
         Ok(())
     }
     pub fn cores_and_memory(&self) -> (u8, u32) {
+        // set cores at 10 , run files sequentially.  Threading happens in viral_seq::Locator
+
         let cores = 10;
         let memory: u32 = 10000;
 

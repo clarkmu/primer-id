@@ -20,3 +20,23 @@
 
 Ex)
 'fasttree' : './ogv-dating/FastTree', 'classifier' : './ogv-dating/scripts/compute-distance.js'
+
+## Server setup:
+
+Placing just /HPC on server at x/x/primer-id
+
+git init
+git remote add origin https://github.com/clarkmu/primer-id
+git fetch origin optimize-hpc
+
+git sparse-checkout init --no-cone
+git sparse-checkout set --no-cone "HPC/\*\*"
+
+git checkout -b optimize-hpc --track origin/optimize-hpc
+
+### Safety
+
+Run these at x/x/primer-id to protect files from getting `git clean`ed
+
+git config core.protectHFS true
+git config core.protectNTFS true
