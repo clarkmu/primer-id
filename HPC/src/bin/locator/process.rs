@@ -6,7 +6,6 @@ use anyhow::{ Result, Context };
 use utils::compress::compress_dir;
 use utils::email_templates::results_email_template;
 use utils::pipeline::LocatorAPI;
-use utils::run_command::run_command;
 use utils::{ pipeline::{ Pipeline }, send_email::send_email, load_locations::Locations };
 
 pub async fn process(pipeline: &Pipeline<LocatorAPI>, locations: Locations) -> Result<()> {
@@ -49,19 +48,27 @@ pub async fn process(pipeline: &Pipeline<LocatorAPI>, locations: Locations) -> R
                 &format!("Initializing job #{}: {} at [{}]", &i, pathbuf.display(), &date_now)
             );
 
-            // run command
-            let locator_command = format!("conda run -n locator locator -i {}", &pathbuf.display());
-            let _ = pipeline.add_log(&format!("Running Locator command: {}", &locator_command));
-            if let Err(e) = run_command(&locator_command, &pipeline.scratch_dir) {
-                let error_filename = format!(
-                    "{}.error",
-                    pathbuf.file_name().unwrap().to_string_lossy()
-                );
-                let error_path = std::path::Path::new(&pipeline.scratch_dir).join(&error_filename);
-                let error_file = File::create(&error_path).ok();
-                if let Some(mut file) = error_file {
-                    let _ = writeln!(file, "{}", e);
-                    viral_seq_errors.push(error_filename);
+            // locator does not exit code !0 when errors occur, don't use run_command
+            let output = std::process::Command
+                ::new("conda")
+                .args(&["run", "-n", "locator", "locator", "-i", &pathbuf.display().to_string()])
+                .current_dir(&pipeline.scratch_dir)
+                .output();
+
+            if let Ok(ref result) = output {
+                let std_err = String::from_utf8_lossy(&result.stderr);
+
+                if !std_err.is_empty() {
+                    let error_filename = format!(
+                        "{}.error",
+                        pathbuf.file_name().unwrap().to_string_lossy()
+                    );
+                    let error_path = std::path::Path::new(&work_dir).join(&error_filename);
+                    let error_file = File::create(&error_path).ok();
+                    if let Some(mut file) = error_file {
+                        let _ = writeln!(file, "{}", std_err);
+                        viral_seq_errors.push(error_filename);
+                    }
                 }
             }
         });
@@ -93,7 +100,7 @@ pub async fn process(pipeline: &Pipeline<LocatorAPI>, locations: Locations) -> R
     pipeline.add_log("Emailing results.")?;
     let results_body = results_email_template(signed_url, "");
     send_email(
-        &format!("Locator Dating Results #{}", &job_id),
+        &format!("Locator Results #{}", &job_id),
         &results_body,
         &pipeline.data.email,
         false
