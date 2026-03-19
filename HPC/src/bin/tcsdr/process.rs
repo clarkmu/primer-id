@@ -189,11 +189,28 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
         std::fs::create_dir(&results_location).context("Failed to create results directory.")?;
     }
 
-    // move files to results location
-    let move_files_command = format!("mv {}/* {}", &pipeline.scratch_dir, &results_location);
-    run_command(&move_files_command, &pipeline.scratch_dir).context(
-        "Failed to move files to results location."
-    )?;
+    // Move scratch contents into results, but skip the results directory itself.
+    for entry in std::fs::read_dir(&pipeline.scratch_dir).context(
+        "Failed to read scratch directory before compressing results."
+    )? {
+        let entry = entry.context("Failed to read scratch directory entry.")?;
+        let source_path = entry.path();
+
+        if source_path == Path::new(&results_location) {
+            continue;
+        }
+
+        let destination_path = Path::new(&results_location).join(entry.file_name());
+        std::fs
+            ::rename(&source_path, &destination_path)
+            .with_context(|| {
+                format!(
+                    "Failed to move '{}' to '{}'",
+                    source_path.display(),
+                    destination_path.display()
+                )
+            })?;
+    }
 
     pipeline.add_log(
         &format!(

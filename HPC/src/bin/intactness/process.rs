@@ -7,7 +7,12 @@ use utils::{
     run_command::run_command,
     send_email::send_email,
 };
-use std::{ ffi::OsStr, fs::{ File, OpenOptions }, io::{ BufRead, BufReader, BufWriter, Write } };
+use std::{
+    ffi::OsStr,
+    fs::{ File, OpenOptions },
+    io::{ BufRead, BufReader, BufWriter, Write },
+    path::Path,
+};
 use rayon::prelude::*;
 use crate::split_sequences::split_sequences;
 use serde_json::json;
@@ -60,6 +65,10 @@ pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Re
         });
 
     let summary_file_location = format!("{}/summary.csv", &pipeline.scratch_dir);
+    let archive_output_dir = Path::new(&pipeline.scratch_dir)
+        .parent()
+        .context("Failed to resolve archive output directory for intactness.")?
+        .to_path_buf();
     let mut summary_errors: Vec<String> = vec![];
     let mut summary_results: Vec<String> = vec![];
 
@@ -133,14 +142,14 @@ pub async fn process(pipeline: &Pipeline<IntactAPI>, locations: Locations) -> Re
         &format!(
             "Compressing results\nInput: {}\nOutput: {}",
             &results_location,
-            &pipeline.scratch_dir
+            archive_output_dir.display()
         )
     )?;
     let (location, compressed_filename) = compress_dir(
         &pipeline.data.results_format,
         &job_id,
         &results_location,
-        &pipeline.scratch_dir
+        archive_output_dir.to_str().context("Invalid archive output directory.")?
     ).context("Failed to compress files.")?;
 
     // upload compressed results and get signed url to compressed results

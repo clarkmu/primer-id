@@ -78,6 +78,14 @@ pub fn compress_dir(
         anyhow::bail!("input_location is not a directory: {}", input_path.display());
     }
 
+    if out_dir == input_path || out_dir.starts_with(input_path) {
+        anyhow::bail!(
+            "Invalid compression paths: output_location ('{}') must not be the same as or inside input_location ('{}')",
+            out_dir.display(),
+            input_path.display()
+        );
+    }
+
     if compression_type == "tar" {
         let tar_gz = fs::File::create(&tmp_archive).context("Failed to create temp archive file")?;
         let enc = GzEncoder::new(tar_gz, Compression::default());
