@@ -5,6 +5,7 @@ HPC/locations.php
 
 storage-admin.json
 .env*
+app.yaml
 
 /cypress/screenshots
 
