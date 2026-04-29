@@ -3,11 +3,6 @@ import { Storage } from "@google-cloud/storage";
 
 const { NODE_ENV, TEST_ENV } = process.env;
 
-const storage = new Storage({
-  projectId: GCP_CREDENTIALS.project_id,
-  credentials: GCP_CREDENTIALS,
-});
-
 const bucketPrefixDev = NODE_ENV === "production" ? "" : "dev/";
 
 type InputFile = any;
@@ -22,20 +17,27 @@ async function createSignedUrls(
   files: InputFile[],
   createPath: (file: InputFile) => String
 ) {
-  const bucket = storage.bucket(bucketName);
-
-  let signedUrls: InputFileWithSignedUrl[] = [];
-
-  const expires = new Date(
-    new Date().getTime() + 24 * 60 * 60 * 1000
-  ).getTime();
-
   if (!!TEST_ENV) {
     return files.map((file) => ({
       signedURL: "http://test-url.com/test-bucket/1",
       ...file,
     }));
   }
+
+  if (!GCP_CREDENTIALS.private_key) {
+    console.error("Missing GCP_BUCKET_PRIVATE_KEY; cannot create signed URLs.");
+    return [];
+  }
+
+  const storage = new Storage({
+    projectId: GCP_CREDENTIALS.project_id,
+    credentials: GCP_CREDENTIALS,
+  });
+  const bucket = storage.bucket(bucketName);
+  let signedUrls: InputFileWithSignedUrl[] = [];
+  const expires = new Date(
+    new Date().getTime() + 24 * 60 * 60 * 1000
+  ).getTime();
 
   try {
     for (const file of files) {

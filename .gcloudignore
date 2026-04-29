@@ -6,16 +6,10 @@ HPC/
 .env
 .env.*
 .envrc
-src/
 cypress/
 coverage/
-prisma/
 scripts/
 *.log
 *.md
-tsconfig.json
-eslint.config.mjs
-postcss.config.mjs
-next.config.ts
 cypress/screenshots/
 README.md

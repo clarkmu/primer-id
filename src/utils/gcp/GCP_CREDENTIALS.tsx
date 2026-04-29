@@ -17,7 +17,7 @@ const GCP_CREDENTIALS: {
   type: "service_account",
   project_id: "phylodynamics-213415",
   private_key_id: "d16d90f31d1961d0f3b6c3cbab3f9e548ad0895d",
-  private_key: GCP_BUCKET_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  private_key: GCP_BUCKET_PRIVATE_KEY?.replace(/\\n/g, "\n") || "",
   client_email:
     "tcs-dr-service-new@phylodynamics-213415.iam.gserviceaccount.com",
   client_id: "108250714575414510679",
