@@ -2,6 +2,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 const { API_KEY, TEST_ENV } = process.env;
 
+export const publicQueueWhere = {
+  processingError: { not: true },
+  OR: [{ submit: true }, { pending: true }],
+};
+
 // 'middleware' to ensure API Key or return id
 export const validateIdRequest = (req: NextApiRequest) => {
   let error = "";
@@ -21,30 +26,43 @@ export const validateIdRequest = (req: NextApiRequest) => {
 };
 
 // GET api/*/index
+export const fetchPublic = async (
+  prismaFindManyFunction: (query: any) => Promise<any>,
+  calcUploadCount: (item: any) => number
+) => {
+  // get all objects that are ready for or already processing on server
+  const all: any[] = await prismaFindManyFunction({
+    where: publicQueueWhere,
+  });
+
+  // allow all data in test env, otherwise filter out sensitive fields
+  return !!TEST_ENV
+    ? all.map((item) => ({
+        id: item.id,
+        submit: item.submit,
+        pending: item.pending,
+        createdAt: item.createdAt,
+        uploadCount: calcUploadCount(item),
+      }))
+    : all.map(({ id, submit, pending, createdAt, ...item }) => ({
+        id,
+        submit,
+        pending,
+        createdAt,
+        uploadCount: calcUploadCount(item),
+      }));
+};
+
 export const getPublic = async (
   prismaFindManyFunction: (query: any) => Promise<any>,
   res: NextApiResponse,
   calcUploadCount: (item: any) => number
 ) => {
   try {
-    // get all objects that are ready for or already processing on server
-    const all: any[] = await prismaFindManyFunction({
-      where: {
-        processingError: { not: true },
-        OR: [{ submit: true }, { pending: true }],
-      },
-    });
-
-    // allow all data in test env, otherwise filter out sensitive fields
-    const filtered_results = !!TEST_ENV
-      ? all
-      : all.map(({ id, submit, pending, createdAt, ...item }) => ({
-          id,
-          submit,
-          pending,
-          createdAt,
-          uploadCount: calcUploadCount(item),
-        }));
+    const filtered_results = await fetchPublic(
+      prismaFindManyFunction,
+      calcUploadCount,
+    );
 
     return res.status(200).json(filtered_results);
   } catch (e) {
