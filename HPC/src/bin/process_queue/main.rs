@@ -1,7 +1,6 @@
 use anyhow::Result;
 use chrono::Local;
 use serde::Deserialize;
-use serde_json::json;
 use std::path::Path;
 use std::process::exit;
 use utils::{
@@ -17,7 +16,6 @@ use utils::{
         Pipeline,
         SplicingAPI,
         TcsAPI,
-        pipeline_is_stale,
     },
     run_command::run_command,
 };
@@ -25,10 +23,7 @@ use utils::{
 #[derive(Debug, Deserialize)]
 struct SharedAPIData {
     pub id: String,
-    #[serde(rename = "createdAt")]
-    pub created_at: String,
     pub submit: bool,
-    pub pending: bool,
     #[serde(rename = "uploadCount")]
     pub upload_count: Option<u8>,
 }
@@ -148,12 +143,6 @@ async fn run() -> Result<()> {
     );
     if lock_file.exists().unwrap_or(true) {
         println!("\n\nProcess currently running.\nExiting.\n\n");
-
-        if lock_file.is_stale().unwrap_or(true) {
-            //todo: send a notification email to locations.admin_email
-            return Ok(());
-        }
-
         exit(1);
     } else {
         lock_file.create()?;
@@ -178,24 +167,7 @@ async fn run() -> Result<()> {
     });
 
     for ogv in ogvs {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&ogv.pending, &ogv.created_at, 48);
-
-        if is_stale {
-            let pipeline: Pipeline<OgvAPI> = match Pipeline::new(&ogv.id, PipelineType::Ogv).await {
-                Ok(p) => p,
-                Err(e) => {
-                    println!("Error creating pipeline: {:?}", e);
-                    continue;
-                }
-            };
-
-            run_command(
-                &format!("{} --id={}{}{}", ogv_bin_location, &ogv.id, &is_dev_cmd, is_stale_cmd),
-                &locations.base
-            )?;
-
-            let _ = pipeline.patch_pipeline(json!({ "pending": false, "submit": false })).await?;
-        } else if ogv.submit {
+        if ogv.submit {
             let pipeline: Pipeline<OgvAPI> = match Pipeline::new(&ogv.id, PipelineType::Ogv).await {
                 Ok(p) => p,
                 Err(e) => {
@@ -226,33 +198,7 @@ async fn run() -> Result<()> {
     }
 
     for intact in intacts {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&intact.pending, &intact.created_at, 24);
-
-        if is_stale {
-            let pipeline: Pipeline<IntactAPI> = match
-                Pipeline::new(&intact.id, PipelineType::Intact).await
-            {
-                Ok(p) => p,
-                Err(e) => {
-                    println!("Error creating pipeline: {:?}", e);
-                    continue;
-                }
-            };
-
-            run_command(
-                &format!(
-                    "{} --id={} --cores={}{}{}",
-                    intactness_bin_location,
-                    &intact.id,
-                    1,
-                    &is_dev_cmd,
-                    is_stale_cmd
-                ),
-                &locations.base
-            )?;
-
-            let _ = pipeline.patch_pipeline(json!({ "pending": false, "submit": false })).await?;
-        } else if intact.submit {
+        if intact.submit {
             let pipeline: Pipeline<IntactAPI> = match
                 Pipeline::new(&intact.id, PipelineType::Intact).await
             {
@@ -292,31 +238,7 @@ async fn run() -> Result<()> {
     }
 
     for tcs in tcss {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&tcs.pending, &tcs.created_at, 48);
-
-        if is_stale {
-            let pipeline: Pipeline<TcsAPI> = match Pipeline::new(&tcs.id, PipelineType::Tcs).await {
-                Ok(p) => p,
-                Err(e) => {
-                    println!("Error creating pipeline: {:?}", e);
-                    continue;
-                }
-            };
-
-            run_command(
-                &format!(
-                    "{} --id={} --cores={}{}{}",
-                    tcsdr_bin_location,
-                    &tcs.id,
-                    1,
-                    &is_dev_cmd,
-                    is_stale_cmd
-                ),
-                &locations.base
-            )?;
-
-            let _ = pipeline.patch_pipeline(json!({ "pending": false, "submit": false })).await?;
-        } else if tcs.submit {
+        if tcs.submit {
             let pipeline: Pipeline<TcsAPI> = match Pipeline::new(&tcs.id, PipelineType::Tcs).await {
                 Ok(p) => p,
                 Err(e) => {
@@ -354,36 +276,7 @@ async fn run() -> Result<()> {
     }
 
     for splicing in splicings {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(
-            &splicing.pending,
-            &splicing.created_at,
-            24
-        );
-
-        if is_stale {
-            let pipeline: Pipeline<SplicingAPI> = match
-                Pipeline::new(&splicing.id, PipelineType::Splicing).await
-            {
-                Ok(p) => p,
-                Err(e) => {
-                    println!("Error creating pipeline: {:?}", e);
-                    continue;
-                }
-            };
-
-            run_command(
-                &format!(
-                    "{} --id={} {}{}",
-                    splicing_bin_location,
-                    &splicing.id,
-                    &is_dev_cmd,
-                    is_stale_cmd
-                ),
-                &locations.base
-            )?;
-
-            pipeline.patch_pipeline(json!({ "pending": false, "submit": false })).await?;
-        } else if splicing.submit {
+        if splicing.submit {
             let pipeline: Pipeline<SplicingAPI> = match
                 Pipeline::new(&splicing.id, PipelineType::Splicing).await
             {
@@ -422,32 +315,7 @@ async fn run() -> Result<()> {
     }
 
     for locator in locators {
-        let (is_stale, is_stale_cmd) = pipeline_is_stale(&locator.pending, &locator.created_at, 24);
-
-        if is_stale {
-            let pipeline: Pipeline<LocatorAPI> = match
-                Pipeline::new(&locator.id, PipelineType::Locator).await
-            {
-                Ok(p) => p,
-                Err(e) => {
-                    println!("Error creating pipeline: {:?}", e);
-                    continue;
-                }
-            };
-
-            run_command(
-                &format!(
-                    "{} --id={} {}{}",
-                    locator_bin_location,
-                    &locator.id,
-                    &is_dev_cmd,
-                    is_stale_cmd
-                ),
-                &locations.base
-            )?;
-
-            pipeline.patch_pipeline(json!({ "pending": false, "submit": false })).await?;
-        } else if locator.submit {
+        if locator.submit {
             let pipeline: Pipeline<LocatorAPI> = match
                 Pipeline::new(&locator.id, PipelineType::Locator).await
             {
