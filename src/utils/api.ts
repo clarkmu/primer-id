@@ -37,13 +37,7 @@ export const fetchPublic = async (
 
   // allow all data in test env, otherwise filter out sensitive fields
   return !!TEST_ENV
-    ? all.map((item) => ({
-        id: item.id,
-        submit: item.submit,
-        pending: item.pending,
-        createdAt: item.createdAt,
-        uploadCount: calcUploadCount(item),
-      }))
+    ? all.map((item) => ({ ...item, uploadCount: calcUploadCount(item) }))
     : all.map(({ id, submit, pending, createdAt, ...item }) => ({
         id,
         submit,
