@@ -486,9 +486,9 @@ impl Pipeline<OgvAPI> {
     }
     pub fn cores_and_memory(&self) -> (u8, u32) {
         // allocate 5 GiB per core, capped at 20 cores
-        let cores = std::cmp::min(self.data.uploads.len() as u8, 20);
+        let cores = std::cmp::min(self.data.uploads.len() as u8, 20) * 2;
 
-        let memory: u32 = (cores as u32) * 5000;
+        let memory: u32 = (cores as u32) * 10000;
 
         (cores, memory)
     }

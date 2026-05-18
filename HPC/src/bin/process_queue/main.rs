@@ -9,14 +9,7 @@ use utils::{
     load_env_vars::{ EnvVars, load_env_vars },
     load_locations::{ Locations, PipelineType, load_locations },
     lock_file,
-    pipeline::{
-        IntactAPI,
-        LocatorAPI,
-        OgvAPI,
-        Pipeline,
-        SplicingAPI,
-        TcsAPI,
-    },
+    pipeline::{ IntactAPI, LocatorAPI, OgvAPI, Pipeline, SplicingAPI, TcsAPI },
     run_command::run_command,
 };
 
@@ -53,7 +46,7 @@ fn create_sbatch_cmd(
     let slurm_error_handling = format!("--mail-type=FAIL --mail-user={}", admin_email);
 
     let sbatch_command = format!(
-        "sbatch {} -o {} -n {} --job-name='{}' --mem={} -t {} --wrap='{}'",
+        "sbatch {} -o {} --cpus-per-task={} --job-name='{}' --mem={} -t {} --wrap='{}'",
         slurm_error_handling,
         output_file,
         cores,
@@ -149,13 +142,9 @@ async fn run() -> Result<()> {
     }
 
     let queue_url = format!("{}/queue", &locations.api_url[PipelineType::Base]);
-    let QueueAPIData {
-        ogvs,
-        intacts,
-        tcss,
-        splicings,
-        locators,
-    } = get_api(&queue_url).await.unwrap_or_else(|e| {
+    let QueueAPIData { ogvs, intacts, tcss, splicings, locators } = get_api(
+        &queue_url
+    ).await.unwrap_or_else(|e| {
         println!("Error getting queue API: {:?}", e);
         QueueAPIData {
             ogvs: vec![],
@@ -328,12 +317,7 @@ async fn run() -> Result<()> {
 
             let (cores, memory) = pipeline.cores_and_memory();
 
-            let mut cmd = format!(
-                "{} --id={} {}",
-                locator_bin_location,
-                &locator.id,
-                &is_dev_cmd
-            );
+            let mut cmd = format!("{} --id={} {}", locator_bin_location, &locator.id, &is_dev_cmd);
 
             if !is_dev {
                 cmd = create_sbatch_cmd(
