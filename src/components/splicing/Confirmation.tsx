@@ -1,16 +1,11 @@
 import { useRouter } from "next/router";
-import Modal from "../form/Modal";
 import { useState } from "react";
 import useSplicing from "@/hooks/queries/useSplicing";
-import Alert from "../form/Alert";
-import { CheckCircleIcon } from "@heroicons/react/20/solid";
-import Button from "../form/Button";
 import useUploadSignedURLs from "@/hooks/useUploadSignedURLs";
 import { splice } from "@prisma/client";
 import spliceConfigValues from "./spliceConfigValues.json";
 import ConfirmationDisplay from "../form/ConfirmationDisplay";
 import ConfirmationModal from "../templates/ConfirmationModal";
-import { upload } from "@google-cloud/storage/build/cjs/src/resumable-upload";
 
 const { assays, strains } = spliceConfigValues;
 
@@ -21,8 +16,13 @@ export default function Confirmation({ submission, open, onClose }) {
   const { mutate, isLoading, isError } = useSplicing();
   const [submitted, setSubmitted] = useState(false);
 
-  const { uploadError, UploadProgress, uploadFilesToSignedURL } =
-    useUploadSignedURLs(submission.files);
+  const {
+    uploadError,
+    UploadProgress,
+    uploadFilesToSignedURL,
+    isUploading,
+    isUploadComplete,
+  } = useUploadSignedURLs(submission.files);
 
   const onSubmit = async () => {
     setError("");
@@ -63,13 +63,17 @@ export default function Confirmation({ submission, open, onClose }) {
     }
   };
 
+  const isUsingUploads = submission.uploads?.length > 0;
+  const isItUploading = isUsingUploads ? isUploading : false;
+  const isItUploadComplete = isUsingUploads ? isUploadComplete : true;
+
   return (
     <ConfirmationModal
       open={open}
       onBack={onCloseConfirmation}
       onSubmit={onSubmit}
-      isLoading={isLoading}
-      submitted={submitted}
+      isLoading={isLoading || isItUploading}
+      submitted={submitted && isItUploadComplete}
       errorMessage={
         error || uploadError || isError
           ? "An error has occurred with your submission."
