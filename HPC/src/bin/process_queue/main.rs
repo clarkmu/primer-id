@@ -174,7 +174,7 @@ async fn run() -> Result<()> {
                     cores + 1,
                     &format!("ogv-{}", &ogv.id),
                     memory,
-                    2160,
+                    2880,
                     &cmd
                 );
             }
