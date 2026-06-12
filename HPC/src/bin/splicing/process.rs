@@ -31,6 +31,8 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, _locations: Locations) ->
 
     let splicing_bin_location = project_root_bin_location(ProjectBinNames::SPLICING).unwrap();
 
+    let conda_command = "conda run -n splicing";
+
     // set up variables
     let job_id = pipeline.job_id();
     let htsf_location = pipeline.data.htsf.as_deref().unwrap_or("").to_owned();
@@ -87,16 +89,17 @@ pub async fn process(pipeline: &Pipeline<SplicingAPI>, _locations: Locations) ->
 
         let r1_file = rfiles.r1.unwrap_or_default();
         let r2_file = rfiles.r2.unwrap_or_default();
-
-        // let assay = pipeline.data.assay.replace('-', "_");
+        let assay = pipeline.data.assay.replace('-', "_");
 
         let command = format!(
-            "{} --query {} --distance {} --assay {} --file1 {} --file2 {}",
+            // "{} {} --query {} --distance {} --assay {} --file1 {} --file2 {}",
+            "{} {}  {}  {}  {}  {}  {}",
+            conda_command,
             splicing_bin_location,
             pipeline.data.strain,
             pipeline.data.distance,
-            // assay,
-            &pipeline.data.assay,
+            assay,
+            // &pipeline.data.assay,
             r1_file,
             r2_file
         );

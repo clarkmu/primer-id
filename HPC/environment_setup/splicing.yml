@@ -1,0 +1,17 @@
+name: splicing
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+channel_priority: strict
+dependencies:
+  - r-base
+  - r-essentials
+  - r-rmarkdown
+  - r-knitr
+  - r-tidyverse
+  - r-plotly
+  - r-dt
+  - r-htmltools
+  - r-scales
+  - pandoc
