@@ -14,7 +14,7 @@ use crate::{
 };
 use chrono::prelude::*;
 use reqwest::Client;
-use serde::{ Deserialize, Serialize };
+use serde::Deserialize;
 use serde_json::json;
 use serde_json::Value;
 use std::io::Write;
@@ -152,10 +152,7 @@ pub struct LocatorAPI {
     pub uploads: Vec<FileUpload>,
 }
 
-// rename on deserialize only so that ViralSeq can pick up snake_case in params.json files
-// no researilization happens to database where camelCase names are needed
-#[derive(Deserialize, Serialize, Debug, Clone)]
-#[allow(non_snake_case)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Primer {
     // pub id: String,
     pub region: String,
@@ -184,12 +181,6 @@ pub struct Primer {
     pub trim_start: Option<u16>,
     #[serde(rename(deserialize = "trimEnd"))]
     pub trim_end: Option<u16>,
-    pub overlap: Option<u16>,
-    pub TCS_QC: Option<bool>,
-    pub trim_ref: Option<String>,
-    pub trim_ref_start: Option<u16>,
-    pub trim_ref_end: Option<u16>,
-    pub indel: Option<bool>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
