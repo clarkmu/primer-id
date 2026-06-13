@@ -13,7 +13,11 @@ use utils::{
     send_email::send_email,
 };
 
-use crate::{ generate_tcs_json::generate_tcs_json, sort_files::sort_files };
+use crate::{
+    downsample_sequence_files::{ downsample_sequence_files, MAX_SAMPLES_PER_FILE },
+    generate_tcs_json::generate_tcs_json,
+    sort_files::sort_files,
+};
 
 // TODO replace cargo run with tcs bin after virust-tcs update
 
@@ -56,6 +60,15 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
             .bucket_download(&from, &samples_dir, true)
             .context("Failed to download bucket files.")?;
     }
+
+    downsample_sequence_files(&samples_dir, MAX_SAMPLES_PER_FILE, |file, original_count| {
+        pipeline.add_log(&format!(
+            "Downsampled {} from {} to {} samples.",
+            file.display(),
+            original_count,
+            MAX_SAMPLES_PER_FILE
+        ))
+    })?;
 
     // thread TCS/DR jobs
     // filter is_dir to skip compressed results when rerunning jobs

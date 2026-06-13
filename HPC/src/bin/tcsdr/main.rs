@@ -8,6 +8,7 @@ mod process;
 mod validate_file_names;
 mod generate_tcs_json;
 mod sort_files;
+mod downsample_sequence_files;
 
 #[tokio::main]
 async fn main() -> () {
