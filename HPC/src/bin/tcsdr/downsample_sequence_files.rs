@@ -1,16 +1,14 @@
 use anyhow::{ Context, Result };
-use bio::io::fastq;
+use bio::io::fastq::{ self, FastqRead };
 use flate2::{ read::GzDecoder, write::GzEncoder, Compression };
 use glob::glob;
-use rand::{ rngs::StdRng, Rng, SeedableRng };
 use std::{
     fs::File,
-    io::{ BufReader, BufWriter, Read, Write },
+    io::{ BufRead, BufReader, BufWriter, Write },
     path::{ Path, PathBuf },
 };
 
 pub const MAX_SAMPLES_PER_FILE: usize = 1_000_000;
-const DOWNSAMPLE_SEED: u64 = 0x5eed_1eaf_cafe_babe;
 
 pub fn downsample_sequence_files<F>(
     samples_dir: &str,
@@ -18,17 +16,12 @@ pub fn downsample_sequence_files<F>(
     mut on_downsampled: F
 ) -> Result<()>
 where
-    F: FnMut(&Path, usize) -> Result<()>
+    F: FnMut(&Path) -> Result<()>
 {
     for file in sequence_files(samples_dir)? {
-        let sample_count = count_fastq_records(&file)?;
-
-        if sample_count <= max_samples {
-            continue;
+        if clip_fastq(&file, max_samples)? {
+            on_downsampled(&file)?;
         }
-
-        rewrite_random_fastq_subset(&file, sample_count, max_samples)?;
-        on_downsampled(&file, sample_count)?;
     }
 
     Ok(())
@@ -58,71 +51,67 @@ fn is_fastq(path: &Path) -> bool {
         || file_name.ends_with(".fq.gz")
 }
 
-fn count_fastq_records(path: &Path) -> Result<usize> {
-    let reader = fastq::Reader::new(open_fastq_reader(path)?);
-    let mut count = 0;
-
-    for record in reader.records() {
-        record.with_context(|| format!("Failed to read FASTQ file '{}'.", path.display()))?;
-        count += 1;
-    }
-
-    Ok(count)
-}
-
-fn rewrite_random_fastq_subset(path: &Path, total: usize, keep: usize) -> Result<()> {
+fn clip_fastq(path: &Path, max_samples: usize) -> Result<bool> {
     let temp_path = path.with_file_name(format!(
         ".{}.downsampling",
         path.file_name()
             .and_then(|name| name.to_str())
             .context("FASTQ file name is not valid UTF-8.")?
     ));
-    let reader = fastq::Reader::new(open_fastq_reader(path)?);
+    let mut reader = fastq::Reader::from_bufread(open_fastq_reader(path)?);
     let mut writer = fastq::Writer::new(open_fastq_writer(&temp_path, is_gzip(path))?);
-    let mut rng = StdRng::seed_from_u64(DOWNSAMPLE_SEED ^ total as u64);
-    let mut remaining = total;
-    let mut remaining_to_keep = keep;
+    let mut record = fastq::Record::new();
 
-    for record in reader.records() {
-        let record =
-            record.with_context(|| format!("Failed to read FASTQ file '{}'.", path.display()))?;
+    for _ in 0..max_samples {
+        reader
+            .read(&mut record)
+            .with_context(|| format!("Failed to read FASTQ file '{}'.", path.display()))?;
 
-        if rng.gen_range(0..remaining) < remaining_to_keep {
-            writer
-                .write_record(&record)
-                .with_context(|| format!("Failed to downsample '{}'.", path.display()))?;
-            remaining_to_keep -= 1;
+        if record.is_empty() {
+            drop(writer);
+            std::fs::remove_file(&temp_path).with_context(|| {
+                format!("Failed to remove temporary file '{}'.", temp_path.display())
+            })?;
+            return Ok(false);
         }
 
-        remaining -= 1;
+        writer
+            .write_record(&record)
+            .with_context(|| format!("Failed to clip '{}'.", path.display()))?;
+    }
+
+    reader
+        .read(&mut record)
+        .with_context(|| format!("Failed to read FASTQ file '{}'.", path.display()))?;
+
+    if record.is_empty() {
+        drop(writer);
+        std::fs::remove_file(&temp_path).with_context(|| {
+            format!("Failed to remove temporary file '{}'.", temp_path.display())
+        })?;
+        return Ok(false);
     }
 
     drop(writer);
 
-    if remaining_to_keep != 0 {
-        return Err(anyhow::anyhow!(
-            "Failed to select {} samples from '{}'.",
-            keep,
-            path.display()
-        ));
-    }
-
     std::fs::rename(&temp_path, path).with_context(|| {
         format!(
-            "Failed to replace '{}' with its downsampled file.",
+            "Failed to replace '{}' with its clipped file.",
             path.display()
         )
     })?;
 
-    Ok(())
+    Ok(true)
 }
 
-fn open_fastq_reader(path: &Path) -> Result<Box<dyn Read>> {
+fn open_fastq_reader(path: &Path) -> Result<Box<dyn BufRead>> {
     let file =
         File::open(path).with_context(|| format!("Failed to open '{}'.", path.display()))?;
 
     if is_gzip(path) {
-        Ok(Box::new(GzDecoder::new(BufReader::new(file))))
+        Ok(Box::new(BufReader::new(GzDecoder::new(BufReader::new(
+            file
+        )))))
     } else {
         Ok(Box::new(BufReader::new(file)))
     }
@@ -161,14 +150,14 @@ mod tests {
     }
 
     fn record_ids(path: &Path) -> Vec<String> {
-        fastq::Reader::new(open_fastq_reader(path).unwrap())
+        fastq::Reader::from_bufread(open_fastq_reader(path).unwrap())
             .records()
             .map(|record| record.unwrap().id().to_string())
             .collect()
     }
 
     #[test]
-    fn caps_fastq_files_and_preserves_pair_selection() {
+    fn clips_fastq_files_and_preserves_pair_selection() {
         let temp_dir = std::env::temp_dir().join(format!(
             "primer-id-downsampling-{}",
             std::process::id()
@@ -179,7 +168,7 @@ mod tests {
         write_fastq(&r1, 20, 1);
         write_fastq(&r2, 20, 2);
 
-        downsample_sequence_files(temp_dir.to_str().unwrap(), 7, |_, _| Ok(())).unwrap();
+        downsample_sequence_files(temp_dir.to_str().unwrap(), 7, |_| Ok(())).unwrap();
 
         let r1_ids = record_ids(&r1);
         let r2_ids = record_ids(&r2);
@@ -193,6 +182,12 @@ mod tests {
             r2_ids
                 .iter()
                 .map(|id| id.split('/').next().unwrap())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            r1_ids,
+            (0..7)
+                .map(|index| format!("sample_{index}/1"))
                 .collect::<Vec<_>>()
         );
 

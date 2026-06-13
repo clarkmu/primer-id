@@ -242,7 +242,7 @@ async fn run() -> Result<()> {
                 "{} --id={} --cores={}{}",
                 tcsdr_bin_location,
                 &tcs.id,
-                cores + 1,
+                cores,
                 &is_dev_cmd
             );
 

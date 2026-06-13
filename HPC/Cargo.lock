@@ -2024,7 +2024,6 @@ dependencies = [
  "mail-send",
  "openssl",
  "openssl-sys",
- "rand",
  "rayon",
  "reqwest",
  "serde",

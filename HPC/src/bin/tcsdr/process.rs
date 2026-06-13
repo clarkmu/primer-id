@@ -61,11 +61,10 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
             .context("Failed to download bucket files.")?;
     }
 
-    downsample_sequence_files(&samples_dir, MAX_SAMPLES_PER_FILE, |file, original_count| {
+    downsample_sequence_files(&samples_dir, MAX_SAMPLES_PER_FILE, |file| {
         pipeline.add_log(&format!(
-            "Downsampled {} from {} to {} samples.",
+            "Clipped {} to the first {} samples.",
             file.display(),
-            original_count,
             MAX_SAMPLES_PER_FILE
         ))
     })?;
