@@ -48,7 +48,35 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
 
     // transfer samples
     if !htsf_location.is_empty() {
+        let htsf_path = Path::new(&htsf_location);
+
+        if !htsf_path.exists() || !htsf_path.is_dir() {
+            return Err(
+                anyhow::anyhow!("TCS/DR Error:\n\nInvalid HTSF Directory: {}", htsf_location)
+            );
+        }
+
+        let has_fast_file = std::fs
+            ::read_dir(htsf_path)?
+            .filter_map(Result::ok)
+            .any(|entry| {
+                entry
+                    .file_type()
+                    .map(|ft| ft.is_file())
+                    .unwrap_or(false) && entry.file_name().to_string_lossy().contains(".fast")
+            });
+
+        if !has_fast_file {
+            return Err(
+                anyhow::anyhow!(
+                    "TCS/DR Error:\n\nHTSF Directory is valid but contained no fast files: {}",
+                    htsf_location
+                )
+            );
+        }
+
         pipeline.add_log(&format!("Transferring results from HTSF location: {}", &htsf_location))?;
+
         sort_files(&htsf_location, &samples_dir).await.context(
             "Failed to sort input files by lib name."
         )?;
@@ -62,11 +90,9 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     }
 
     downsample_sequence_files(&samples_dir, MAX_SAMPLES_PER_FILE, |file| {
-        pipeline.add_log(&format!(
-            "Clipped {} to the first {} samples.",
-            file.display(),
-            MAX_SAMPLES_PER_FILE
-        ))
+        pipeline.add_log(
+            &format!("Clipped {} to the first {} samples.", file.display(), MAX_SAMPLES_PER_FILE)
+        )
     })?;
 
     // thread TCS/DR jobs
@@ -202,9 +228,9 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
     }
 
     // Move scratch contents into results, but skip the results directory itself.
-    for entry in std::fs::read_dir(&pipeline.scratch_dir).context(
-        "Failed to read scratch directory before compressing results."
-    )? {
+    for entry in std::fs
+        ::read_dir(&pipeline.scratch_dir)
+        .context("Failed to read scratch directory before compressing results.")? {
         let entry = entry.context("Failed to read scratch directory entry.")?;
         let source_path = entry.path();
 
