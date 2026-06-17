@@ -20,7 +20,7 @@ describe("DR", () => {
 
     cy.wait("@dr_params");
 
-    cy.get('[data-cy="dr_version_v2"]').click();
+    cy.get('[data-cy="dr_version_v4"]').click();
 
     cy.get('[data-cy="nextStepButton"]').last().click();
 
@@ -64,7 +64,7 @@ describe("DR", () => {
 
     cy.wait("@dr_params");
 
-    cy.get('[data-cy="dr_version_v2"]').click();
+    cy.get('[data-cy="dr_version_v4"]').click();
 
     cy.get('[data-cy="nextStepButton"]').last().click();
 
