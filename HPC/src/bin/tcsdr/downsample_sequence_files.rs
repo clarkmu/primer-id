@@ -1,12 +1,9 @@
+#![allow(unused)]
 use anyhow::{ Context, Result };
 use bio::io::fastq::{ self, FastqRead };
 use flate2::{ read::GzDecoder, write::GzEncoder, Compression };
 use glob::glob;
-use std::{
-    fs::File,
-    io::{ BufRead, BufReader, BufWriter, Write },
-    path::{ Path, PathBuf },
-};
+use std::{ fs::File, io::{ BufRead, BufReader, BufWriter, Write }, path::{ Path, PathBuf } };
 
 pub const MAX_SAMPLES_PER_FILE: usize = 1_000_000;
 
@@ -15,8 +12,7 @@ pub fn downsample_sequence_files<F>(
     max_samples: usize,
     mut on_downsampled: F
 ) -> Result<()>
-where
-    F: FnMut(&Path) -> Result<()>
+    where F: FnMut(&Path) -> Result<()>
 {
     for file in sequence_files(samples_dir)? {
         if clip_fastq(&file, max_samples)? {
@@ -45,19 +41,22 @@ fn is_fastq(path: &Path) -> bool {
         .unwrap_or("")
         .to_ascii_lowercase();
 
-    file_name.ends_with(".fastq")
-        || file_name.ends_with(".fq")
-        || file_name.ends_with(".fastq.gz")
-        || file_name.ends_with(".fq.gz")
+    file_name.ends_with(".fastq") ||
+        file_name.ends_with(".fq") ||
+        file_name.ends_with(".fastq.gz") ||
+        file_name.ends_with(".fq.gz")
 }
 
 fn clip_fastq(path: &Path, max_samples: usize) -> Result<bool> {
-    let temp_path = path.with_file_name(format!(
-        ".{}.downsampling",
-        path.file_name()
-            .and_then(|name| name.to_str())
-            .context("FASTQ file name is not valid UTF-8.")?
-    ));
+    let temp_path = path.with_file_name(
+        format!(
+            ".{}.downsampling",
+            path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .context("FASTQ file name is not valid UTF-8.")?
+        )
+    );
     let mut reader = fastq::Reader::from_bufread(open_fastq_reader(path)?);
     let mut writer = fastq::Writer::new(open_fastq_writer(&temp_path, is_gzip(path))?);
     let mut record = fastq::Record::new();
@@ -69,9 +68,11 @@ fn clip_fastq(path: &Path, max_samples: usize) -> Result<bool> {
 
         if record.is_empty() {
             drop(writer);
-            std::fs::remove_file(&temp_path).with_context(|| {
-                format!("Failed to remove temporary file '{}'.", temp_path.display())
-            })?;
+            std::fs
+                ::remove_file(&temp_path)
+                .with_context(|| {
+                    format!("Failed to remove temporary file '{}'.", temp_path.display())
+                })?;
             return Ok(false);
         }
 
@@ -86,40 +87,39 @@ fn clip_fastq(path: &Path, max_samples: usize) -> Result<bool> {
 
     if record.is_empty() {
         drop(writer);
-        std::fs::remove_file(&temp_path).with_context(|| {
-            format!("Failed to remove temporary file '{}'.", temp_path.display())
-        })?;
+        std::fs
+            ::remove_file(&temp_path)
+            .with_context(|| {
+                format!("Failed to remove temporary file '{}'.", temp_path.display())
+            })?;
         return Ok(false);
     }
 
     drop(writer);
 
-    std::fs::rename(&temp_path, path).with_context(|| {
-        format!(
-            "Failed to replace '{}' with its clipped file.",
-            path.display()
-        )
-    })?;
+    std::fs
+        ::rename(&temp_path, path)
+        .with_context(|| {
+            format!("Failed to replace '{}' with its clipped file.", path.display())
+        })?;
 
     Ok(true)
 }
 
 fn open_fastq_reader(path: &Path) -> Result<Box<dyn BufRead>> {
-    let file =
-        File::open(path).with_context(|| format!("Failed to open '{}'.", path.display()))?;
+    let file = File::open(path).with_context(|| format!("Failed to open '{}'.", path.display()))?;
 
     if is_gzip(path) {
-        Ok(Box::new(BufReader::new(GzDecoder::new(BufReader::new(
-            file
-        )))))
+        Ok(Box::new(BufReader::new(GzDecoder::new(BufReader::new(file)))))
     } else {
         Ok(Box::new(BufReader::new(file)))
     }
 }
 
 fn open_fastq_writer(path: &Path, gzip: bool) -> Result<Box<dyn Write>> {
-    let file =
-        File::create(path).with_context(|| format!("Failed to create '{}'.", path.display()))?;
+    let file = File::create(path).with_context(||
+        format!("Failed to create '{}'.", path.display())
+    )?;
     let writer = BufWriter::new(file);
 
     if gzip {
@@ -140,8 +140,7 @@ mod tests {
     use super::*;
 
     fn write_fastq(path: &Path, record_count: usize, mate: u8) {
-        let mut writer =
-            fastq::Writer::new(open_fastq_writer(path, is_gzip(path)).unwrap());
+        let mut writer = fastq::Writer::new(open_fastq_writer(path, is_gzip(path)).unwrap());
 
         for index in 0..record_count {
             let id = format!("sample_{index}/{mate}");
@@ -150,7 +149,8 @@ mod tests {
     }
 
     fn record_ids(path: &Path) -> Vec<String> {
-        fastq::Reader::from_bufread(open_fastq_reader(path).unwrap())
+        fastq::Reader
+            ::from_bufread(open_fastq_reader(path).unwrap())
             .records()
             .map(|record| record.unwrap().id().to_string())
             .collect()
@@ -158,10 +158,9 @@ mod tests {
 
     #[test]
     fn clips_fastq_files_and_preserves_pair_selection() {
-        let temp_dir = std::env::temp_dir().join(format!(
-            "primer-id-downsampling-{}",
-            std::process::id()
-        ));
+        let temp_dir = std::env
+            ::temp_dir()
+            .join(format!("primer-id-downsampling-{}", std::process::id()));
         let r1 = temp_dir.join("sample_R1.fastq.gz");
         let r2 = temp_dir.join("sample_R2.fastq.gz");
         std::fs::create_dir_all(&temp_dir).unwrap();
@@ -184,12 +183,7 @@ mod tests {
                 .map(|id| id.split('/').next().unwrap())
                 .collect::<Vec<_>>()
         );
-        assert_eq!(
-            r1_ids,
-            (0..7)
-                .map(|index| format!("sample_{index}/1"))
-                .collect::<Vec<_>>()
-        );
+        assert_eq!(r1_ids, (0..7).map(|index| format!("sample_{index}/1")).collect::<Vec<_>>());
 
         std::fs::remove_dir_all(temp_dir).unwrap();
     }

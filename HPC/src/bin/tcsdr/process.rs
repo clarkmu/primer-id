@@ -14,7 +14,7 @@ use utils::{
 };
 
 use crate::{
-    downsample_sequence_files::{ downsample_sequence_files, MAX_SAMPLES_PER_FILE },
+    // downsample_sequence_files::{ downsample_sequence_files, MAX_SAMPLES_PER_FILE },
     generate_tcs_json::generate_tcs_json,
     sort_files::sort_files,
 };
@@ -89,11 +89,11 @@ pub async fn process(pipeline: &Pipeline<TcsAPI>, locations: Locations) -> Resul
             .context("Failed to download bucket files.")?;
     }
 
-    downsample_sequence_files(&samples_dir, MAX_SAMPLES_PER_FILE, |file| {
-        pipeline.add_log(
-            &format!("Clipped {} to the first {} samples.", file.display(), MAX_SAMPLES_PER_FILE)
-        )
-    })?;
+    // downsample_sequence_files(&samples_dir, MAX_SAMPLES_PER_FILE, |file| {
+    //     pipeline.add_log(
+    //         &format!("Clipped {} to the first {} samples.", file.display(), MAX_SAMPLES_PER_FILE)
+    //     )
+    // })?;
 
     // thread TCS/DR jobs
     // filter is_dir to skip compressed results when rerunning jobs
