@@ -62,7 +62,11 @@ describe("TCS Pipeline", () => {
 
     // General Settings
     cy.get('[data-cy="radio_platformFormat_1"]').click();
-    cy.get('[data-cy="errorRate"]').type("0.05");
+    cy.get('[data-cy="errorRateSlider"]')
+      .invoke("val", "0.05")
+      .trigger("input")
+      .trigger("change")
+      .should("have.value", "0.05");
 
     // Primer 1 with EndJoin and QC and Trim
     cy.get('[data-cy="primerContainer_0"]').within(() => {
