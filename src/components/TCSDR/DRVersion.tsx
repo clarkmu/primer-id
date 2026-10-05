@@ -19,7 +19,7 @@ export default function DRVersion({ ContinueButton, state, setState }) {
 
   const versionKeys = Object.keys(params).filter((k) => {
     const kl = k.toLowerCase();
-    return kl !== "v2" && kl !== "v3";
+    return kl !== "v2";
   });
 
   return (
